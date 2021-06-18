@@ -8,12 +8,13 @@ using InteractiveUtils
 md"""
 #### Tarefa Semana 1
 
-> Implementar em Julia os seguintes algorimtos para encontrar raiz quadrada de um número inteiro $${n >0}$$. 
+> Implementar em Julia, com base no algoritmo que vimos em sala de aula, os seguintes algoritmos que encontram aproximações da raiz quadrada de um número inteiro $${n >0}$$. 
 >  1. Com 1 casa de precisão depois da vírgula
 >  2. Com $$t\in\mathbb{Z}$$ casas de precisão depois da vírgula
 
 **Observações:** 
-- Suba o Notebook Pluto com nome _Tarefa1_Meu_Nome.pluto.jl_ na Tarefa 1 específica no Julia
+
+- Suba o Notebook Pluto com nome _Tarefa1_Meu_Nome.pluto.jl_ na Tarefa 1 específica no Moodle
 
 - Não esqueça de incluir as *Referências* consultadas, incluindo pessoas.
 
