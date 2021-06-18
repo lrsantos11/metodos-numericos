@@ -4,9 +4,6 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 169f6fe6-9420-4460-aa51-df4c7f6cce63
-using Pkg; Pkg.add("PlutoUI")
-
 # ╔═╡ 79afca88-d86b-45be-993d-2a7bea872982
 using PlutoUI
 
@@ -36,7 +33,7 @@ md"""
 sin(pi/4)
 
 # ╔═╡ 92a2f02e-f83b-4f3e-8af3-7de014a76864
-x = 12
+x = 11
 
 # ╔═╡ e607addd-9e0a-4037-b9f2-fedf8912de81
 x^2
@@ -77,6 +74,9 @@ md"""
 #### Pacote `PlutoUI.jl`
 """
 
+# ╔═╡ 169f6fe6-9420-4460-aa51-df4c7f6cce63
+# using Pkg; Pkg.add("PlutoUI")
+
 # ╔═╡ 600ee512-b3c0-4b62-8bbc-4fde624325f2
 md"""
 - Usando função `with_terminal()`
@@ -92,6 +92,10 @@ end
 with_terminal() do
 	println("Hello, ")
     println("World!")
+	@show 2+3 
+	@show x # @show  x equivale à println("x = $x")
+	println("x = $x")
+	@show y
 end
 
 # ╔═╡ 44ea2c67-9e6a-4b93-894f-2a3b66d6a42a
@@ -107,18 +111,19 @@ Vamos agora implementar nosso Algoritmo para encontrar raízes quadradas de um i
 """
 
 # ╔═╡ 2dd983c1-288d-48b5-b12f-1ac281b5e6ad
-begin
-	n = 17
+with_terminal() do
+	n = 48
 	for m in 1:n
 		if m^2 == n
 			# Declarar m como raiz quadrada de n
 			println("$m é raiz quadrada de $n")
-			# break
+			break
 		end
 		if m^2 > n
 			# Declarar que n não possui raiz quadrada inteira
 			println("$n não tem raiz quadrada inteira")
-			# break
+			println("A raiz de $n está entre $(m-1) e $m")
+			break
 		end
 	end
 end
@@ -139,11 +144,35 @@ end
 
 # ╔═╡ 9c90333c-4134-4e86-8d10-d41bff035ab7
 function calcula_raiz(n)
-	
+	for m in 1:n
+		if m^2 == n
+			return  m, m, :TemRaiz
+		end
+		if m^2 > n
+			return  m-1, m, :NaoTemRaiz
+		end
+	end
 end
 
+# ╔═╡ f60cdba6-955c-4ef0-8c49-590257893a2e
+n = 15
+
 # ╔═╡ 76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
-calcula_raiz(9)
+calcula_raiz(n)
+
+# ╔═╡ a0e060e5-b2f8-401e-a78c-25d6c15df23d
+sqrt(n)
+
+# ╔═╡ f25056db-7961-4ffb-91d3-5a7bdba3b85a
+md"""
+- Uso do type `Symbol` em Julia
+"""
+
+# ╔═╡ 2c17e973-e8e6-496d-a7fd-c484cf0e4238
+ronaldo = :TemRaiz
+
+# ╔═╡ adec5130-12a1-4740-823b-b3bcb2e2f28f
+ronaldo == :NaoTemRaiz
 
 # ╔═╡ a2baf3cc-ac0d-4015-86bd-b8b49d99ba73
 md"""
@@ -152,11 +181,44 @@ md"""
 - Como fazer para encontrar uma solução melhor?
 """
 
+# ╔═╡ 958db75b-7b10-497e-8e7b-4882ba4eacd9
+md"""
+- Construindo intervalos com `range`
+"""
+
 # ╔═╡ 68466a9f-0882-4621-88b8-7865dabadf81
-r = range(4, 5, length = 11) #Range => Intervalo
+r = range(3, 4, length = 11) #Range => Intervalo
+
+# ╔═╡ c1902ac1-b5d3-4d8f-8599-b070dea93d81
+md"""
+ - O comando `collect` transforma um `range` em um vetor (`Array`)
+"""
 
 # ╔═╡ 943230db-5f99-464a-b76c-480baee40753
-collect(r)
+vet_r = collect(r)
+
+# ╔═╡ 24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
+vet_r[9]
+
+# ╔═╡ ca7b4bea-9f94-4185-949f-6cb39b242579
+collect(range(1,n,step =1))
+
+# ╔═╡ b8b08634-db6e-4f31-a36f-ea5eddcc1d05
+with_terminal() do
+	# a, b, status = calcula_raiz(n)
+	num_ele = length(vet_r)
+	for index in 1:num_ele
+		m = vet_r[index]
+		if m^2 == n
+			@show  m, m, :TemRaiz
+			break
+		end
+		if m^2 > n
+			@show  vet_r[index-1], m, :NaoTemRaiz
+			break
+		end
+	end
+end
 
 # ╔═╡ ca61832f-acef-45b8-9548-dfcfda22fbb6
 md"""
@@ -203,8 +265,18 @@ md"""
 # ╠═2dd983c1-288d-48b5-b12f-1ac281b5e6ad
 # ╟─9bfd6085-389b-4f81-897c-2c8591977fd1
 # ╠═9c90333c-4134-4e86-8d10-d41bff035ab7
+# ╠═f60cdba6-955c-4ef0-8c49-590257893a2e
 # ╠═76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
+# ╠═a0e060e5-b2f8-401e-a78c-25d6c15df23d
+# ╟─f25056db-7961-4ffb-91d3-5a7bdba3b85a
+# ╠═2c17e973-e8e6-496d-a7fd-c484cf0e4238
+# ╠═adec5130-12a1-4740-823b-b3bcb2e2f28f
 # ╟─a2baf3cc-ac0d-4015-86bd-b8b49d99ba73
+# ╟─958db75b-7b10-497e-8e7b-4882ba4eacd9
 # ╠═68466a9f-0882-4621-88b8-7865dabadf81
+# ╟─c1902ac1-b5d3-4d8f-8599-b070dea93d81
 # ╠═943230db-5f99-464a-b76c-480baee40753
+# ╠═24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
+# ╠═ca7b4bea-9f94-4185-949f-6cb39b242579
+# ╠═b8b08634-db6e-4f31-a36f-ea5eddcc1d05
 # ╟─ca61832f-acef-45b8-9548-dfcfda22fbb6
