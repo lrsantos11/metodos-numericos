@@ -4,6 +4,9 @@
 using Markdown
 using InteractiveUtils
 
+# ╔═╡ 169f6fe6-9420-4460-aa51-df4c7f6cce63
+using Pkg; Pkg.add("PlutoUI")
+
 # ╔═╡ 79afca88-d86b-45be-993d-2a7bea872982
 using PlutoUI
 
@@ -35,9 +38,6 @@ sin(pi/4)
 # ╔═╡ 92a2f02e-f83b-4f3e-8af3-7de014a76864
 x = 12
 
-# ╔═╡ 39aad1ee-689b-404a-ad6b-46862a5b02a0
-
-
 # ╔═╡ e607addd-9e0a-4037-b9f2-fedf8912de81
 x^2
 
@@ -58,7 +58,7 @@ exp(x)
 
 # ╔═╡ b04f4fc2-ebde-4901-aa9f-0315f379b715
 md"""
-## Pluto é REATIVO
+#### Pluto é REATIVO
 
 - Qualquer alteração em uma célula é refletida em todas as outras células
 """
@@ -74,16 +74,19 @@ z + x
 
 # ╔═╡ 12d93f85-309c-4b4a-8e8b-28bd5ec4381b
 md"""
-### Pacote `PlutoUI.jl`
+#### Pacote `PlutoUI.jl`
 """
-
-# ╔═╡ 169f6fe6-9420-4460-aa51-df4c7f6cce63
-# using Pkg; Pkg.add("PlutoUI")
 
 # ╔═╡ 600ee512-b3c0-4b62-8bbc-4fde624325f2
 md"""
 - Usando função `with_terminal()`
 """
+
+# ╔═╡ 4e192825-1212-48bb-bdff-b575fe3997a2
+begin
+	println("Hello, ")
+    println("World!")
+end
 
 # ╔═╡ d048bcf5-221f-4df7-8e7c-1383e398d6a0
 with_terminal() do
@@ -149,30 +152,27 @@ md"""
 - Como fazer para encontrar uma solução melhor?
 """
 
+# ╔═╡ 68466a9f-0882-4621-88b8-7865dabadf81
+r = range(4, 5, length = 11) #Range => Intervalo
+
+# ╔═╡ 943230db-5f99-464a-b76c-480baee40753
+collect(r)
+
 # ╔═╡ ca61832f-acef-45b8-9548-dfcfda22fbb6
 md"""
 #### Tarefa Semana 1
 
-> Implementar em Julia um algoritmo para encontrar raiz quadrada de um número interio ${n >0}$. 
+> Implementar em Julia os seguintes algorimtos para encontrar raiz quadrada de um número inteiro $${n >0}$$. 
 >  1. Com 1 casa de precisão depois da vírgula
->  2. Com $t\in\mathbb{Z}$ casas de precisão depois da vírgula
+>  2. Com $$t\in\mathbb{Z}$$ casas de precisão depois da vírgula
 
 **Observações:** 
-- Salve este notebook Pluto com nome `Tarefa1_Meu_Nome.pluto.jl` e faça o upload do mesmo na Tarefa 1 - Semana 1 no Moodle
+- Suba o Notebook Pluto com nome _Tarefa1_Meu_Nome.pluto.jl_ na Tarefa 1 específica no Julia
+
 - Não esqueça de incluir as *Referências* consultadas, incluindo pessoas.
+
+- Você abrir diretamente no Pluto a tarefa usando o seguinte [link](https://github.com/lrsantos11/metodos-numericos/raw/2021-1/tarefas/tarefa_semana1.jl)
 """
-
-# ╔═╡ 5aed160c-3209-40cc-aa7b-afe0cf0db959
-
-
-# ╔═╡ c8c84543-0a40-460d-b44c-1ffb43ddf2c4
-
-
-# ╔═╡ 68466a9f-0882-4621-88b8-7865dabadf81
-r = range(4, stop = 5, length = 11) #Range => Intervalo
-
-# ╔═╡ 943230db-5f99-464a-b76c-480baee40753
-collect(r)
 
 # ╔═╡ Cell order:
 # ╟─e45bbc21-b1dd-492e-8550-22b080a5ad9a
@@ -183,7 +183,6 @@ collect(r)
 # ╠═ce5b18af-a1e0-4fb0-b6a0-757869765d37
 # ╠═0a0dd88f-ae9e-4b21-9931-da6178d5324b
 # ╠═92a2f02e-f83b-4f3e-8af3-7de014a76864
-# ╠═39aad1ee-689b-404a-ad6b-46862a5b02a0
 # ╠═e607addd-9e0a-4037-b9f2-fedf8912de81
 # ╠═27114178-876e-4458-9d37-5f11c8625846
 # ╠═6994acf6-9aa3-4177-8b20-f40affbbb02e
@@ -197,6 +196,7 @@ collect(r)
 # ╠═169f6fe6-9420-4460-aa51-df4c7f6cce63
 # ╠═79afca88-d86b-45be-993d-2a7bea872982
 # ╟─600ee512-b3c0-4b62-8bbc-4fde624325f2
+# ╠═4e192825-1212-48bb-bdff-b575fe3997a2
 # ╠═d048bcf5-221f-4df7-8e7c-1383e398d6a0
 # ╠═44ea2c67-9e6a-4b93-894f-2a3b66d6a42a
 # ╟─05461694-b4c4-4a2e-8f9f-01574dca4919
@@ -205,8 +205,6 @@ collect(r)
 # ╠═9c90333c-4134-4e86-8d10-d41bff035ab7
 # ╠═76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
 # ╟─a2baf3cc-ac0d-4015-86bd-b8b49d99ba73
-# ╠═ca61832f-acef-45b8-9548-dfcfda22fbb6
-# ╠═5aed160c-3209-40cc-aa7b-afe0cf0db959
-# ╠═c8c84543-0a40-460d-b44c-1ffb43ddf2c4
 # ╠═68466a9f-0882-4621-88b8-7865dabadf81
 # ╠═943230db-5f99-464a-b76c-480baee40753
+# ╟─ca61832f-acef-45b8-9548-dfcfda22fbb6
