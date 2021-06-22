@@ -4,11 +4,23 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
 # ╔═╡ 79afca88-d86b-45be-993d-2a7bea872982
 using PlutoUI
 
 # ╔═╡ e45bbc21-b1dd-492e-8550-22b080a5ad9a
 md"""
+###### UFSC/Blumenau
+###### MAT1831 - Métodos Numéricos
+###### Prof. Luiz-Rafael Santos
 # Algoritmos numéricos com Julia
 
 ## Comandos Básicos
@@ -146,22 +158,13 @@ end
 function calcula_raiz(n)
 	for m in 1:n
 		if m^2 == n
-			return  m, m, :TemRaiz
+			return  m, m, :RaizExata
 		end
 		if m^2 > n
-			return  m-1, m, :NaoTemRaiz
+			return  m-1, m, :IntervalodaRaiz
 		end
 	end
 end
-
-# ╔═╡ f60cdba6-955c-4ef0-8c49-590257893a2e
-n = 15
-
-# ╔═╡ 76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
-calcula_raiz(n)
-
-# ╔═╡ a0e060e5-b2f8-401e-a78c-25d6c15df23d
-sqrt(n)
 
 # ╔═╡ f25056db-7961-4ffb-91d3-5a7bdba3b85a
 md"""
@@ -169,10 +172,10 @@ md"""
 """
 
 # ╔═╡ 2c17e973-e8e6-496d-a7fd-c484cf0e4238
-ronaldo = :TemRaiz
+ronaldo = :RaizExata
 
 # ╔═╡ adec5130-12a1-4740-823b-b3bcb2e2f28f
-ronaldo == :NaoTemRaiz
+ronaldo == :IntervalordaRaiz
 
 # ╔═╡ a2baf3cc-ac0d-4015-86bd-b8b49d99ba73
 md"""
@@ -200,27 +203,7 @@ vet_r = collect(r)
 # ╔═╡ 24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
 vet_r[9]
 
-# ╔═╡ ca7b4bea-9f94-4185-949f-6cb39b242579
-collect(range(1,n,step =1))
-
-# ╔═╡ b8b08634-db6e-4f31-a36f-ea5eddcc1d05
-with_terminal() do
-	# a, b, status = calcula_raiz(n)
-	num_ele = length(vet_r)
-	for index in 1:num_ele
-		m = vet_r[index]
-		if m^2 == n
-			@show  m, m, :TemRaiz
-			break
-		end
-		if m^2 > n
-			@show  vet_r[index-1], m, :NaoTemRaiz
-			break
-		end
-	end
-end
-
-# ╔═╡ ca61832f-acef-45b8-9548-dfcfda22fbb6
+# ╔═╡ dd93b856-008d-498e-be2e-e07fe2a9666b
 md"""
 #### Tarefa Semana 1
 
@@ -235,6 +218,82 @@ md"""
 
 - Você abrir diretamente no Pluto a tarefa usando o seguinte [link](https://github.com/lrsantos11/metodos-numericos/raw/2021-1/tarefas/tarefa_semana1.jl)
 """
+
+# ╔═╡ e92d829c-7913-4caa-8cbb-8727fed4a666
+function calcula_raizdecimal(n, t = 0)
+	a, b, status = calcula_raiz(n)
+	if status != :RaizExata
+		for digit in 1:t
+			num_pontos = 11
+			ran = collect(range(a, b, length=num_pontos))
+			for index in 2:num_pontos
+				if ran[index]^2 == n
+					return ran[index], ran[index], :RaizDecimal
+				elseif ran[index]^2 > n
+					a, b, status =  ran[index-1], ran[index], :IntervalodaRaiz
+					break
+				end
+			end
+		end
+	end
+	return a, b, status
+		
+end
+
+# ╔═╡ 81a97a42-b5a8-40f4-9fcc-63d20541f1d1
+md"""
+- Uso de `@bind` do pacote `PlutoUI` em conjunto com a função `Slider`
+"""
+
+# ╔═╡ a08fb056-3e5a-4493-9521-743be0cb628f
+@bind n Slider(1:100)
+
+# ╔═╡ 76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
+calcula_raiz(n)
+
+# ╔═╡ a0e060e5-b2f8-401e-a78c-25d6c15df23d
+sqrt(n)
+
+# ╔═╡ b8b08634-db6e-4f31-a36f-ea5eddcc1d05
+with_terminal() do
+	# a, b, status = calcula_raiz(n)
+	num_ele = length(vet_r)
+	for index in 1:num_ele
+		m = vet_r[index]
+		if m^2 == n
+			@show  m, m, :TemRaiz
+			break
+		end
+		if m^2 > n
+			@show  vet_r[index-1], m, :IntervalodaRaiz
+			break
+		end
+	end
+end
+
+# ╔═╡ f60cdba6-955c-4ef0-8c49-590257893a2e
+@show n
+
+# ╔═╡ 88bd320b-0e81-4692-91c4-a5ac6e84eef7
+@bind t Slider(0:20)
+
+# ╔═╡ ed8893a3-8f1d-444c-ac1f-d7f17a17655c
+@show t
+
+# ╔═╡ a533eaa2-544d-44a9-a1c1-fc002df43bd8
+a,b, status = calcula_raizdecimal(n,t)
+
+# ╔═╡ 5066412b-451e-4a0f-bff6-c793ec4187ea
+a
+
+# ╔═╡ 582ed9b7-ddcc-4f1c-95d7-5c33d4729dc8
+b
+
+# ╔═╡ b0dd81ff-dbba-4fab-b274-9dd7c0be5ef0
+sqrt(n) 
+
+# ╔═╡ eb7aee0e-54cd-4c33-81d0-b9a31164d861
+# Erro  de Aproximação
 
 # ╔═╡ Cell order:
 # ╟─e45bbc21-b1dd-492e-8550-22b080a5ad9a
@@ -265,7 +324,6 @@ md"""
 # ╠═2dd983c1-288d-48b5-b12f-1ac281b5e6ad
 # ╟─9bfd6085-389b-4f81-897c-2c8591977fd1
 # ╠═9c90333c-4134-4e86-8d10-d41bff035ab7
-# ╠═f60cdba6-955c-4ef0-8c49-590257893a2e
 # ╠═76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
 # ╠═a0e060e5-b2f8-401e-a78c-25d6c15df23d
 # ╟─f25056db-7961-4ffb-91d3-5a7bdba3b85a
@@ -277,6 +335,16 @@ md"""
 # ╟─c1902ac1-b5d3-4d8f-8599-b070dea93d81
 # ╠═943230db-5f99-464a-b76c-480baee40753
 # ╠═24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
-# ╠═ca7b4bea-9f94-4185-949f-6cb39b242579
+# ╟─dd93b856-008d-498e-be2e-e07fe2a9666b
 # ╠═b8b08634-db6e-4f31-a36f-ea5eddcc1d05
-# ╟─ca61832f-acef-45b8-9548-dfcfda22fbb6
+# ╠═e92d829c-7913-4caa-8cbb-8727fed4a666
+# ╟─81a97a42-b5a8-40f4-9fcc-63d20541f1d1
+# ╠═a08fb056-3e5a-4493-9521-743be0cb628f
+# ╟─f60cdba6-955c-4ef0-8c49-590257893a2e
+# ╠═88bd320b-0e81-4692-91c4-a5ac6e84eef7
+# ╠═ed8893a3-8f1d-444c-ac1f-d7f17a17655c
+# ╠═a533eaa2-544d-44a9-a1c1-fc002df43bd8
+# ╠═5066412b-451e-4a0f-bff6-c793ec4187ea
+# ╠═582ed9b7-ddcc-4f1c-95d7-5c33d4729dc8
+# ╠═b0dd81ff-dbba-4fab-b274-9dd7c0be5ef0
+# ╠═eb7aee0e-54cd-4c33-81d0-b9a31164d861
