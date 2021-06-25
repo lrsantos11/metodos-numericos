@@ -18,8 +18,9 @@ md"""
 # ╔═╡ b86c5fdf-7b7c-4566-8bcc-59f4be5004fc
 md"""
 $\renewcommand{\fl}{\operatorname{fl}}$
+# Aritimética de Ponto Flutuante
 
-# Introdução
+## Introdução
 
 O computador é uma máquina finita, feita a partir de um número finito de objetos e capaz de armazenar e manipular um número finito de dados. Fica então a dúvida: como ele pode armazenar ou fazer contas com números que não admitem representação finita, como os números irracionais?  Como se pode calcular o $\sin(\pi)$ se o computador não pode armazenar o $\pi$, pelo menos não completamente? Isso não pode ser feito exatamente.
 
@@ -61,9 +62,12 @@ Para armazenar números no computador adotou-se um sistema que busca diminuir es
 
 1. Uma *base* $b$. No computador essa base é tipicamente $2$ (base binária). Mas nos nossos exemplos em sala iremos usar a base $10$ que é mais usual para nós, humanos.
 
-1. A quantidade de números (dígitos na base) armazenados. Os dígitos armazenados são conhecidos como *mantissa* e denotada por $m$. Para evitar duplicidade de representação é importante definir exatamente a forma da mantissa. Uma escolha comum é considerar que a mantissa é um número que tem o primeiro dígito nulo, depois a vírgula seguida de pelo menos um dígito não nulo. Ou seja a mantissa deve ser um número cujo módulo pertence a $[0{,}1, 1)$.
+1. A quantidade de números (dígitos na base) armazenados. Os dígitos armazenados são conhecidos como *mantissa* e denotada por $m$. Para evitar duplicidade de representação é importante definir exatamente a forma da mantissa. Uma escolha comum é considerar que a mantissa é um número que tem o primeiro dígito nulo, depois a vírgula seguida de pelo menos um dígito não nulo. Ou seja a mantissa deve ser um número cujo módulo pertence a $[0.1, 1)$.
 
 1. A quantidade mínima e máxima de um inteiro, chamado de *expoente*, que é usado para dizer em que posição está a vírgula, denotado por $e$.
+
+$x = \pm(0.d_1d_2d_3\ldots d_{m-1}d_{m})\times b^e$
+em que $d_1\neq 0$.
 
 Para deixar isso mais claro vamos definir um sistema simples em base decimal e ver que tipo de números podem ser representados.
 
@@ -74,7 +78,7 @@ Para deixar isso mais claro vamos definir um sistema simples em base decimal e v
 1. O menor expoente é -99 e o maior 99.
 
 Imagine que queremos representar o número 0.034. Seguindo as regras e escolha descritas acima esse número será representado pela mantissa $0.3400$ (note que o número é  estritamente menor que $1$ e maior ou igual a $0.1$) e expoente $$-1$$. Ou seja representamos 
-- $$0{,}034 = 0{,}3400\cdot10^{-1}.$$
+- $$0.034 = 0.3400\cdot10^{-1}.$$
 
 A unicidade da representação evita dúvidas e desperdício com múltiplas representações para o mesmo número.
 
@@ -83,13 +87,13 @@ E como seria representado o nosso amigo $\pi$? Vamos relembrar o seu valor.
 """
 
 # ╔═╡ 24c6e582-1e1e-435a-b0e6-4fc9f7d4c3b1
-BigFloat(π)
+BigFloat(π) #Mais casas decimais corretas.
 
 # ╔═╡ 9a63e356-911c-478a-ab08-34d3a163ce07
 md"""
 A melhor representação que podemos obter é
 ```math
-\pi \approx 0.3146 \cdot 10^1.
+\pi \approx 0.3141 \cdot 10^1.
 ```
 
 Note que em particular o menor número representável em módulo no nosso sistema é $0.1000 \cdot 10^{-99}$ e o maior $0.9999 \cdot 10^{99}$.
@@ -109,6 +113,12 @@ o próprio 1! Vamos normalmente denotar os resultados calculados pelo computador
 \fl(1 + u) = 1.
 ```
 """
+
+# ╔═╡ 292b079c-3adc-4a7a-9966-ff2a368afa96
+1 + eps()
+
+# ╔═╡ 6bd08fe7-2bcd-4e85-b883-5c8ab4ed44c8
+1 + eps()/2
 
 # ╔═╡ a6324f07-427b-4ffa-ae66-ddd823bb2fc9
 md"""
@@ -159,18 +169,37 @@ Podemos então prever que $\sqrt{x^2 + 1} - x$ deve gerar erros de cancelamento 
 """
 
 # ╔═╡ 09471dc2-1dc1-4106-9b60-7a57e17688de
-# Expressão
-expr(x) = sqrt.(x.^2 + 1) - x
+expr(x) = sqrt(x^2 + 1) - x # Expressão
 
 # ╔═╡ 51ffe6c7-3b72-4f00-af55-aaafa1542df1
-# Intervalo [a,b]
-a, b = 1e+1, 1e+4
+a, b = 1e+1, 1e+4 # Intervalo [a,b]
 
 # ╔═╡ 30da546a-3e1c-487e-9e79-3e84f62d907c
-Eᵣ(x,xh) = abs.(x-xh) ./ abs.(xh)
+Eᵣ(xh,x) = abs(x - xh) / abs(xh)
 
 # ╔═╡ d3dbda41-d1cc-4739-9cbc-c740ec0a7d29
+# x ∈ [a,b]
+x = collect(range(a, b, length = 1000))
 
+# ╔═╡ 6207fb3a-73c8-4534-9390-8f7ddc3d7f10
+exprx_double = expr.(x)
+
+# ╔═╡ c5384b39-4237-4ef0-9645-7f1ff77181bf
+x_single = Float32.(x)
+
+# ╔═╡ 33aa31b3-9871-49af-9c4f-e26dd7913f7a
+exprx_single = expr.(x_single)
+
+# ╔═╡ 93b2317c-45f6-4d04-a166-33e0f1472ba5
+log_erro = log10.(Eᵣ.(exprx_double,exprx_single))
+
+# ╔═╡ 1e743aad-4501-4be2-95ae-6f6ad1fbb58c
+begin
+	plot(x,-log_erro,xaxis=:log10)
+	title!("Dígitos corretos em função de x")
+	ylabel!("Dígitos corretos")
+	xlabel!("x")
+end
 
 # ╔═╡ 1589e991-c91e-43e4-9368-bc0c6104893d
 md"""
@@ -188,6 +217,9 @@ $\sqrt{x^2 + 1} - x = \frac{1}{\sqrt{x^2 + 1} + x}.$
 
 Essa última expressão não tem erros de cancelamento quando $x$ é grande, já que não ocorre subtração de valores próximos. Note o que ocorre ao usarmos essa expressão para o cômputo da fórmula.
 """
+
+# ╔═╡ e6cf7ab8-833f-4477-84c4-28081ecb6136
+
 
 # ╔═╡ 5a53346f-a40f-4b81-9d70-e1cd1ddf0690
 md"""
@@ -264,6 +296,8 @@ Note como a precisão se mantém constante, entre 15 e 16 casas decimais, que é
 # ╟─e12e8462-4280-42d9-a995-b52480e47dd2
 # ╠═24c6e582-1e1e-435a-b0e6-4fc9f7d4c3b1
 # ╟─9a63e356-911c-478a-ab08-34d3a163ce07
+# ╠═292b079c-3adc-4a7a-9966-ff2a368afa96
+# ╠═6bd08fe7-2bcd-4e85-b883-5c8ab4ed44c8
 # ╟─a6324f07-427b-4ffa-ae66-ddd823bb2fc9
 # ╟─b9844f13-c267-4eae-b0fd-69a3d2915c71
 # ╟─2a445201-df9b-4a86-91c0-c6ffa7bf301b
@@ -271,7 +305,13 @@ Note como a precisão se mantém constante, entre 15 e 16 casas decimais, que é
 # ╠═51ffe6c7-3b72-4f00-af55-aaafa1542df1
 # ╠═30da546a-3e1c-487e-9e79-3e84f62d907c
 # ╠═d3dbda41-d1cc-4739-9cbc-c740ec0a7d29
+# ╠═6207fb3a-73c8-4534-9390-8f7ddc3d7f10
+# ╠═c5384b39-4237-4ef0-9645-7f1ff77181bf
+# ╠═33aa31b3-9871-49af-9c4f-e26dd7913f7a
+# ╠═93b2317c-45f6-4d04-a166-33e0f1472ba5
+# ╠═1e743aad-4501-4be2-95ae-6f6ad1fbb58c
 # ╟─1589e991-c91e-43e4-9368-bc0c6104893d
+# ╠═e6cf7ab8-833f-4477-84c4-28081ecb6136
 # ╟─5a53346f-a40f-4b81-9d70-e1cd1ddf0690
 # ╠═39156ca2-1bc0-4b94-bd11-c60c1c293425
 # ╟─d242e2f1-48d1-4f11-a404-bbb90b4733f6
