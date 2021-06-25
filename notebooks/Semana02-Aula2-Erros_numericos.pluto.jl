@@ -178,7 +178,7 @@ der_fx₀ = aprox_deriv.(sin,x₀,h₀)
 DataFrame(:h => h₀, :ErroAbsoluto => Eₐ.(cos(x₀), der_fx₀), :ErroRelativo => Eᵣ.(cos(x₀), der_fx₀))
 
 # ╔═╡ 9383bf51-6c77-4ddc-b83e-2c4b0550982d
-h₁ = [1e-8, 1e-9, 1e-10, 1e-11, 1e-13, 1e-15, 1e-16]
+	h₁ = [exp10(i) for i in 0:-0.5:-20]
 
 # ╔═╡ 9071eafb-f080-4520-a114-aa65e2a54235
 der_fx₁ = aprox_deriv.(sin,x₀,h₁)
@@ -187,10 +187,21 @@ der_fx₁ = aprox_deriv.(sin,x₀,h₁)
 DataFrame(:h => h₁, :ErroAbsoluto => Eₐ.(cos(x₀), der_fx₁), :ErroRelativo => Eᵣ.(cos(x₀), der_fx₁))
 
 # ╔═╡ 1716126d-cd8e-4cae-98f3-a5636b926a83
-err =  Eₐ.(cos(x₀), der_fx₀)
+err =  Eₐ.(cos(x₀), der_fx₁)
+
+# ╔═╡ dd24f23e-5a27-45dc-b121-ea816efb97f6
+begin
+	plot(h₁,err, xaxis=:log10, yaxis=:log10, st=[:path, :scatter], leg=false)
+	xlabel!("h",aspect_raio=:equal)
+	ylabel!("Erro Absoluto")
+	title!("Gráfico Bonito")
+end
+
+# ╔═╡ 64c7d2fd-dcb7-45b4-ada1-828e1434ee90
+
 
 # ╔═╡ Cell order:
-# ╟─a2d2d41c-d397-11eb-0f7d-ed2891f49049
+# ╠═a2d2d41c-d397-11eb-0f7d-ed2891f49049
 # ╟─206f3485-ba82-4b9e-948a-97e656f42b8a
 # ╟─4d8839cb-f01e-47b0-9671-3eb4f58e5acf
 # ╠═b25c1fd4-b6e2-4248-8bb9-41a1f06032dd
@@ -225,3 +236,5 @@ err =  Eₐ.(cos(x₀), der_fx₀)
 # ╠═9071eafb-f080-4520-a114-aa65e2a54235
 # ╠═001748e6-c0e9-460d-b6b1-6e0688cce16a
 # ╠═1716126d-cd8e-4cae-98f3-a5636b926a83
+# ╠═dd24f23e-5a27-45dc-b121-ea816efb97f6
+# ╠═64c7d2fd-dcb7-45b4-ada1-828e1434ee90
