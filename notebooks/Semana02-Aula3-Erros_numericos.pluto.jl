@@ -288,7 +288,7 @@ Note como a precisão se mantém constante, entre 15 e 16 casas decimais, que é
 """
 
 # ╔═╡ Cell order:
-# ╠═94f24f5a-d5f7-11eb-0c0d-5983bdf1822f
+# ╟─94f24f5a-d5f7-11eb-0c0d-5983bdf1822f
 # ╠═caf6c14d-86fb-4ae6-97c5-9e148810f977
 # ╟─b86c5fdf-7b7c-4566-8bcc-59f4be5004fc
 # ╠═00668afc-b4b2-4d70-8ac0-32da4844f686
