@@ -195,7 +195,7 @@ log_erro = log10.(Eᵣ.(exprx_double,exprx_single))
 
 # ╔═╡ 1e743aad-4501-4be2-95ae-6f6ad1fbb58c
 begin
-	plot(x,-log_erro,xaxis=:log10)
+	plot(x,-log_erro,xaxis=:log10,leg=false)
 	title!("Dígitos corretos em função de x")
 	ylabel!("Dígitos corretos")
 	xlabel!("x")
@@ -220,6 +220,21 @@ Essa última expressão não tem erros de cancelamento quando $x$ é grande, já
 
 # ╔═╡ e6cf7ab8-833f-4477-84c4-28081ecb6136
 # Implementação
+expr_melhorada(x) = 1/(√(x^2 + 1) + x)
+
+# ╔═╡ a1bfe989-45e6-4d9b-8eb2-eb2f33947bb6
+exprx_me_single = expr_melhorada.(x_single)
+
+# ╔═╡ fb7dcb96-d70b-4df5-bb51-89af50a8eb30
+log_erro_me = log10.(Eᵣ.(exprx_double,exprx_me_single))
+
+# ╔═╡ 6892c590-2150-486d-812b-1390eb47fbdb
+begin
+	plot(x,-log_erro_me,xaxis=:log10, label="Função")
+	title!("Dígitos corretos em função de x - expressão melhorada")
+	ylabel!("Dígitos corretos")
+	xlabel!("x")
+end
 
 # ╔═╡ Cell order:
 # ╟─94f24f5a-d5f7-11eb-0c0d-5983bdf1822f
@@ -246,3 +261,6 @@ Essa última expressão não tem erros de cancelamento quando $x$ é grande, já
 # ╠═1e743aad-4501-4be2-95ae-6f6ad1fbb58c
 # ╟─1589e991-c91e-43e4-9368-bc0c6104893d
 # ╠═e6cf7ab8-833f-4477-84c4-28081ecb6136
+# ╠═a1bfe989-45e6-4d9b-8eb2-eb2f33947bb6
+# ╠═fb7dcb96-d70b-4df5-bb51-89af50a8eb30
+# ╠═6892c590-2150-486d-812b-1390eb47fbdb
