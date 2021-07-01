@@ -280,7 +280,7 @@ end
 @show n
 
 # ╔═╡ 88bd320b-0e81-4692-91c4-a5ac6e84eef7
-@bind t Slider(0:20)
+@bind t Slider(0:40)
 
 # ╔═╡ ed8893a3-8f1d-444c-ac1f-d7f17a17655c
 @show t
