@@ -303,9 +303,9 @@ Observe que seguindo a ordem decrescente a precisão máxima para números de pr
 """
 
 # ╔═╡ Cell order:
-# ╟─94f24f5a-d5f7-11eb-0c0d-5983bdf1822f
+# ╠═94f24f5a-d5f7-11eb-0c0d-5983bdf1822f
 # ╠═caf6c14d-86fb-4ae6-97c5-9e148810f977
-# ╟─b86c5fdf-7b7c-4566-8bcc-59f4be5004fc
+# ╠═b86c5fdf-7b7c-4566-8bcc-59f4be5004fc
 # ╟─5a53346f-a40f-4b81-9d70-e1cd1ddf0690
 # ╠═b78b3380-93fa-4ce6-9626-90f5bd8f13d9
 # ╠═0dbde1de-bbdd-441a-beea-2d74c1479098
