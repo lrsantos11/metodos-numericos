@@ -193,7 +193,7 @@ md"""
 url_ibama = "http://dadosabertos.ibama.gov.br/dados/SIFISC/auto_infracao/auto_infracao/auto_infracao.csv"
 
 # ╔═╡ 376c6be2-b1d2-427e-8243-d48934e756e3
-# df_ibama = CSV.read(HTTP.get(url_ibama).body, DataFrame)
+df_ibama = CSV.read(HTTP.get(url_ibama).body, DataFrame,enc"utf8")
 
 # ╔═╡ ab114725-f7d8-47b4-bb58-a601d095e2c6
 md"""
@@ -201,6 +201,18 @@ md"""
 
 - Fonte para dados COVID no mundo em [https://ourworldindata.org/coronavirus-source-data](https://ourworldindata.org/coronavirus-source-data)
 """
+
+# ╔═╡ f2a7995f-638e-4811-84f8-b74079499ebf
+
+
+# ╔═╡ a96e9951-e919-4d4f-9652-1336674366bf
+
+
+# ╔═╡ 8bf5d656-ed40-4742-9f9b-acdbce34c917
+
+
+# ╔═╡ 8af1738c-ff53-4e37-92ea-64cfbc593242
+
 
 # ╔═╡ Cell order:
 # ╟─f903bc7e-5ead-4e30-a8ec-ba7523e21f98
@@ -244,4 +256,8 @@ md"""
 # ╟─90e35fba-58e3-4d3e-a12b-0ded94ba49a7
 # ╠═4859e1a8-ea34-498c-9f52-933be8475827
 # ╠═376c6be2-b1d2-427e-8243-d48934e756e3
-# ╠═ab114725-f7d8-47b4-bb58-a601d095e2c6
+# ╟─ab114725-f7d8-47b4-bb58-a601d095e2c6
+# ╠═f2a7995f-638e-4811-84f8-b74079499ebf
+# ╠═a96e9951-e919-4d4f-9652-1336674366bf
+# ╠═8bf5d656-ed40-4742-9f9b-acdbce34c917
+# ╠═8af1738c-ff53-4e37-92ea-64cfbc593242

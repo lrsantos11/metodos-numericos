@@ -51,7 +51,7 @@ md"""
 
 - Não esqueça de incluir as **Referências** consultadas, incluindo pessoas.
 
-- Você abrir diretamente no Pluto a tarefa usando o seguinte [link](https://github.com/lrsantos11/metodos-numericos/raw/2021-1/tarefas/tarefa_semana2.jl)
+- Você abrir diretamente no Pluto a tarefa usando o seguinte [link](https://github.com/lrsantos11/metodos-numericos/raw/2021-1/tarefas/tarefa_semana3.jl)
 """
 
 # ╔═╡ Cell order:
