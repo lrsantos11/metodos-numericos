@@ -212,7 +212,14 @@ md"""
 
 
 # ╔═╡ 8af1738c-ff53-4e37-92ea-64cfbc593242
+combine(df_sc, :vaccinated => maximum∘skipmissing)
 
+# ╔═╡ 59fddee1-11ce-466f-971e-0c325da72c65
+select(df_sc, :vaccinated => collect, :vaccinated_per_100_inhabitants => collect,skipmissing=true)
+
+
+# ╔═╡ 471695c6-3fa2-49f6-8236-519ce1160af7
+combine(df_sc, :vaccinated =>  mean∘skipmissing => :MediaVacinados)
 
 # ╔═╡ Cell order:
 # ╟─f903bc7e-5ead-4e30-a8ec-ba7523e21f98
@@ -261,3 +268,5 @@ md"""
 # ╠═a96e9951-e919-4d4f-9652-1336674366bf
 # ╠═8bf5d656-ed40-4742-9f9b-acdbce34c917
 # ╠═8af1738c-ff53-4e37-92ea-64cfbc593242
+# ╠═59fddee1-11ce-466f-971e-0c325da72c65
+# ╠═471695c6-3fa2-49f6-8236-519ce1160af7
