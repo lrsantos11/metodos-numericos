@@ -9,11 +9,8 @@ using InteractiveUtils
 begin
 	using Plots, PlutoUI
 	plotly() #Um backend para Gráficos mais iterativos
-	using DataFrames, Missings, StatsBase
+	using DataFrames, StatsBase, StatsPlots
 end
-
-# ╔═╡ 755966fa-e0f7-11eb-1825-fd8a6013244f
-
 
 # ╔═╡ 8076c3d8-6652-483c-87f8-4a446375b849
 md"""
@@ -84,9 +81,12 @@ md"""
 
 ## Existência e unicidade de soluções
 
-Um resultado de cáculo fundamental para tratar da existência de soluções de uma equação não linear é o teorema de Bolzano.
+Um resultado de cáculo fundamental para tratar da existência de soluções de uma equação não linear é o teorema de Bolzano, que é um corolário do
 
-**Teorema de Bolzano** Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função contínua em um intervalo $[a, b] \subset \mathbb{R}$. Se $f(a)f(b) < 0$ então existe $x \in (a, b)$, tal que $f(x) = 0$.
+**Teorema de Valor Intermediário (TVI).** Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função contínua em um intervalo $[a, b] \subset \mathbb{R}$. Para todo $d$ entre $f(a)$ e $f(b)$, existe $c\in (a,b)$, tal que $f(c) = d$. 
+
+
+**Teorema de Bolzano.** Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função contínua em um intervalo $[a, b] \subset \mathbb{R}$. Se $f(a)f(b) < 0$ então existe $c \in (a, b)$, tal que $f(c) = 0$.
 
 Ou seja, se uma função contínua troca de sinal em um intervalo, então ela possui pelo menos um zero (nesse intervalo).
 
@@ -100,15 +100,26 @@ Seu gráfico entre $[-2,2]$ mostra existência de três raízes.
 # Define a função
 f(x) = x.^5 - 3.0*x.^3 - 2.0*x + 1.0
 
+# ╔═╡ ff168e88-a44a-460a-8715-9a1d69c15953
+f(-2)
+
+# ╔═╡ f8e3a4a1-f787-4aad-9d0b-01ea740c0554
+f(2)
+
+# ╔═╡ 929c13b8-e931-4c11-85e1-e33143957ec2
+f(-3)*f(3) < 0
+
+# ╔═╡ 2e4b118a-e695-4dc1-8e80-76c3dce812fa
+
 
 # ╔═╡ 46b773e1-6c10-44c5-9b51-513fe64d97ba
-let
+let # Escopo limitado
 	# Define o intervalo
 	x = range(-2,stop=2,length=100)
-
 	# Desenha o gráfico e o eixo x.
-	plot(x, f,xlim = (-2,2),label="y = f(x)")
-	hline!([0.],  color=:black,label="")
+	plot(x, f, label="y = f(x)", framestyle = :box)
+	xlims!(-2,2)
+	hline!([0.],  color=:black,label="", lw=2)
 	scatter!([1.8509635925292969, 0.4054832458496094, -1.9194421768188477],zeros(3),label="")
 end
 
@@ -121,8 +132,6 @@ Já para garantir a unicidade é preciso exigir mais da função $f$. Uma hipót
 **Teorema** Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ diferenciável em um intervalo $[a, b] \subset \mathbb{R}$. Se $f(a)f(b) < 0$ e a derivada de $f$ tem sinal constante $(a, b)$, então existe um único $x \in (a, b)$, tal que $f(x) = 0$.
 
 Aqui note que temos que considerar os valores da derivada em todo o intervalo e não apenas nos extremos.
-
-*Exercício.* Estude os zeros da função acima, encontre intervalos que contém os três zeros apresentados de forma única usando os teoremas apresentados.
 
 """
 
@@ -137,9 +146,9 @@ Porém podemos também calcular a função nesse ponto médio $m = \frac{a + b}{
 
 1. Caso $f(m) = 0$, demos sorte. De fato o ponto médio é uma raiz que foi encontrada.
 
-2. Sinal de $f(m)$ é o mesmo sinal de $f(a)$. Nesse caso podemos concluir, usando o teorema de Bolsano, que há uma raiz no intervalo $[m, b]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
+2. Sinal de $f(m)$ é o mesmo sinal de $f(a)$. Nesse caso podemos concluir, usando o teorema de Bolzano, que há uma raiz no intervalo $[m, b]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
 
-3. Sinal de $f(m)$ é o mesmo sinal de $f(b)$. Nesse caso podemos concluir, usando o teorema de Bolsano, que há uma raiz no intervalo $[a, m]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
+3. Sinal de $f(m)$ é o mesmo sinal de $f(b)$. Nesse caso podemos concluir, usando o teorema de Bolzano, que há uma raiz no intervalo $[a, m]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
 """
 
 # ╔═╡ 40086dd8-1808-4d35-92a4-9d7e7bf4d2fa
@@ -164,18 +173,62 @@ Isso sugere o seguinte método:
 
 # ╔═╡ b5f3881f-c886-4365-bd91-7da8d983c940
 # Método da bissecção
-function bissec()
+function bissec(f, a, b; ε = 1.0e-5, itmax = 1_000)
+	f(a)*f(b) < 0. ? nothing : error("Não temos certeza  de existência de raiz da função no intevalo [$a, $b]")
+	k = 0
+	aₖ = a
+	bₖ = b
+	while k ≤ itmax
+		xₖ = (aₖ + bₖ)/2
+		fₖ = f(xₖ)
+		if abs(fₖ) < ε
+			return xₖ, k, abs(fₖ), :Conv
+		end
+		if f(aₖ) * fₖ < 0
+			bₖ = xₖ
+		else
+			aₖ = xₖ
+		end
+		k += 1	
+	end
+	return xₖ, k, :MaxIter	
+	
 end
+
+# ╔═╡ cbda75f8-1fd2-41c8-bfc7-4a10642be15a
+bissec(x->x^2-1, -1.7,.5)
+
+# ╔═╡ 26c5e4e6-6ce7-433f-a3bf-5216d1e90814
+md"""
+- Resolvendo pelo método da bissecção para a função
+
+$f(x) = x^5 - 3x^3 - 2x + 1.$
+entre $[-1,1]$.
+"""
+
+# ╔═╡ 628d6924-df50-4ceb-b196-499c0d217281
+# Testando função do incíio
+sol1, k1, normsol, status1 = bissec(f,-1, 1, ε = 1e-8)
 
 # ╔═╡ bcd4d09d-2ef0-4074-b0d3-07fcbae43581
 md"""
-#### Exercício
+#### Tarefa
 - Resolva o problema do início do texto, isto é, encontrar zero de $f(\theta) = 2 v_0^2 \sin(\theta) \cos(\theta) - gd$.
 
 """
 
+# ╔═╡ 9e9b0019-6f59-460a-a5c7-7b865d18adf4
+# Dados para Tarefa
+begin
+	v0 = 12
+	d = 10
+	g = 9.80665
+end
+
 # ╔═╡ d2657e39-d90d-47f8-8974-8cc5bda8e983
 md"""
+### Convergência
+
 Uma característica interessante do método da bissecção é que ele pede usa apenas os valores da função em alguns pontos para decidir o que fazer. Além disso o seu comportamento é bem previsível. O comprimento do intervalo é dividido por 2 a cada iteração. Assim podemos prever quantas iterações serão necessárias para terminar o método como função do comprimento inicial e da precisão, `epsilon`, desejada. 
 
 Note que cada $x_n$ pode ser dado por
@@ -194,18 +247,25 @@ Quando $n\to\infty$, temos que $x_n \to 0$. Além disso, $|x_n-x^*|<x_n, \forall
 """
 
 # ╔═╡ Cell order:
-# ╠═755966fa-e0f7-11eb-1825-fd8a6013244f
 # ╟─8076c3d8-6652-483c-87f8-4a446375b849
 # ╠═9bf79d09-0ea8-4370-9289-d2287dcef3a7
 # ╟─ad2160bd-8561-4087-a682-fc13722aea15
 # ╟─b094d90d-ae3a-410d-b428-7dbf6e513209
 # ╟─9f0f8a7d-5891-4384-98ed-56f8a3c6f1cd
 # ╠═8058826b-cebb-485f-88fa-55abda71743d
+# ╠═ff168e88-a44a-460a-8715-9a1d69c15953
+# ╠═f8e3a4a1-f787-4aad-9d0b-01ea740c0554
+# ╠═929c13b8-e931-4c11-85e1-e33143957ec2
+# ╠═2e4b118a-e695-4dc1-8e80-76c3dce812fa
 # ╟─46b773e1-6c10-44c5-9b51-513fe64d97ba
 # ╟─4e798009-e680-407a-b26b-28efbb0aacb9
 # ╟─83bcc891-9eb5-4b86-b1b8-528a5ef1bc9a
-# ╠═40086dd8-1808-4d35-92a4-9d7e7bf4d2fa
+# ╟─40086dd8-1808-4d35-92a4-9d7e7bf4d2fa
 # ╟─19d5ac06-bebf-4052-9031-2c013f51d1f9
 # ╠═b5f3881f-c886-4365-bd91-7da8d983c940
+# ╠═cbda75f8-1fd2-41c8-bfc7-4a10642be15a
+# ╟─26c5e4e6-6ce7-433f-a3bf-5216d1e90814
+# ╠═628d6924-df50-4ceb-b196-499c0d217281
 # ╟─bcd4d09d-2ef0-4074-b0d3-07fcbae43581
+# ╠═9e9b0019-6f59-460a-a5c7-7b865d18adf4
 # ╟─d2657e39-d90d-47f8-8974-8cc5bda8e983
