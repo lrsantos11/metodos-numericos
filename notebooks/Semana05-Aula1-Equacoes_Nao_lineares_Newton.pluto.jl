@@ -143,16 +143,6 @@ $x_{k + 1} = x_k - \frac{f(x_k)}{f'(x_k)}.$
 A equação acima define o *método de Newton*.
 """
 
-# ╔═╡ d0a8ddd7-dce4-4fb1-9f28-7b99a19302f2
-md"""
-###### Observação: Calculando derivadas
-
-Uma desvantagem do método de Newton é que requer-se o computo de derivadas das funções. Isto pode ser dispendioso ou até impossível.
-   - O uso de técnicas de **diferenciação automatica** tem se mostrado de grande valia.
-   - Vamos usar o pacote `ForwardDiff.jl` para computar derivadas de maneira mais fácil.
-
-"""
-
 # ╔═╡ 920029ca-2198-4a16-a5d6-8c8ec8232c0e
 md"""
 #### Exemplo 2
@@ -1400,7 +1390,7 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═492b94ce-e41a-11eb-17c6-8d4508fd8fba
+# ╟─492b94ce-e41a-11eb-17c6-8d4508fd8fba
 # ╠═d6ef98e6-9bd1-43ea-b7fe-2814978baed5
 # ╟─f3aa6879-bac1-4c52-8b38-9284e32d64a8
 # ╟─c15cf1ae-175e-41b2-afc1-8d028f27f9e3
@@ -1408,8 +1398,7 @@ version = "0.9.1+5"
 # ╟─34950cbf-587e-4dcc-a882-2724b7887153
 # ╟─af105e16-30a2-4175-bf52-6dee6b9492cd
 # ╟─2cc9a4b2-fea6-4521-b53c-d4a8e0421d45
-# ╟─d0a8ddd7-dce4-4fb1-9f28-7b99a19302f2
-# ╠═641866ec-1a01-46bb-931d-95b61f3bbba1
+# ╟─641866ec-1a01-46bb-931d-95b61f3bbba1
 # ╟─920029ca-2198-4a16-a5d6-8c8ec8232c0e
 # ╠═7db124e5-4fef-44ba-a953-31818b987eb0
 # ╟─03656bf3-618f-4a94-a2bc-39f824ea62f6
