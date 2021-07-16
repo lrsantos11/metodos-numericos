@@ -70,16 +70,17 @@ md"""
 
 # ╔═╡ c868424d-3c38-4b76-8109-1b0ac5d23266
 function newton_eq(f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
-	df = DataFrame(xₖ = Float64[], erro = Float64[], k = [])
+	df = DataFrame(k = [], xₖ = Float64[], fxₖ = Float64[], ∇fxₖ = Float64[], erro = Float64[])
 	∇f(x) = ForwardDiff.derivative(f,x)
 	k = 0
 	xₖ = x₀
+	push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), Inf ])
 	while k ≤ itmax
 		xₖ₊₁ = xₖ - f(xₖ) / ∇f(xₖ)
 		erro = abs(xₖ₊₁ - xₖ)
 		k += 1
 		xₖ = xₖ₊₁
-		push!(df,[xₖ, erro, k])
+		push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), erro ])
 		if erro < ε
 			return df, :Conv
 		end
@@ -134,6 +135,15 @@ end
 
 # ╔═╡ b2a11e5b-b38a-4465-8509-b3f4522407b0
 plot(f,0,10,framestyle=:origin)
+
+# ╔═╡ bfa4104d-1a41-43e6-873e-45e6ef8aca1f
+begin 
+	C(x) = 6 - 20*(exp(-0.2*x) - exp(-.75*x))
+	df_C, = newton_eq(C,0,ε = 1e-8)
+	# bissec(C,0,2,ε = 1e-8)
+	# plot(C, -1,10,framestyle=:origin)
+	with_terminal(println,(df_C.xₖ))
+end
 
 # ╔═╡ 2cdabaa4-be73-4c2b-b884-9e9e773e96fe
 md"""
@@ -1177,6 +1187,7 @@ version = "0.9.1+5"
 # ╟─5dbc2255-87d0-41e0-8daf-d58b96e79ad0
 # ╠═22492dd1-54d7-4ee8-a064-943091f42c56
 # ╠═b2a11e5b-b38a-4465-8509-b3f4522407b0
+# ╠═bfa4104d-1a41-43e6-873e-45e6ef8aca1f
 # ╟─2cdabaa4-be73-4c2b-b884-9e9e773e96fe
 # ╟─ccf68c58-5bb5-4e8f-9616-598799433f11
 # ╟─37dfab59-ba4d-4583-ba24-66e501735fa6
