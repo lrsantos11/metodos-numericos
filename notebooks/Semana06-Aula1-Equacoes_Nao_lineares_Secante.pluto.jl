@@ -26,6 +26,28 @@ md"""
 ###### Semana 06 - Aula 01
 """
 
+# ╔═╡ 98f67429-35e0-4f6b-9610-2237a72757a7
+begin 
+	function newton_eq(f, ∇f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
+		df = DataFrame(k = [], xₖ = Float64[], fxₖ = Float64[], ∇fxₖ = Float64[], erro = Float64[])
+		k = 0
+		xₖ = x₀
+		push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), Inf ])
+		while k ≤ itmax
+			xₖ₊₁ = xₖ - f(xₖ) / ∇f(xₖ)
+			erro = abs(xₖ₊₁ - xₖ)
+			k += 1
+			xₖ = xₖ₊₁
+			push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), erro ])
+			if erro < ε
+				return df, :Conv
+			end
+		end
+		return df, :MaxIter	
+	end
+	newton_eq(f, x₀; kwargs...) =  newton_eq(f, x -> ForwardDiff.derivative(f,x), x₀ ; kwargs...)
+end
+
 # ╔═╡ 6bca82fd-e143-4af3-8534-cbd7b067b810
 md"""
 ## Método secante
@@ -53,11 +75,82 @@ $$x_{k+1} = x_k - \frac{f(x_k)(x_{k - 1} - x_k)}{f(x_{k - 1}) - f(x_k)}.$$
 A sua implementação é muito semelhante a do método de Newton, vamos fazê-la a seguir a executar um teste para ver o quão rápido é esse método.
 """
 
+# ╔═╡ 8122e92c-1200-4ae0-9a55-a659bccf8035
+md"""
+x₀ = $(@bind x0_ex1 Slider(-0.9:0.1:0.2, show_value=true, default=-0.5))
+"""
+
+# ╔═╡ 3d3f4084-aad3-4a95-85dd-76686fa79045
+# Implementação
+function secante_eq(f, x₀, x₁; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
+	df = DataFrame(k = [], xₖ₋₁ = Float64[], xₖ = Float64[], fxₖ = Float64[], erro = Float64[])
+	sec(x,y) = (f(y) - f(x))/(y-x)
+	k = 0
+	xₖ₋₁ = x₀
+	xₖ = x₁
+	push!(df,[k, xₖ₋₁, xₖ, f(xₖ), Inf ])
+	while k ≤ itmax
+		xₖ₊₁ = xₖ - f(xₖ) / sec(xₖ,xₖ₋₁)
+		erro = abs(xₖ₊₁ - xₖ)
+		k += 1
+		xₖ₋₁ = xₖ
+		xₖ = xₖ₊₁
+		push!(df,[k, xₖ₋₁, xₖ, f(xₖ), erro ])
+		if erro < ε
+			return df, :Conv
+		end
+	end
+	return df, :MaxIter	
+end
+
+
 # ╔═╡ ef4d662b-dd64-42b6-8984-11b8dbad7ed3
 md"x₀ $(@bind x₀ Slider(2:2:10,show_value=true))"
 
-# ╔═╡ e5aae328-09ec-4212-aebe-dccf5d83c0e2
+# ╔═╡ dfdf9a50-5b18-4098-8b53-bef9a95d3efc
+md"x₁ $(@bind x₁ Slider(2:2:10,show_value=true))"
 
+# ╔═╡ 5e614364-90bd-49d9-a6cd-ffcc44e2e4a9
+begin 
+	f(x) = 2cosh(x/4) - x
+	tol = 1e-8
+	df_ex1, = newton_eq(f,x₀,ε = tol)
+end
+
+# ╔═╡ d67f64a2-f72d-46da-9075-0209f3d77818
+let 
+	f(x) = sin(x+1)*cos(x)
+	df(x) = ForwardDiff.derivative(f,x)
+	sec(x,y) = (f(y) - f(x))/(y-x)
+	aprox_linear(x) = f(x0_ex1) + df(x0_ex1)*(x-x0_ex1)
+	aprox_secante(x) =  f(x0_ex1) + sec(x0_ex1, x0_ex1 - 1/2)*(x-x0_ex1)
+	newton = x0_ex1 - f(x0_ex1)/ df(x0_ex1)
+	secante = x0_ex1 - f(x0_ex1)/ sec(x0_ex1, x0_ex1 - 1/2)
+	plot(f,-2,2,label="", framestyle=:origin,lw=2)
+	plot!(aprox_linear,-2,2,label="Aproximação linear",ls=:dot,lw=2)
+	plot!(aprox_secante,-2,2,label="Aproximação secante",ls=:dot,lw=2)
+	scatter!([x0_ex1 ],[ f(x0_ex1) ], label="x₀",marker = (3,:circ))
+	scatter!([(x0_ex1 -1/2 )],[ f(x0_ex1 -1/2) ], label="x₋₁",marker = (3,:circ))
+	scatter!([newton ],[ 0 ], label="x₁",marker = (3,:circ))
+	scatter!([secante ],[ 0 ], label="x̄₁",marker = (3,:circ))
+
+	xlims!(-2,2)
+	ylims!(-1,2)
+end
+
+# ╔═╡ b12d3911-009d-4efb-8956-d4552aa1b0b1
+df_ex1_sec, = secante_eq(f, x₀, x₁, ε = tol)
+
+# ╔═╡ e5aae328-09ec-4212-aebe-dccf5d83c0e2
+begin
+	plot(f,0,10,framestyle=:origin)
+	@df df_ex1 scatter!(:xₖ,:fxₖ,label="Newton") # Usando Stasplot
+	@df df_ex1_sec scatter!(:xₖ,:fxₖ,label = "Secante") # Usando Stasplot
+
+end
+
+# ╔═╡ 46a53d9f-b2f9-4215-b25d-de28a4bbd98b
+df_ex1[:,:xₖ]
 
 # ╔═╡ 69719111-2140-4bbe-950f-90b5ef0d7df9
 md"""
@@ -73,130 +166,8 @@ Vemos nesse exemplo que o método secante também pode convergir rapidamente, re
 Uma análise atenta do limite acima mostra que o método secante vai também ficando cada vez mais rápido, ganhando de qualquer método com convergência linear, daí chamarmos esse tipo de convergência de _superlinear_.
 """
 
-# ╔═╡ 98f67429-35e0-4f6b-9610-2237a72757a7
-begin 
-	function newton_eq(f, ∇f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
-		df = DataFrame(k = [], xₖ = Float64[], fxₖ = Float64[], ∇fxₖ = Float64[], erro = Float64[])
-		k = 0
-		xₖ = x₀
-		push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), Inf ])
-		while k ≤ itmax
-			xₖ₊₁ = xₖ - f(xₖ) / ∇f(xₖ)
-			erro = abs(xₖ₊₁ - xₖ)
-			k += 1
-			xₖ = xₖ₊₁
-			push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), erro ])
-			if erro < ε
-				return df, :Conv
-			end
-		end
-		return df, :MaxIter	
-	end
-	newton_eq(f, x₀; kwargs...) =  newton_eq(f, x -> ForwardDiff.derivative(f,x), x₀ ; kwargs...)
-end
-
-# ╔═╡ 5e614364-90bd-49d9-a6cd-ffcc44e2e4a9
-begin 
-	f(x) = 2cosh(x/4) - x
-	newton_eq(f,x₀,ε = 1e-8)
-end
-
-# ╔═╡ 0350989f-6e13-406f-a1bd-a83f6bb50b5b
-md"""
-# Método de Newton para Sistemas Não-Lineares
-
-O método de Newton admite uma generalização direta para resolver sistemas de equações não-lineares. Nesse caso temos uma função $F: \mathbb{R}^n \rightarrow \mathbb{R}^n$ e queremos resolver $F(x) = 0,\ x \in \mathbb{R}^n$. Em outras palavras, queremos encontrar $x_1, x_2, \ldots, x_n \in \mathbb{R}^n$ tais que
-
-$\begin{align*}
-f_1(x_1, x_2, \ldots, x_n) &= 0 \\
-f_2(x_1, x_2, \ldots, x_n) &= 0 \\
-\quad\quad\quad\vdots &\\
-f_n(x_1, x_2, \ldots, x_n) &= 0,
-\end{align*}$
-
-
-em que $F(x) = (f_1(x), f_2(x), \ldots, f_n(x))$.
-
-Nesse caso podemos usar resultados de Cálculo (2). Lembremos que cada função $f_i: \mathbb{R}^n \rightarrow R$ admite uma aproximação linear
-
-$$f_i(y) \approx f_i(x) + \nabla f_i(x)'(y - x),\ i = 1, \ldots, n.$$
-em que $\nabla f(x)$ é o gradiente de $f_i$ em $x$. Podemos escrever todas essas equações de forma compacta lembrando a definição da matriz jacobiana de $F$ que é composta por linhas com os gradientes:
-
-$$J_F(x) = \left[ \begin{array}{c}
-\nabla f_1(x_1, x_2, \ldots, x_n))^T \\
-\nabla f_s(x_1, x_2, \ldots, x_n))^T \\
-\vdots \\
-\nabla f_n(x_1, x_2, \ldots, x_n))^T
-\end{array} \right].$$
-Nesse caso escrevemos
-
-$$F(y) \approx F(x) + J_F(x)(y - x).$$
-
-Podemos então aplicar as mesmas ideias que nos levaram a deduzir o método de Newton.
-
-Queremos resolver
-
-$$F(x) = 0.$$
-Já temos uma aproximação da solução $x^k$ e queremos melhorá-la. Uma ideia é então substituir a função não-linear $F$ por sua aproximação linear calculada nesse último ponto e usar o seu zero como novo ponto. Isso é queremos resolver
-
-$$F(x^{k + 1}) \approx F(x^k) + J_F(x^k)(x^{k + 1} - x^k) = 0.$$
-Isolando $x^{k + 1}$, que pode ser feito se o jacobiano for inversível, obtemos
-
-$$x^{k +1} = x^k - J_F(x^k)^{-1}F(x^k).$$
-Uma clara generalização da equação que define o método de Newton no caso unidmensional.
-
-Uma observação importante é que, apesar da fórmula acima sugerir que devemos inicialmente inverter a matriz jacobiana, não há necessidade de inverter nenhuma matriz, o que exigiria a soluçào de $n$ sistemas lineares gerando uma complexidade total de $O(n ^4)$. Basta resolver inicialmente um único sistema
-
-$$J_F(x^k)s^{k + 1} = -F(x^k)$$
-e em seguida atualizar
-
-$$x^{k + 1} = x^{k} + s^{k + 1}.$$
-Se o jacobiano for inversível, claramente, esses dois passos são equivalentes à fórmula do método de Newton dada acima.
-
-"""
-
-# ╔═╡ 5a80ede2-e5e8-4a5f-b44f-90c434a56558
-md"""
-#### Exemplo
-Se quisermos resolver
-
-$$F(x) = \left[ \begin{array}{c}
-    x_1^2 - e^{-x_1 x_2} \\
-    x_1x_2 + \sin(x_1)
-\end{array} \right] = 0.$$
-
-Temos
-
-$$J_F(x) = \left[ \begin{array}{cc}
-    2x_1 + x_2e^{-x_1 x_2} & x_1 e^{-x_1 x_2} \\
-    x_2 + \cos(x_1)        & x_1
-\end{array} \right].$$
-Vamos implementar o método de Newton e testá-lo.
-
-"""
-
 # ╔═╡ c9a8857a-e052-44f3-828f-8e00a22b974d
 # Implementação
-
-# ╔═╡ 769d99b2-e479-4dfc-8de9-933187f4ca9c
-md"""
-Note que temos nesse caso o mesmo problema para determinar o momento ideal de parada. Assim como no método de Newton para equações podemos usar a norma de $F(x)$ para definir quando o ponto está perto da solução. A justificativa para isso é continuidade. Uma justificativa mais formal pode ser obtida usando a expansão de Taylor em torno da solução $x^*$, assim como foi feito no método para uma variável. Outras opções de critério de parada que são muito usadas na prática são:
-
-$\begin{aligned}
-\| F(x) \| &\leq \epsilon \| F(x^0) \| \\
-\| F(x) \| &\leq \epsilon_0 \| F(x^0) \| + \epsilon_1 \\
-\| s^k \| &\leq \epsilon.
-\end{aligned}$
-
-Precisamos também destacar que a operação que mais cara em cada iteração do método de Newton é a resolução do sistema linear para cômputo do passo. Isso pode ser feito com os métodos como a fatoração LU. Em alguns casos, principalmente quando as matrizes envolvidas são grandes e esparsas, pode ser interessante usar um método iterativo para achar o passo de Newton. Nesse caso o passo não é calculado exatamente, apenas uma aproximação é obtida. Se a aproximação obtida for boa o método se comporta muitas vezes bem e é conhecido como Newton *inexato* ou *truncado*.
-
-Outro problema de do método de Newton para equações unidimensionais que também ocorre com o caso multidimensional é que a convergência não é garantida se o ponto inicial não estiver próximo de um zero onde a matriz Jacobiana não nula. O resultado típico de convergência é muito parecido com o resultado para uma dimensão apenas.
-
->**Teorema (da Convergência Quadrática de Newton).** Seja $F:\mathbb{R}^n \rightarrow \mathbb{R^n}$ uma função duas vezes continuamente diferenciável. Se $x^0$ inicia perto de uma raiz $x^*$ para a qual a matriz jacobiana de $F$ é inversível, então o método de Newton está bem definido e gera uma sequência convergindo para $x^*$ tal que 
->
->$$\|x^{k+1}−x^∗\| \leq M \|x^k−x^∗\|^2.$$
-> em que $M>0$.
-"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1306,17 +1277,20 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─5a87ba10-7519-4355-9646-863a2bdd5dc5
+# ╠═5a87ba10-7519-4355-9646-863a2bdd5dc5
 # ╠═451dc584-5f76-42f3-a05d-b517261a95c3
 # ╠═98f67429-35e0-4f6b-9610-2237a72757a7
 # ╟─6bca82fd-e143-4af3-8534-cbd7b067b810
-# ╠═ef4d662b-dd64-42b6-8984-11b8dbad7ed3
+# ╟─8122e92c-1200-4ae0-9a55-a659bccf8035
+# ╠═d67f64a2-f72d-46da-9075-0209f3d77818
+# ╠═3d3f4084-aad3-4a95-85dd-76686fa79045
+# ╟─ef4d662b-dd64-42b6-8984-11b8dbad7ed3
+# ╟─dfdf9a50-5b18-4098-8b53-bef9a95d3efc
 # ╠═5e614364-90bd-49d9-a6cd-ffcc44e2e4a9
+# ╠═b12d3911-009d-4efb-8956-d4552aa1b0b1
 # ╠═e5aae328-09ec-4212-aebe-dccf5d83c0e2
+# ╠═46a53d9f-b2f9-4215-b25d-de28a4bbd98b
 # ╟─69719111-2140-4bbe-950f-90b5ef0d7df9
-# ╟─0350989f-6e13-406f-a1bd-a83f6bb50b5b
-# ╟─5a80ede2-e5e8-4a5f-b44f-90c434a56558
 # ╠═c9a8857a-e052-44f3-828f-8e00a22b974d
-# ╟─769d99b2-e479-4dfc-8de9-933187f4ca9c
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
