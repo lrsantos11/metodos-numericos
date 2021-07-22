@@ -7,10 +7,20 @@ using InteractiveUtils
 # ╔═╡ a236cca3-96b6-4b9c-b5b2-3a4bd4c716e7
 begin
 	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots
+	plotly();
 end
 
-# ╔═╡ 32471f7d-eef5-44bd-a766-c68678579841
-using LazySets
+# ╔═╡ f9ef5bf7-db85-4eab-8495-eec15fb308e3
+begin
+	using LazySets
+	b = Ball2( zeros(2),1.)
+	x̄₀ = [1,1]
+	x̂₀ = [-1,1]
+	plot(b, aspect_ratio = :equal, framestyle=:origin,  alpha=0.2)
+	plot!(Singleton(x̄₀),markershape=:x)
+	plot!(Singleton(x̂₀),markershape=:x)
+	plot!(x->x^2-2x+1,-.2,2,lw=2,leg=false)
+end
 
 # ╔═╡ dbfd283a-ea6e-11eb-2033-a5646e8d2681
 md"""
@@ -18,6 +28,19 @@ md"""
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
 ###### Semana 06 - Aula 02
+"""
+
+# ╔═╡ 41eac1c5-afc9-4d38-b4e9-5e33481cab72
+md"""
+**Operador de Ponto fixo:** 
+Seja $T : X \to X$. Dizemos que $x \in \operatorname{Fix} T$ se $T(x) = x$, isto é, $\operatorname{Fix} T:= \{ x\in \operatorname{dom}T \mid T(x) = x\}$. 
+
+- Note que $x \in \operatorname{Fix}T$ se, e somente se, $F(x) = T(x) - x = 0$.
+
+**Iteração de ponto fixo:**
+$x_{k+1} = T(x_k)$
+
+
 """
 
 # ╔═╡ 5a324577-a8e3-4b7b-b49e-bb50e578e465
@@ -35,14 +58,14 @@ f_n(x_1, x_2, \ldots, x_n) &= 0,
 em que $F(x) = (f_1(x), f_2(x), \ldots, f_n(x))$.
 
 Nesse caso podemos usar resultados de Cálculo de Várias Variáveis. 
-Lembremos que cada função $f_i: \mathbb{R}^n \rightarrow R$ admite uma aproximação linear
+Lembremos que cada função $f_i: \mathbb{R}^n \rightarrow  \mathbb{R}$ admite uma aproximação linear
 
 $$f_i(y) \approx f_i(x) + \nabla f_i(x)^\top(y - x),\ i = 1, \ldots, n.$$
-em que $\nabla f(x)$ é o gradiente de $f_i$ em $x$. Podemos escrever todas essas equações de forma compacta lembrando a definição da matriz Jacobiana de $F$ que é composta por linhas com os gradientes:
+em que $\nabla f(x) = (\partial f_i/\partial{x_1},\partial f_i/\partial{x_2},\ldots, \partial f_i/\partial{x_n})^\top$ é o gradiente de $f_i$ em $x$. Podemos escrever todas essas equações de forma compacta lembrando a definição da matriz Jacobiana de $F$ que é composta por linhas com os gradientes:
 
 $$J_F(x) = \left[ \begin{array}{c}
 \nabla f_1(x_1, x_2, \ldots, x_n))^\top \\
-\nabla f_s(x_1, x_2, \ldots, x_n))^\top \\
+\nabla f_2(x_1, x_2, \ldots, x_n))^\top \\
 \vdots \\
 \nabla f_n(x_1, x_2, \ldots, x_n))^\top
 \end{array} \right].$$
@@ -53,7 +76,7 @@ Temos o seguinte teorema.
 > Sejam $x=\left(x_{1}, x_{2}, \ldots, x_{n}\right)^{T}, F=\left(f_{1}, f_{2}, \ldots, f_{m}\right)^{T}$, e assuma que  $F(x)$ tem derivadas limitadas pelo menos até ordem 2. Então, a partir de um vetor de direções  $d=\left(d_{1}, d_{2}, \ldots, d_{n}\right)^{T}$, a expansão de Taylor para cada função $f_{i}$ em cada coordenada $x_{j}$ nos dá
 >
 >$$F(x+d)=F(x)+J_F(x) d+\mathcal{O}\left(\|d\|^{2}\right)$$
->em que  $J_F(x)$ é a matrix Jacobina das primeiras derivadas de $F$ em $x$.
+>em que  $J_F(x)$ é a matrix Jacobiana das primeiras derivadas de $F$ em $x$.
 
 Assim, fazendo $y=x+d$ podemos usar a aproximação
 
@@ -71,16 +94,18 @@ Isolando $x^{k + 1}$, que pode ser feito desde que a matrix  Jacobiana seja inve
 $$x^{k +1} = x^k - J_F(x^k)^{-1}F(x^k).$$
 ##### Observações
 
-- A iteração de Newton é uma clara generalização da equação que define o método de Newton no caso unidmensional.
+- A iteração de Newton é uma clara generalização da equação que define o método de Newton no caso unidmensional: $x_{k+1} = x_k - (f'(x_k))^{-1} f(x_k)$
 
 - Apesar da fórmula acima sugerir que devemos inicialmente inverter a matriz jacobiana, não há necessidade de inverter nenhuma matriz, o que exigiria a solução de $n$ sistemas lineares gerando uma complexidade total de $O(n ^4)$. Basta resolver inicialmente um único sistema
 
-$$J_F(x^k)d^{k} = -F(x^k)$$
+$$J_F(x^k)d^{k} = F(x^k)$$
 e em seguida atualizar
 
-$$x^{k + 1} = x^{k} + d^{k}.$$
+$$x^{k + 1} = x^{k} - d^{k}.$$
 
 - Se a Jacobiana for inversível, claramente, esses dois passos são equivalentes à fórmula do método de Newton dada acima.
+
+-  O vetor $d_k$ é a chamado **direção de Newton**.
 
 """
 
@@ -104,6 +129,42 @@ Vamos implementar o método de Newton e testá-lo.
 
 """
 
+# ╔═╡ e8f51d53-965b-4458-be6c-5aa2f3ab07bf
+# Implementação
+function newton_siseq(F, J, x⁰; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
+	df = DataFrame(k = [],  normFᵏ = Float64[])
+	k = 0
+	xᵏ = x⁰
+	while k ≤ itmax
+		Fᵏ = F(xᵏ)
+		erro = norm(Fᵏ)
+		push!(df,[k, erro])
+		if erro < ε
+			return df, xᵏ, :Conv
+		end
+		dᵏ = J(xᵏ) \ Fᵏ
+		xᵏ = xᵏ - dᵏ
+		k += 1
+	end
+	return df, xᵏ, :MaxIter	
+end
+
+# ╔═╡ 90150313-e18d-46be-973f-330331870a0d
+begin
+	F(x) = [x[1]^2 - exp(-x[1]*x[2]), 
+		    x[1]*x[2] + sin(x[1])]
+	J(x)= [2*x[1] + x[2]*exp(-x[1]*x[2]) x[1]*exp(-x[1]*x[2]);
+		   x[2] + cos(x[1])               x[1] ]
+	x⁰ = [2.,1]
+	J(x⁰)
+end
+
+# ╔═╡ ab6ec7cd-f95e-44b3-ab4e-9cc97dfdf0df
+df1, xᵏ,  = newton_siseq(F, J, x⁰,ε = 1e-12)
+
+# ╔═╡ edb05618-8994-45cb-b502-88ff1db7480f
+
+
 # ╔═╡ 29651fb8-dfdf-46af-995f-4bf9ba11ab6f
 md"""
 
@@ -113,7 +174,7 @@ Note que temos nesse caso o mesmo problema para determinar o momento ideal de pa
 $\begin{aligned}
 \| F(x) \| &\leq \epsilon \| F(x^0) \| \\
 \| F(x) \| &\leq \epsilon_0 \| F(x^0) \| + \epsilon_1 \\
-\| s^k \| &\leq \epsilon.
+\| d^k \| &\leq \epsilon.
 \end{aligned}$
 
 Precisamos também destacar que a operação que mais cara em cada iteração do método de Newton é a resolução do sistema linear para cômputo do passo. Isso pode ser feito com os métodos como a fatoração LU. Em alguns casos, principalmente quando as matrizes envolvidas são grandes e esparsas, pode ser interessante usar um método iterativo para achar o passo de Newton. Nesse caso o passo não é calculado exatamente, apenas uma aproximação é obtida. Se a aproximação obtida for boa o método se comporta muitas vezes bem e é conhecido como Newton *inexato* ou *truncado*.
@@ -133,8 +194,30 @@ md"""
 
 Seja  $f_{1}\left(x_{1}, x_{2}\right)=x_{1}^{2}-2 x_{1}-x_{2}+1$ e $f_{2}\left(x_{1}, x_{2}\right)=x_{1}^{2}+x_{2}^{2}-1$. NOte que $f_1(x,y) = 0$ descreve uma parábola e $f_2(x,y) = 0$ descreve um círculo. Quais os pontos de intersecção destas curvas?"""
 
-# ╔═╡ b5706bcd-8164-416f-9cb5-39ba186b3da1
+# ╔═╡ d66a9454-33d4-4a0d-8f6d-17f41c22a27e
+md"""
+Pontos Iniciais: $x̄^0 = (1,1)^T$ e $x̂^0 = (-1,1)^T$
+"""
 
+# ╔═╡ e2b8f3eb-390d-4334-b41d-ca3e93c7c560
+md"""
+### Otimização Irrestrita
+
+$$\min_{x\in \mathbb{R}^n} f(x)$$
+
+##### Exemplo
+
+$$\min_{x\in \mathbb{R}^n} x_1^2 + x_2^4 + 1$$
+"""
+
+# ╔═╡ 93fd1c70-bfe5-4904-a90d-e8190f7314c5
+# Resolvendo sistemas lineares (Ax  = b)
+let 
+	A = [1 2; 2 -1.]
+	b = [3, 2]
+	x = A \ b 
+	norm(A*x - b)
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1380,12 +1463,19 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─dbfd283a-ea6e-11eb-2033-a5646e8d2681
-# ╠═a236cca3-96b6-4b9c-b5b2-3a4bd4c716e7
-# ╠═5a324577-a8e3-4b7b-b49e-bb50e578e465
+# ╟─a236cca3-96b6-4b9c-b5b2-3a4bd4c716e7
+# ╟─41eac1c5-afc9-4d38-b4e9-5e33481cab72
+# ╟─5a324577-a8e3-4b7b-b49e-bb50e578e465
 # ╟─e22b16be-6982-414e-a51a-0f472960c5df
+# ╠═e8f51d53-965b-4458-be6c-5aa2f3ab07bf
+# ╠═90150313-e18d-46be-973f-330331870a0d
+# ╠═ab6ec7cd-f95e-44b3-ab4e-9cc97dfdf0df
+# ╠═edb05618-8994-45cb-b502-88ff1db7480f
 # ╟─29651fb8-dfdf-46af-995f-4bf9ba11ab6f
-# ╠═6e648206-5596-4c11-943e-9a9dc4950b2d
-# ╠═32471f7d-eef5-44bd-a766-c68678579841
-# ╠═b5706bcd-8164-416f-9cb5-39ba186b3da1
+# ╟─6e648206-5596-4c11-943e-9a9dc4950b2d
+# ╟─d66a9454-33d4-4a0d-8f6d-17f41c22a27e
+# ╠═f9ef5bf7-db85-4eab-8495-eec15fb308e3
+# ╟─e2b8f3eb-390d-4334-b41d-ca3e93c7c560
+# ╠═93fd1c70-bfe5-4904-a90d-e8190f7314c5
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
