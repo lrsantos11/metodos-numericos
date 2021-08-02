@@ -4,94 +4,365 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 53707f00-ae48-4855-ab1d-c09140b51986
-begin
-	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra
-	plotly();
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
 end
 
-# ╔═╡ 41a3c6c6-ebfa-11eb-0a70-d34549d0035e
+# ╔═╡ 9c6074f1-981d-4150-a189-5296ca374e70
+begin
+	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra, Random
+	Random.seed!(11)
+end
+
+# ╔═╡ 28febda9-bb76-448b-89f2-5663b4f8af11
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 06 - Aula 03
+###### Semana 07 - Aula 02
 """
 
-# ╔═╡ d5df9d47-52ae-47c7-9191-62a8910cc70a
+# ╔═╡ 58564077-487a-4721-8ab9-d2ceddb3ba59
 md"""
-# Sistemas não-lineares
-## Método de Newton
+# O Problema de Quadrados Mínimos
+
+$\min_x \frac{1}{2}\| b - Ax\|^2$
 """
 
-# ╔═╡ 925e25c6-0d1d-4296-98eb-65e5e568375d
-# Implementação
-function newton_siseq(F, J, x⁰; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
-	df = DataFrame(k = [],  normFᵏ = Float64[])
-	k = 0
-	xᵏ = x⁰
-	while k ≤ itmax
-		Fᵏ = F(xᵏ)
-		erro = norm(Fᵏ)
-		push!(df,[k, erro])
-		if erro < ε
-			return df, xᵏ, :Conv
-		end
-		dᵏ = J(xᵏ) \ Fᵏ # O operador / resolve o sistema linear
-		xᵏ = xᵏ - dᵏ # xᵏ .-= dᵏ
-		k += 1
+
+
+# ╔═╡ ab6c9311-3a94-4509-8250-b95425a4a07f
+md"""
+## Ajuste de Curvas e Método dos Quadrados Mínimos
+
+- Qual curva melhor representa ou melhor se ajusta a um conjunto de dados?
+"""
+
+# ╔═╡ 7f8f25dd-cb97-41f1-a4a4-dadb4c6f7937
+md"Incluir retas $(@bind retas CheckBox())"
+
+# ╔═╡ e5cd46ba-b49d-4fcc-9ae7-eeb8e4dbe703
+begin
+	Random.seed!(11)
+	# Number of examples to use
+	n = 100
+	
+	# Specify the true value of the variable
+	true_coeffs = [2; -2; .5]
+
+	
+	# Generate data
+	x_data = rand(n, 1)*5
+	x_data_expanded = hcat([x_data .^ i for i in 1 : 3]...)
+	y_data = x_data_expanded * true_coeffs + .5 * rand(n, 1)
+	
+	
+	p = scatter(x_data, y_data, leg=false)
+	xlabel!("Mês")
+	ylabel!("Chuva")
+	if retas
+		plot!(x->2x,lw=2)
+		plot!(x->1.5x - 2,lw=2)
+		plot!(x->.5x + 2,lw=2)
+		plot!(x->-.2x + 4,lw=2)
+		hline!([3.2],lw=2)
 	end
-	return df, xᵏ, :MaxIter	
+	# ylims!(2,6)
 end
 
-# ╔═╡ f2014a75-a568-4737-83cd-d7ec68a559e4
+# ╔═╡ 0d9877f3-1daf-455a-9c73-38a5f82b7bc4
 md"""
-##### Exemplo 
-
-Seja  $f_{1}\left(x_{1}, x_{2}\right)=x_{1}^{2}-2 x_{1}-x_{2}+1$ e $f_{2}\left(x_{1}, x_{2}\right)=x_{1}^{2}+x_{2}^{2}-1$. Note que $f_1(x,y) = 0$ descreve uma parábola e $f_2(x,y) = 0$ descreve um círculo. Quais os pontos de intersecção destas curvas?"""
-
-# ╔═╡ 6fe825ed-7d95-4a58-a34b-8c46c2f95038
-md"""
-Pontos Iniciais: $x̄^0 = (1,1)^T$ e $x̂^0 = (-1,1)^T$
+- Resolver equações normais $A^TAx = A^Tb$
 """
 
-# ╔═╡ 50c57a6a-bac7-4459-966b-88bce380526b
+# ╔═╡ cddc7bf1-0d23-45fc-ab57-2975f90bc778
 begin
-	F1(x) = [x[1]^2 - 2*x[1] - x[2] + 1 , x[1]^2 + x[2]^2 - 1]
-	JF1(x) = [(2*x[1]-2)    -1; 
-		      (2*x[1])       2*x[2]]
-	x̄₀ = [1,1]
-	x̂₀ = [-1,1]
-     
+	A = [ones(n) x_data]
+	B = A'*A
+	b = A'*y_data
+	β = B  \ b  # O Comando B \ b resolve o sitema linear Bβ = b
+	plot!(x-> β[1] + β[2]*x,lw = 3)
 end
 
-# ╔═╡ 6a7b7a36-0e47-40e4-89af-e25f5ea16062
+# ╔═╡ 6c22e329-f596-443e-985c-16cafe3ef5d8
+norm(y_data - A*β)
+
+# ╔═╡ f8ca808b-3c9c-416f-85fd-08aab4302f16
 begin
-	using LazySets
-	b = Ball2( zeros(2),1.)
-	plot(b, aspect_ratio = :equal, framestyle=:origin,  alpha=0.2)
-	plot!(x->x^2-2x+1,-.2,2.2,lw=2,label="")
-	plot!(Singleton(x̄₀), label = "x̄₀")
-	plot!(Singleton(x̂₀), label = "x̂₀", leg = :bottomright)
-	plot!([Singleton([1,0]), Singleton([0,1])], label = "Intersecção")
+	A2 = [ones(n) x_data x_data.^2]
+	B2 = A2'*A2
+	b2 = A2'*y_data
+	β2 = B2  \ b2  # O Comando B \ b resolve o sitema linear Bβ = b
+	plot(p, x-> β2[1] + β2[2]*x + β2[3]*x^2,lw = 3)
 end
 
-# ╔═╡ 35bab7f8-23ac-43c2-b474-0f26c33052d7
-newton_siseq(F, x⁰; kwargs...) = newton_siseq(F, x -> ForwardDiff.jacobian(F,x) ,  x⁰; kwargs...)
+# ╔═╡ b583cf18-bfe1-4810-b978-b25bf18bca65
+norm(y_data - A2*β2)
 
-# ╔═╡ 61f7bce4-5950-4bef-b4db-ad2613640d8b
-ForwardDiff.jacobian(F1,x̄₀)
+# ╔═╡ 2280263a-4971-49c0-ac82-39b51f6c3727
+begin
+	A3 = [ones(n) x_data x_data.^2 x_data.^3]
+	B3 = A3'*A3
+	b3 = A3'*y_data
+	β3 = B3  \ b3  # O Comando B \ b resolve o sitema linear Bβ = b
+	plot(p, x-> β3[1] + β3[2]*x + β3[3]*x^2 + β3[4]*x^3,lw = 3)
+end
 
-# ╔═╡ 7c485f74-ae6e-45a0-9558-49a42aab43cb
+# ╔═╡ 4006cf16-6495-4d4a-a1ec-0b34ecc6415c
+norm(y_data - A3*β3)
+
+# ╔═╡ 71d93229-4cc8-4936-bc43-890a903dc705
+md"""
 
 
-# ╔═╡ 4dc06d87-7e3f-4bae-ab7e-03476e7e65f9
-df̄_F1, x̄ₖ,  = newton_siseq(F1, x̄₀)
+-  Um dos temas principais de problemas numéricos é a obtenção de funções, ou leis, que ajustem dados experimentais. Por exemplo, imagine que temos dados experimentais de um fenômeno que pode ser explicado pelo seguinte polinômio do segundo grau. 
+$\operatorname{lei}(x) = \pi x^2 + 2x + 1.73$
 
-# ╔═╡ b19370bf-0831-4533-9a0b-6b978c0b9647
-df̂_F1, x̂ₖ,  = newton_siseq(F1,  x̂₀)
+- Mesmo que o fenômeno seja perfeitamente explicável por esse tipo de função os erros de medidas nunca vão nos permitir observar exatamente o gráfico da verdadeira função. Vamos simular isso no código abaixo.
+"""
 
-# ╔═╡ 0e33ce40-48f8-406e-bbb1-4ed0fbd6097e
+# ╔═╡ 6f52dbf5-ac9d-4e9d-9391-9260cd0712f8
+# Uma função do segundo grau.
+lei(x) =  π*x.^2 + 2.0.*x + 1.73
+
+# ╔═╡ 803e5e9a-9211-430e-9c95-61e28c5be5c9
+n_pontos = 500
+
+# ╔═╡ 3f70b663-ce3e-4903-9bf8-8f45606f9980
+x = range(-4, stop = 4, length = n_pontos)
+
+# ╔═╡ ee78d76e-3c4e-4aec-848c-6387138c9d69
+md"""
+-  Vamos simular medidas reais de valores da função introduzindo um erro aleatório uniformo entre $[-5, 5]$.
+"""
+
+# ╔═╡ 5b302eba-fb8d-4aa5-aea9-eebce4e085ac
+erro_aleatorio = 10*(rand(n_pontos) .- 0.5)
+
+# ╔═╡ f365f222-46c2-445c-8bb2-39d3a13f5e62
+medida = lei.(x) + erro_aleatorio
+
+# ╔═╡ 3bead87d-dbf7-421d-8229-a99ddfd87547
+plt1 =  scatter(x, medida, label = "Dados aleatorios")
+
+# ╔═╡ 47142de5-dd02-4c6f-8fa9-29db363d8d2f
+md"""
+- Ao observar a figura acima podemos ter a intruição que o valor medido vem de fato de um polinômio do segundo grau. Mas como descobrir qual é esse polinômio. Ou seja, como recuperar os coeficientes $a_2 = \pi,\ a_1 = 2, a_0 =1.73$? Este é o assunto dessa parte do curso.
+
+### Modelando o problema de ajuste polinômios de grau 2
+
+- Vamos tentar achar uma formulação matemática razoável para o problema e depois resolvê-lo. O que temos são medidas com erros de uma função $p$ cujo o formato geral conhecemos:
+
+$$p(x) = a_2 x^2 + a_1 x + a_0,$$
+para coeficientes $a_2,\ a_1,\ a_0$ que não conhecemos. 
+
+- Desejamos descobrir os valores dos seus coeficientes $a_2,\ a_1$ e $a_0$. A informação que temos disponível são medidas $(x_i, y_i),\ i = 1, \ldots, m$ e que $y_i = p(x_i)$ mais algum tipo de ruído aleatório. 
+
+- Note que se não houvesse o ruído aleatório, isso é se tivéssemos o valor exato do polinômio desejado a solução seria simples. Bastaria pegar três pontos do plano e encontrar o (único) polinômio do segundo grau que passa por eles. Veremos como fazer esse isso na próxima parte do curso. Note que quaisquer que fosse os três pontos escolhidos iríamos obter o mesmo polinômio.
+
+
+"""
+
+# ╔═╡ f28cc256-9f6c-479d-9dc9-23c970e8ec73
+md"""
+- No caso de erros de medidas na função fica impossível usar a ideia acima já que o polinômio iria mudar um pouco dependendo de quais três pontos fossem escolhidos. Nesse caso, uma ideia razoável nesse caso é procurar qual o polinômio do segundo grau que melhor se "encaixa" a todos os dados ao mesmo tempo. Como fazer isso matematicamente? 
+
+- Dado um $i = 1, \ldots, m$, o erro de uma função $p$ com respeito ao valor medido em um único ponto $x_i$ é 
+$\lvert p(x_i) - y_i \rvert.$
+- Para levar em consideração todos os pontos, os erros em todos eles devem ser combinados de alguma forma. Uma maneira natural é pensar em dois vetores do $\mathbb{R}^m$. 
+
+- O primeiro representa os valores medidos $y = (y_1, y_2, \ldots, y_m)$ e o segundo a função $p$ nos respectivos pontos $p = (p(x_1), p(x_2), \ldots, p(x_m))$. O que gostaríamos é que $y = p$ mas devido aos erros isso é impossível. 
+
+- Podemos então buscar os coeficientes $\beta_2$, $\beta_1$ e $\beta_0$ que minimizem a distância entre $y$ e $p$, já que isso leva em conta todas as coordenadas. Ou seja queremos encontrar os coeficientes para os quais
+$\| p - y \|_2$ **é o menor possível**. 
+- Uma coisa interessante é que minimizar a norma euclidiana ou o seu quadrado dá a mesma resposta. Já a norma euclidiana ao quadrado tem a vantagem de ser diferenciável o que poderemos explorar ao resolver o problema.
+
+Chegamos finalmente ao seguinte problema:
+
+>Encontre coeficientes $\beta_2,\ \beta_1,\ \beta_0$ de modo que ao definirmos a função $p(x) = \beta_2 x^2 + \beta_1 x + \beta_0$ o valor de
+>
+>$\sum_{i = 1}^m (p(x_i) - y_i)^2 = \| p - y \|^2$
+>seja o menor possível, em que $p=(p_1,\ldots,p_m)^T$  e $p_i = p(x_i), i=1,\ldots,m$. Equivalentemente, procuramos a solução do seguinte problema de minimização
+>
+>$\min_{p\in \mathbb{R}^m} \frac{1}{2}\| p - y\|^2.$ 
+"""
+
+# ╔═╡ 01665646-cc2d-4516-870b-5744c7d9dbb3
+md"""
+
+### Ajuste linear de curvas
+
+Uma observação importante é que o fato da função que desejamos ajustar aos dados medidos ser um polinômio de grau 2 desempenhou um papel secundário na dedução do problema final acima. A mesma ideia poderia ser aplicada para ajustar um polinômio de grau 5, por exemplo. Mais ainda se função que desejamos ajustar é uma soma de senos e cossenos como
+
+$\beta_0 \sin(x) + \beta_1 \cos(x) + \beta_2 \sin(2x) + \beta_3 \cos(2x)$
+
+o mesmo problema faz sentido e a modelagem é basicamente a mesma. 
+
+De uma maneira geral, considere que temos $n+1$ funções $\phi_0,\ \phi_1, \ldots, \phi_n$ que acreditamos que são linearmente combinadas para definir uma função $\phi$. Isto é, supomos que $\phi$ tem a forma
+
+$\phi(x) = \beta_0 \phi_0(x) + \beta_1 \phi_1(x) + \ldots + \beta_n \phi_n(x)$
+usando um vetor de coeficientes $c = (\beta_0, \beta_1, \ldots, \beta_n) \in \mathbb{R}^{n+1}$. Considere também que temos um conjunto de medidas $(x_i, y_i),\ i = 1, \ldots, m$ que representam, aproximadamente, avaliações da função $\phi$ com o formato acima.
+
+Podemos então desejar encontrar os coeficientes que definem a função $\phi$ que melhor se ajusta aos dados no sentido de minimizar
+$\| \phi - y \|^2,$
+em que $y$ é o vetor de medidas $y = (y_1, y_2, \ldots, y_m)$ e $\phi$ o vetor da função $\phi(\cdot)$ avaliado nos pontos $x_i,\ i = 1, 2, \ldots, m$:
+
+$\phi = 
+\left(
+\begin{array}{c}
+\phi(x_1) \\
+\phi(x_2) \\
+\vdots \\
+\phi(x_m)
+\end{array}
+\right) = 
+\left(
+\begin{array}{c}
+\beta_0 \phi_0(x_1) + \beta_1 \phi_1(x_1) + \ldots + \beta_n \phi_n(x_1) \\
+\beta_0 \phi_0(x_2) + \beta_1 \phi_1(x_2) + \ldots + \beta_n \phi_n(x_2) \\
+\vdots \\
+\beta_0 \phi_0(x_m) + \beta_1 \phi_1(x_m) + \ldots + \beta_n \phi_n(x_m) \\
+\end{array}
+\right).$
+Escolhemos o critério de minimizar a norma euclidiana *elevada ao quadrado* por que assim a função que desejamos minimizar é diferenciável.
+
+Obtemos assim o problema de encontrar um vetor de coeficientes $c = (\beta_0, \beta_1, \ldots, \beta_n)$ tal que ao definirmos a função $\phi(x) = \beta_0 \phi_0(x) + \beta_1 \phi_1(x) + \ldots + \beta_n \phi_n(x)$ o valor de
+
+$\sum_{i = 1}^m (\phi(x_i) - y_i)^2 = \| \phi - y \|^2$
+seja o menor possível.
+
+Para sermos capaz de realizar essa tarefa temos que entender como a expressão acima varia com os coeficientes no vetor $c$. Para isso vamos usar um pouco de notação matricial. Se olharmos a segunda fórmula acima e tentarmos entender o que ela diz colocando $c$ em destaque temos:
+
+$\phi = \underbrace{\left(
+\begin{array}{c}
+\phi(x_1) \\
+\phi(x_2) \\
+\vdots \\
+\phi(x_m)
+\end{array}
+\right)}_{\phi}
+= \underbrace{\left( \begin{array}{cccc}
+\phi_0(x_1) & \phi_1(x_1) & \ldots & \phi_n(x_1) \\
+\phi_0(x_2) & \phi_1(x_2) & \ldots & \phi_n(x_2) \\
+\vdots & \vdots & \vdots & \vdots \\
+\phi_0(x_m) & \phi_1(x_m) & \ldots & \phi_n(x_m) \\
+\end{array}
+\right)}_{A} 
+\underbrace{\left( \begin{array}{c}
+\beta_0  \\
+\beta_1 \\
+\vdots \\
+\beta_n
+\end{array} \right)}_{c}.$
+
+"""
+
+
+# ╔═╡ 77e008d9-9eb5-43f0-a320-e113cb24a866
+md"""
+
+Como sugerido acima, podemos definir a matriz $A$ como a matriz acima, ou seja a matriz que contém na primeira coluna a função $\phi_0$ avaliada nos pontos $x_1, x_2, \ldots, x_m$, depois na segunda coluna a função $\phi_1$ avaliada nos mesmos pontos e assim sucessivamente. Com isso podemos escrever essa última expressão na forma compacta
+
+$A c = \phi.$
+Assim, a função que queremos minimizar pode ser escrita tornando explícita sua dependência no vetor de coeficientes como
+
+$\min_{c\in \mathbb{R}^{n+1}} f(c) = \frac{1}{2} \| A c - y \|^2$
+
+Note que $\frac{1}{2} \| A c - y \|^2 = \frac{1}{2}(A c - y)^T(A c - y) =  \frac{1}{2}\left(c^T A^T A c - 2 c^TA^T y - y^T y.\right)$
+Como desejamos minimizar a função $f: \mathbb{R}^{n+1} \rightarrow \mathbb{R}$ podemos usar os nossos conhecimentos de Cálculo. 
+
+- Em primeiro lugar, observe que a função cresce de forma quadrática com $c$, logo para $c$ grande ela passará a crescer até infinito se a norma de $c$ crescer indefinidamente. Logo ela atinge mínimo. Agora, sabemos de cálculo que os candidatos a ponto de mínimo devem obedecer à equação
+
+$\nabla f(c) = 0.$
+
+Precisamos descobrir como calcular a derivada de $f$. Para isso observe as seguintes regras de derivação que são facilmente demonstradas a partir das respectivas fórmulas.
+
+1. Se $g(c) = \frac{1}{2}c^TAc$, para alguma matriz quadrada $A$, então $\nabla g(c) = A c$.
+1. Se $h(c) = c^T b = b^T c$, para algum vetor $b$, então $\nabla h(c) = b$, um vetor constante.
+
+### Equações normais
+
+Aplicando as regras de cálculo acima para obter o gradiente de $f$:
+
+$\nabla f(c) = A^T A c - A^T y.$
+Assim a equação que caracteriza o mínimo é
+
+$0 = \nabla f(c) =  A^T A c -  A^T y.$
+Ou escrevendo de uma forma mais simples, 
+
+$A^T A c = A^T y.$
+
+Um sistema de equações lineares em $c$ com $n+1$ equações e $n+1$ incógnitas. Esse tipo de sistema é conhecido como **Equação normais** associada ao problema de quadrados mínimos. Em particular se a matriz do sistema $A^T A$ for inversível sabemos que haverá uma única solução que será necessariamente então o mínimo da função $f$.  
+
+Nos problemas que vamos enfrentar é natural imaginar que a matriz $A^T A$ é inversível. Isso somente não ocorrerá se uma das funções $\phi_1, \phi_2, \ldots, \phi_m$ for redundante, isto é, se os vetores forem linearmente dependentes, pelo menos nos pontos $(x_1, x_2, \ldots, x_n)$. Para ver isso é necessário usar um pouco de álgebra linear.
+
+Estamos prontos para resolver o problema do início da discussão e usar o vetor `medida` para tentar recuperar a função `lei`. Vamos começar criando a matriz $A$.
+"""
+
+# ╔═╡ d3b8a593-fbf6-4e4b-8fc5-ca8b3048b5cf
+md"""
+- Construímos uma matriz concatenando uma coluna de 1's de dimensão adequada, o vetor `x` e depois o vetor `x.^2`.
+"""
+
+# ╔═╡ 53b208b4-a604-466c-aa99-4f83c1ee2d34
+Φ = [ones(n_pontos) x x.^2];
+
+# ╔═╡ 7be67417-6fda-4598-aadf-3e7923a48460
+md"""
+- Resolvemos a equação normal `Φ'Φ c = Φ'b` medida, usando o operador `\` de Julia
+"""
+
+# ╔═╡ 39fec8ab-9660-4cf7-88cd-6b8e4f3f8b6a
+c = (Φ'*Φ) \ (Φ'*medida)
+
+# ╔═╡ 34b4b134-7433-4407-9d4d-f791d2f387fe
+md"""
+- Veja como os valores se aproximam dos valores originais que eram 1.73 para o termos constante, $2$ para o coeficiente de $x$ e $\pi$ para o coeficiente associado a $x^2$. Outra coisa interessante de fazer é mostrar o gráfico da função final obtida e mostrar como ele se ajusta bem nos pontos medidos.
+
+- Define a função `ϕ` a partir dos coeficientes calculados e das funções originais `1, x` , e `x^2`.
+"""
+
+# ╔═╡ 042578e6-f615-4df9-9a89-32d17d7e0380
+phi(x) = c[1].*1  + c[2].*x +  c[3].*x.^2
+
+# ╔═╡ 162b937f-2f80-4ed3-a271-c949aa6255af
+begin
+	# Plota os pontos medidos e o gráfico da função obtida.
+	plot(plt1, x, phi, linewidth=4, c=:red, label="Phi")
+	plot!(x,lei,label = "Original",lw=2, s = :dash, c = :yellow)
+end
+
+# ╔═╡ 505f1842-374c-4ab6-82c8-d6b2a813a3e5
+c
+
+# ╔═╡ cdfe25a2-5931-4f2f-b7cd-c60af45716b8
+let
+	x = [1,1.25,1.5,1.75,2]
+	y = [5.1,5.79,6.53,7.45,8.46]
+	plt2 = scatter(x,y,label="")
+	A  = [ones(5) x]
+	z = log.(y)
+	@show A'*A
+	@show A'*z
+	@show c = (A'*A)\(A'z)
+	phi(x) = c[1].*1  + c[2].*x
+
+	@show a = c[2]
+	@show b = exp(c[1])
+
+	f(x) = b*exp.(a*x)
+	h  = collect(-2.:.1:3)
+	plot!(plt2, h, phi, c=:red, label="Φ(x)")
+	plot!(plt2, h, f,  lw = 2, c=:blue, label="f(x)")
+end
+
+
+# ╔═╡ 6f58e8a8-0a77-4899-ae2b-937bbd194df2
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -99,19 +370,18 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-LazySets = "b4f0291d-fe17-52bc-9479-3d1a343d9043"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
 DataFrames = "~1.2.1"
 ForwardDiff = "~0.10.18"
-LazySets = "~1.48.0"
-Plots = "~1.19.3"
+Plots = "~1.19.4"
 PlutoUI = "~0.7.9"
-StatsPlots = "~0.14.25"
+StatsPlots = "~0.14.26"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -157,41 +427,17 @@ version = "1.0.0"
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
-[[BenchmarkTools]]
-deps = ["JSON", "Logging", "Printf", "Statistics", "UUIDs"]
-git-tree-sha1 = "c31ebabde28d102b602bada60ce8922c266d205b"
-uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "1.1.1"
-
-[[BinaryProvider]]
-deps = ["Libdl", "Logging", "SHA"]
-git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
-uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.10"
-
 [[Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "c3598e525718abcc440f69cc6d5f60dda0a1b61e"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.6+5"
 
-[[CRlibm]]
-deps = ["Libdl"]
-git-tree-sha1 = "9d1c22cff9c04207f336b8e64840d0bd40d86e0e"
-uuid = "96374032-68de-5a5b-8d9e-752f78720389"
-version = "0.8.0"
-
 [[Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "e2f47f6d8337369411569fd45ae5753ca10394c6"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.0+6"
-
-[[Calculus]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
-uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
-version = "0.5.1"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
@@ -204,18 +450,6 @@ deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArray
 git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
 uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 version = "0.14.2"
-
-[[CodecBzip2]]
-deps = ["Bzip2_jll", "Libdl", "TranscodingStreams"]
-git-tree-sha1 = "2e62a725210ce3c3c2e1a3080190e7ca491f18d7"
-uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
-version = "0.7.2"
-
-[[CodecZlib]]
-deps = ["TranscodingStreams", "Zlib_jll"]
-git-tree-sha1 = "ded953804d019afa9a3f98981d99b33e3db7b6da"
-uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
-version = "0.7.0"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random", "StaticArrays"]
@@ -243,9 +477,9 @@ version = "0.3.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "dc7dedc2c2aa9faf59a55c622760a25cbefbe941"
+git-tree-sha1 = "344f143fa0ec67e47917848795ab19c6a455f32c"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.31.0"
+version = "3.32.0"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -342,11 +576,6 @@ git-tree-sha1 = "92d8f9f208637e8d2d28c664051a00569c01493d"
 uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
 version = "2.1.5+1"
 
-[[ErrorfreeArithmetic]]
-git-tree-sha1 = "d6863c556f1142a061532e79f611aa46be201686"
-uuid = "90fa49ef-747e-5e6f-a989-263ba693cf1a"
-version = "0.5.2"
-
 [[Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "b3bfd02e98aedfa5cf885665493c5598c350cd2f"
@@ -377,17 +606,11 @@ git-tree-sha1 = "3676abafff7e4ff07bbd2c42b3d8201f31653dcc"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.9+8"
 
-[[FastRounding]]
-deps = ["ErrorfreeArithmetic", "Test"]
-git-tree-sha1 = "224175e213fd4fe112db3eea05d66b308dc2bf6b"
-uuid = "fa42c844-2597-5d31-933b-ebd51ab2693f"
-version = "0.2.0"
-
 [[FillArrays]]
-deps = ["LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "25b9cc23ba3303de0ad2eac03f840de9104c9253"
+deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
+git-tree-sha1 = "8c8eac2af06ce35973c3eadb4ab3243076a408e7"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.12.0"
+version = "0.12.1"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -435,28 +658,6 @@ git-tree-sha1 = "dba1e8614e98949abfa60480b13653813d8f0157"
 uuid = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
 version = "3.3.5+0"
 
-[[GLPK]]
-deps = ["BinaryProvider", "GLPK_jll", "Libdl", "MathOptInterface", "SparseArrays"]
-git-tree-sha1 = "86573ecb852e303b209212046af44871f1c0e49c"
-uuid = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
-version = "0.13.0"
-
-[[GLPKMathProgInterface]]
-deps = ["GLPK", "LinearAlgebra", "MathProgBase", "SparseArrays"]
-git-tree-sha1 = "dcca815a687d8f398c8fc701c3796a36ef6b73a5"
-uuid = "3c7084bd-78ad-589a-b5bb-dbd673274bea"
-version = "0.5.0"
-
-[[GLPK_jll]]
-deps = ["GMP_jll", "Libdl", "Pkg"]
-git-tree-sha1 = "ccc855de74292e478d4278e3a6fdd8212f75e81e"
-uuid = "e8aa6df9-e6ca-548a-97ff-1f85fc5b8b98"
-version = "4.64.0+0"
-
-[[GMP_jll]]
-deps = ["Artifacts", "Libdl"]
-uuid = "781609d7-10c4-51f6-84f2-b8444358ff6d"
-
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
 git-tree-sha1 = "9f473cdf6e2eb360c576f9822e7c765dd9d26dbc"
@@ -471,9 +672,9 @@ version = "0.58.0+0"
 
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
-git-tree-sha1 = "15ff9a14b9e1218958d3530cc288cf31465d9ae2"
+git-tree-sha1 = "58bcdf5ebc057b085e58d95c138725628dd7453c"
 uuid = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
-version = "0.3.13"
+version = "0.4.1"
 
 [[Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
@@ -483,9 +684,9 @@ version = "0.21.0+0"
 
 [[Glib_jll]]
 deps = ["Artifacts", "Gettext_jll", "JLLWrappers", "Libdl", "Libffi_jll", "Libiconv_jll", "Libmount_jll", "PCRE_jll", "Pkg", "Zlib_jll"]
-git-tree-sha1 = "47ce50b742921377301e15005c96e979574e130b"
+git-tree-sha1 = "7bf67e9a481712b3dbe9cb3dac852dc4b1162e02"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
-version = "2.68.1+0"
+version = "2.68.3+0"
 
 [[Grisu]]
 git-tree-sha1 = "53bb909d1151e57e2484c3d1b53e19552b887fb2"
@@ -520,12 +721,6 @@ git-tree-sha1 = "1470c80592cf1f0a35566ee5e93c5f8221ebc33a"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 version = "0.13.3"
 
-[[IntervalArithmetic]]
-deps = ["CRlibm", "FastRounding", "LinearAlgebra", "Markdown", "Random", "RecipesBase", "RoundingEmulator", "SetRounding", "StaticArrays"]
-git-tree-sha1 = "4902a5ff073d6977e33baad4e8d5c9a77e26eabf"
-uuid = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
-version = "0.18.2"
-
 [[InvertedIndices]]
 deps = ["Test"]
 git-tree-sha1 = "15732c475062348b0165684ffe28e85ea8396afc"
@@ -554,23 +749,11 @@ git-tree-sha1 = "81690084b6198a2e1da36fcfda16eeca9f9f24e4"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.1"
 
-[[JSONSchema]]
-deps = ["HTTP", "JSON", "ZipFile"]
-git-tree-sha1 = "b84ab8139afde82c7c65ba2b792fe12e01dd7307"
-uuid = "7d188eb4-7ad8-530c-ae41-71a32a6d4692"
-version = "0.3.3"
-
 [[JpegTurbo_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "d735490ac75c5cb9f1b00d8b5509c11984dc6943"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.1.0+0"
-
-[[JuMP]]
-deps = ["Calculus", "DataStructures", "ForwardDiff", "JSON", "LinearAlgebra", "MathOptInterface", "MutableArithmetics", "NaNMath", "Printf", "Random", "SparseArrays", "SpecialFunctions", "Statistics"]
-git-tree-sha1 = "8dfc5df8aad9f2cfebc8371b69700efd02060827"
-uuid = "4076af6c-e467-56ae-b986-b466b2749572"
-version = "0.21.8"
 
 [[KernelDensity]]
 deps = ["Distributions", "DocStringExtensions", "FFTW", "Interpolations", "StatsBase"]
@@ -604,12 +787,6 @@ version = "0.15.6"
 [[LazyArtifacts]]
 deps = ["Artifacts", "Pkg"]
 uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
-
-[[LazySets]]
-deps = ["Distributed", "GLPK", "GLPKMathProgInterface", "InteractiveUtils", "IntervalArithmetic", "JuMP", "LinearAlgebra", "MathProgBase", "Random", "RecipesBase", "Reexport", "Requires", "SharedArrays", "SparseArrays"]
-git-tree-sha1 = "db3dd8fbf19255ff3e0aea8f774e4568806ea595"
-uuid = "b4f0291d-fe17-52bc-9479-3d1a343d9043"
-version = "1.48.0"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -713,18 +890,6 @@ version = "0.5.6"
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
-[[MathOptInterface]]
-deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "JSON", "JSONSchema", "LinearAlgebra", "MutableArithmetics", "OrderedCollections", "SparseArrays", "Test", "Unicode"]
-git-tree-sha1 = "575644e3c05b258250bb599e57cf73bbf1062901"
-uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
-version = "0.9.22"
-
-[[MathProgBase]]
-deps = ["LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "9abbe463a1e9fc507f12a69e7f29346c2cdc472c"
-uuid = "fdba3010-5040-5b88-9595-932c9decdf73"
-version = "0.7.8"
-
 [[MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "Random", "Sockets"]
 git-tree-sha1 = "1c38e51c3d08ef2278062ebceade0e46cefc96fe"
@@ -757,12 +922,6 @@ deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "8d958ff1854b166003238fe191ec34b9d592860a"
 uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
 version = "0.8.0"
-
-[[MutableArithmetics]]
-deps = ["LinearAlgebra", "SparseArrays", "Test"]
-git-tree-sha1 = "3927848ccebcc165952dc0d9ac9aa274a87bfe01"
-uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
-version = "0.2.20"
 
 [[NaNMath]]
 git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
@@ -864,9 +1023,9 @@ version = "1.0.11"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
-git-tree-sha1 = "1bbbb5670223d48e124b388dee62477480e23234"
+git-tree-sha1 = "1e72752052a3893d0f7103fbac728b60b934f5a5"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.19.3"
+version = "1.19.4"
 
 [[PlutoUI]]
 deps = ["Base64", "Dates", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "Suppressor"]
@@ -955,11 +1114,6 @@ git-tree-sha1 = "68db32dff12bb6127bac73c209881191bf0efbb7"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
 version = "0.3.0+0"
 
-[[RoundingEmulator]]
-git-tree-sha1 = "40b9edad2e5287e05bd413a38f61a8ff55b9557b"
-uuid = "5eaf0fd0-dfba-4ccb-bf02-d820a40db705"
-version = "0.2.1"
-
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -971,17 +1125,12 @@ version = "1.1.0"
 
 [[SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "944ced306c76ae4a5db96fc85ec21f501f06b302"
+git-tree-sha1 = "35927c2c11da0a86bcd482464b93dadd09ce420f"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.4"
+version = "1.3.5"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-
-[[SetRounding]]
-git-tree-sha1 = "d7a25e439d07a17b7cdf97eecee504c50fedf5f6"
-uuid = "3cc68bcd-71a2-5612-b932-767ffbe40ab0"
-version = "0.2.1"
 
 [[SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
@@ -1008,15 +1157,15 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[SpecialFunctions]]
 deps = ["ChainRulesCore", "LogExpFunctions", "OpenSpecFun_jll"]
-git-tree-sha1 = "a50550fa3164a8c46747e62063b4d774ac1bcf49"
+git-tree-sha1 = "508822dca004bf62e210609148511ad03ce8f1d8"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
-version = "1.5.1"
+version = "1.6.0"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "1b9a0f17ee0adde9e538227de093467348992397"
+git-tree-sha1 = "885838778bb6f0136f8317757d7803e0d81201e4"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.7"
+version = "1.2.9"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1041,9 +1190,9 @@ version = "0.9.8"
 
 [[StatsPlots]]
 deps = ["Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
-git-tree-sha1 = "990daa9c943e7ee108a36ad17769bf3a51622875"
+git-tree-sha1 = "e7d1e79232310bd654c7cef46465c537562af4fe"
 uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
-version = "0.14.25"
+version = "0.14.26"
 
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
@@ -1089,12 +1238,6 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 [[Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[[TranscodingStreams]]
-deps = ["Random", "Test"]
-git-tree-sha1 = "7c53c35547de1c5b9d46a4797cf6d8253807108c"
-uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
-version = "0.9.5"
 
 [[URIs]]
 git-tree-sha1 = "97bbe755a53fe859669cd907f2d96aee8d2c1355"
@@ -1270,12 +1413,6 @@ git-tree-sha1 = "79c31e7844f6ecf779705fbc12146eb190b7d845"
 uuid = "c5fb5394-a638-5e4d-96e5-b29de1b5cf10"
 version = "1.4.0+3"
 
-[[ZipFile]]
-deps = ["Libdl", "Printf", "Zlib_jll"]
-git-tree-sha1 = "c3a5637e27e914a7a445b8d0ad063d701931e9f7"
-uuid = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
-version = "0.9.3"
-
 [[Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
@@ -1338,19 +1475,40 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═41a3c6c6-ebfa-11eb-0a70-d34549d0035e
-# ╠═53707f00-ae48-4855-ab1d-c09140b51986
-# ╟─d5df9d47-52ae-47c7-9191-62a8910cc70a
-# ╠═925e25c6-0d1d-4296-98eb-65e5e568375d
-# ╟─f2014a75-a568-4737-83cd-d7ec68a559e4
-# ╟─6fe825ed-7d95-4a58-a34b-8c46c2f95038
-# ╠═50c57a6a-bac7-4459-966b-88bce380526b
-# ╠═35bab7f8-23ac-43c2-b474-0f26c33052d7
-# ╠═61f7bce4-5950-4bef-b4db-ad2613640d8b
-# ╠═7c485f74-ae6e-45a0-9558-49a42aab43cb
-# ╠═4dc06d87-7e3f-4bae-ab7e-03476e7e65f9
-# ╠═b19370bf-0831-4533-9a0b-6b978c0b9647
-# ╠═6a7b7a36-0e47-40e4-89af-e25f5ea16062
-# ╠═0e33ce40-48f8-406e-bbb1-4ed0fbd6097e
+# ╟─28febda9-bb76-448b-89f2-5663b4f8af11
+# ╠═9c6074f1-981d-4150-a189-5296ca374e70
+# ╟─58564077-487a-4721-8ab9-d2ceddb3ba59
+# ╟─ab6c9311-3a94-4509-8250-b95425a4a07f
+# ╟─7f8f25dd-cb97-41f1-a4a4-dadb4c6f7937
+# ╟─e5cd46ba-b49d-4fcc-9ae7-eeb8e4dbe703
+# ╟─0d9877f3-1daf-455a-9c73-38a5f82b7bc4
+# ╠═cddc7bf1-0d23-45fc-ab57-2975f90bc778
+# ╠═6c22e329-f596-443e-985c-16cafe3ef5d8
+# ╠═f8ca808b-3c9c-416f-85fd-08aab4302f16
+# ╠═b583cf18-bfe1-4810-b978-b25bf18bca65
+# ╠═2280263a-4971-49c0-ac82-39b51f6c3727
+# ╠═4006cf16-6495-4d4a-a1ec-0b34ecc6415c
+# ╟─71d93229-4cc8-4936-bc43-890a903dc705
+# ╠═6f52dbf5-ac9d-4e9d-9391-9260cd0712f8
+# ╠═803e5e9a-9211-430e-9c95-61e28c5be5c9
+# ╠═3f70b663-ce3e-4903-9bf8-8f45606f9980
+# ╠═ee78d76e-3c4e-4aec-848c-6387138c9d69
+# ╠═5b302eba-fb8d-4aa5-aea9-eebce4e085ac
+# ╠═f365f222-46c2-445c-8bb2-39d3a13f5e62
+# ╠═3bead87d-dbf7-421d-8229-a99ddfd87547
+# ╟─47142de5-dd02-4c6f-8fa9-29db363d8d2f
+# ╟─f28cc256-9f6c-479d-9dc9-23c970e8ec73
+# ╟─01665646-cc2d-4516-870b-5744c7d9dbb3
+# ╟─77e008d9-9eb5-43f0-a320-e113cb24a866
+# ╟─d3b8a593-fbf6-4e4b-8fc5-ca8b3048b5cf
+# ╠═53b208b4-a604-466c-aa99-4f83c1ee2d34
+# ╟─7be67417-6fda-4598-aadf-3e7923a48460
+# ╠═39fec8ab-9660-4cf7-88cd-6b8e4f3f8b6a
+# ╟─34b4b134-7433-4407-9d4d-f791d2f387fe
+# ╠═042578e6-f615-4df9-9a89-32d17d7e0380
+# ╠═162b937f-2f80-4ed3-a271-c949aa6255af
+# ╠═505f1842-374c-4ab6-82c8-d6b2a813a3e5
+# ╠═cdfe25a2-5931-4f2f-b7cd-c60af45716b8
+# ╠═6f58e8a8-0a77-4899-ae2b-937bbd194df2
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

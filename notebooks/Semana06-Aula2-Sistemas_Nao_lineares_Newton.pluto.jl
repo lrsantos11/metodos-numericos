@@ -7,7 +7,7 @@ using InteractiveUtils
 # ╔═╡ a236cca3-96b6-4b9c-b5b2-3a4bd4c716e7
 begin
 	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots
-	plotly(), LinearAlgebra;
+	plotly(), LinearAlgebra
 end
 
 # ╔═╡ dbfd283a-ea6e-11eb-2033-a5646e8d2681

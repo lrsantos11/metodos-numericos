@@ -4,28 +4,22 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 53707f00-ae48-4855-ab1d-c09140b51986
+# ╔═╡ 8409e0f3-f782-4787-b1c9-1a88d2e3d6eb
 begin
-	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra
-	plotly();
+	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots,  LinearAlgebra
+	# plotly();
 end
 
-# ╔═╡ 41a3c6c6-ebfa-11eb-0a70-d34549d0035e
+# ╔═╡ 0760404e-938a-4296-b3f4-1d0a96c36bd2
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 06 - Aula 03
+###### Semana 07 - Aula 01
 """
 
-# ╔═╡ d5df9d47-52ae-47c7-9191-62a8910cc70a
-md"""
-# Sistemas não-lineares
-## Método de Newton
-"""
-
-# ╔═╡ 925e25c6-0d1d-4296-98eb-65e5e568375d
-# Implementação
+# ╔═╡ 474c09bb-338f-4ab4-85ea-3b547162f975
+# Implementação Newton Sistemas Equações
 function newton_siseq(F, J, x⁰; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
 	df = DataFrame(k = [],  normFᵏ = Float64[])
 	k = 0
@@ -44,62 +38,161 @@ function newton_siseq(F, J, x⁰; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
 	return df, xᵏ, :MaxIter	
 end
 
-# ╔═╡ f2014a75-a568-4737-83cd-d7ec68a559e4
+# ╔═╡ 98bac578-5fe3-4200-a7ee-d48f78ea5e14
 md"""
-##### Exemplo 
+## Minimização sem restrições
 
-Seja  $f_{1}\left(x_{1}, x_{2}\right)=x_{1}^{2}-2 x_{1}-x_{2}+1$ e $f_{2}\left(x_{1}, x_{2}\right)=x_{1}^{2}+x_{2}^{2}-1$. Note que $f_1(x,y) = 0$ descreve uma parábola e $f_2(x,y) = 0$ descreve um círculo. Quais os pontos de intersecção destas curvas?"""
+Seja o problema 
 
-# ╔═╡ 6fe825ed-7d95-4a58-a34b-8c46c2f95038
-md"""
-Pontos Iniciais: $x̄^0 = (1,1)^T$ e $x̂^0 = (-1,1)^T$
+$\min_{x\in \mathbb{R}^n} \phi(x)$
+com $\phi:A\subset \mathbb{R}^n \to \mathbb{R}$. 
+
+> **Definição.** Dizemos que $x^*\in\mathbb{R}^n$ é um _ponto de mínimo ou minimizador_ de $\phi:\mathbb{R}^n\to \mathbb{R}$ se 
+>
+>$\phi(x^*) \leq  \phi(x), \forall x\in  A.$ 
+>Neste caso, $\phi(x^*)$ é um _mínimo_ de  $\phi$. O mínimo pode ser local ou global (caso $A = \mathbb{R}^n$). 
+
 """
 
-# ╔═╡ 50c57a6a-bac7-4459-966b-88bce380526b
+# ╔═╡ 7f2135ac-2cb3-4abd-84f2-621c2239d752
+md"""
+#### Condições para mínimos
+> **Teorema. (Condições para minimizadores)**
+>Assuma que $\phi:\mathbb{R}^n\to \mathbb{R}$ é suave o suficiente. Então:
+> -  Uma condição necessária para que haja um mínimo local em  ${x}^{*}$ é que  ${x}^{*}$ seja ponto crítico,  i.e.,
+>
+> $\nabla \phi\left({x}^{*}\right)={0}$
+> e que e que a matriz Hessiana $\nabla^{2} \phi\left({x}^{*}\right)$ seja semidefinida positiva.
+> 
+> - Uma condição suficiente para que para que haja um mínimo local em  ${x}^{*}$ é que  ${x}^{*}$ seja ponto crítico > e que e que a matriz Hessiana $\nabla^{2} \phi\left({x}^{*}\right)$ seja definida positiva.
+
+ - Uma matriz simétrica é semidefinida positiva se, e somente se, seus autovalores forem não-negativos
+- Uma matriz simétrica é definida positiva se, e somente se, seus autovalores forem postivos
+
+As condições do teorema acima podem ser derivadas a partir do Teorema da Série de Taylor para várias variáveis. 
+
+> **Teorema. (Série de Taylor em várias variáveis).**  Seja ${x}=\left(x_{1}, x_{2}, \ldots, x_{n}\right)^{T}$ e assuma que  $\phi({x})$ tenha derivadas limitadas até ordem  3. Então, para o vetor de direções ${d}=\left(d_{1}, d_{2}, \ldots, d_{n}\right)^{T}$, a expansão da série de Taylor em cada coordenada nos dá
+>
+>$\phi({x}+{d})=\phi({x})+\nabla \phi({x})^{T} {d}+\frac{1}{2} {d}^{T} \nabla^{2} \phi({x}) {d}+\mathcal{O}\left(\|{p}\|^{3}\right).$
+
+Lembre-se que  $\nabla \phi({x})$ é o vetor gradiente  de $\phi$ em ${x}$ e é dado por 
+
+$\nabla \phi({x})= \begin{bmatrix}
+\frac{\partial \phi}{\partial x_{1}} \\
+\frac{\partial \phi}{\partial x_{2}} \\
+\vdots \\
+\frac{\partial \phi}{\partial x_{n}}
+\end{bmatrix}.$
+e que $\nabla^{2} \phi({x})$ é a matriz Hessiana das segundas derivadas  de $\phi$ em ${x}$ que é dada por
+
+$\nabla^{2} \phi({x})=\begin{bmatrix}
+\frac{\partial^{2} \phi}{\partial x_{1}^{2}} & \frac{\partial^{2} \phi}{\partial x_{1} \partial x_{2}} & \cdots & \frac{\partial^{2} \phi}{\partial x_{1} \partial x_{n}} \\
+\frac{\partial^{2} \phi}{\partial x_{2} \partial x_{1}} & \frac{\partial^{2} \phi}{\partial x_{2}^{2}} & \cdots & \frac{\partial^{2} \phi}{\partial x_{2} \partial x_{n}} \\
+\vdots & \vdots & \ddots & \vdots \\
+\frac{\partial^{2} \phi}{\partial x_{n} \partial x_{1}} & \frac{\partial^{2} \phi}{\partial x_{n} \partial x_{2}} & \cdots & \frac{\partial^{2} \phi}{\partial x_{n}^{2}}
+\end{bmatrix}.$
+
+"""
+
+# ╔═╡ c705f453-5687-41ec-8ed3-55f8ed42b91d
+
+
+# ╔═╡ 894100cc-88fe-457c-aedc-186208431a86
+md"""
+#### Método de Newton para Minimização
+
+- Usar Newton para resolver $\nabla\phi(x) = 0$, isto é, o sistema não-linear
+
+$F(x) := \nabla\phi(x) = 0.$
+>**Algoritmo. (Método de Newton para Minimização sem restrições).** Considere o problema de minimizar $\phi({x})$ em $\mathbb{R}^{n}$, e seja ${x}_{0}$ um chute inicial.
+>
+>**para** $k=0,1, \ldots$, até que convirja, **faça**
+>
+>$\begin{array}{l}
+>\text {1. Resolva } \nabla^{2} \phi\left({x}_{k}\right) {d}_{k}=- \nabla \phi\left({x}_{k}\right) \text { para } {d}_{k} \\
+>\text {2. Atualize } {x}_{k+1} = {x}_{k}+{d}_{k}
+>\end{array}$
+>**fim**
+"""
+
+# ╔═╡ d9db30df-d852-4409-8cf8-fa3699408266
+md"""
+##### Exemplo 1 - Minimizador único
+$\min_{x\in\mathbb{R}^n} \phi({x})= x_1^2 + x_2^4 +1$
+"""
+
+# ╔═╡ be15ec3f-ddda-4bfc-bb7c-db7d1e366cb6
+md"""
+##### Exemplo 2 - Minimizadores e ponto de sela
+$\min_{x\in\mathbb{R}^n} \phi({x})=\frac{1}{2}\left(\left[1.5-x_{1}\left(1-x_{2}\right)\right]^{2}+\left[2.25-x_{1}\left(1-x_{2}^{2}\right)\right]^{2}+\left[2.625-x_{1}\left(1-x_{2}^{3}\right)\right]^{2}\right)$
+"""
+
+# ╔═╡ 30cc97af-c25e-475d-838b-d118a9522e59
 begin
-	F1(x) = [x[1]^2 - 2*x[1] - x[2] + 1 , x[1]^2 + x[2]^2 - 1]
-	JF1(x) = [(2*x[1]-2)    -1; 
-		      (2*x[1])       2*x[2]]
-	x̄₀ = [1,1]
-	x̂₀ = [-1,1]
-     
+	f(x) = 0.5*((1.5 - x[1]*(1-x[2]))^2 + (2.25 - x[1]*(1-x[2]^2))^2 + (2.625 - x[1]*(1-x[2]^3)^2))
+	∇f(x) = ForwardDiff.gradient(f,x)
+	∇²f(x) = ForwardDiff.hessian(f,x)
+	f(x,y) = f([x,y])
+	x=range(-1, stop=4, length=100)	
+	y=range(0, stop=1.5, length=100)
+    l = @layout [a{0.7w} b]
+	plot(x, y, f,st = [:surface, :contourf], layout = l)
 end
 
-# ╔═╡ 6a7b7a36-0e47-40e4-89af-e25f5ea16062
-begin
-	using LazySets
-	b = Ball2( zeros(2),1.)
-	plot(b, aspect_ratio = :equal, framestyle=:origin,  alpha=0.2)
-	plot!(x->x^2-2x+1,-.2,2.2,lw=2,label="")
-	plot!(Singleton(x̄₀), label = "x̄₀")
-	plot!(Singleton(x̂₀), label = "x̂₀", leg = :bottomright)
-	plot!([Singleton([1,0]), Singleton([0,1])], label = "Intersecção")
+# ╔═╡ c0e6fb72-b5d0-4ced-8e5a-98b437f80c01
+#Exemplo
+let
+	f(x) = x[1]^2 + x[2]^4 + 1
+	f(x,y) = f([x,y])
+	x=range(-2, stop=2, length=100)	
+	y=range(-1, stop=1, length=100)
+	plot(x, y, f, st = :surface, camera = (30,30))
 end
 
-# ╔═╡ 35bab7f8-23ac-43c2-b474-0f26c33052d7
-newton_siseq(F, x⁰; kwargs...) = newton_siseq(F, x -> ForwardDiff.jacobian(F,x) ,  x⁰; kwargs...)
+# ╔═╡ c8666628-0103-4bb5-8311-b6368aeb8bcb
+let
+	f(x) = x[1]^2 + x[2]^4 + 1
+	∇f(x) = [2*x[1], 4*x[2]^3]
+	∇²f(x) = [2. 0; 0 12x[2]^2]
+	x⁰ = [.5, .5]
+	df, xᵏ, = newton_siseq(∇f, ∇²f, x⁰,ε = 1e-8)
+end
 
-# ╔═╡ 61f7bce4-5950-4bef-b4db-ad2613640d8b
-ForwardDiff.jacobian(F1,x̄₀)
+# ╔═╡ a0a77b16-3b65-4cb5-aea0-33bd568e5d0f
+begin
+	x1⁰ = [8,.2]
+	df1, x1ᵏ, = newton_siseq(∇f, ∇²f, x1⁰,ε = 1e-12)
+end
 
-# ╔═╡ 7c485f74-ae6e-45a0-9558-49a42aab43cb
+# ╔═╡ 42309e25-de54-479c-a509-32810ae9ca3c
+G1 = ∇f(x1ᵏ)
 
+# ╔═╡ 4f20126d-e06a-4e24-ab03-88e1b2322cd3
+H1 = ∇²f(x1ᵏ)
 
-# ╔═╡ 4dc06d87-7e3f-4bae-ab7e-03476e7e65f9
-df̄_F1, x̄ₖ,  = newton_siseq(F1, x̄₀)
+# ╔═╡ 772d35f5-c302-49c2-a349-ee81f1cbb4ca
+eigvals(H1)
 
-# ╔═╡ b19370bf-0831-4533-9a0b-6b978c0b9647
-df̂_F1, x̂ₖ,  = newton_siseq(F1,  x̂₀)
+# ╔═╡ 4ae2a391-dbfc-4d0d-8796-bc3aebb792c8
+begin
+	x2⁰ = [8,.8]
+	df2, x2ᵏ, = newton_siseq(∇f, ∇²f, x2⁰)
+end
 
-# ╔═╡ 0e33ce40-48f8-406e-bbb1-4ed0fbd6097e
+# ╔═╡ cb9ee551-9d80-4eb4-8005-d4b286095d14
+G2 = ∇f(x2ᵏ)
 
+# ╔═╡ 700d10b9-4a85-4ce0-9306-e43b234acaf1
+H2 = ∇²f(x2ᵏ)
+
+# ╔═╡ d76821b4-84cf-4e83-ad88-d7fc6283c815
+eigvals(H2)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
-LazySets = "b4f0291d-fe17-52bc-9479-3d1a343d9043"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
@@ -108,10 +201,9 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 [compat]
 DataFrames = "~1.2.1"
 ForwardDiff = "~0.10.18"
-LazySets = "~1.48.0"
 Plots = "~1.19.3"
 PlutoUI = "~0.7.9"
-StatsPlots = "~0.14.25"
+StatsPlots = "~0.14.26"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -157,41 +249,17 @@ version = "1.0.0"
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
-[[BenchmarkTools]]
-deps = ["JSON", "Logging", "Printf", "Statistics", "UUIDs"]
-git-tree-sha1 = "c31ebabde28d102b602bada60ce8922c266d205b"
-uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
-version = "1.1.1"
-
-[[BinaryProvider]]
-deps = ["Libdl", "Logging", "SHA"]
-git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
-uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
-version = "0.5.10"
-
 [[Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "c3598e525718abcc440f69cc6d5f60dda0a1b61e"
 uuid = "6e34b625-4abd-537c-b88f-471c36dfa7a0"
 version = "1.0.6+5"
 
-[[CRlibm]]
-deps = ["Libdl"]
-git-tree-sha1 = "9d1c22cff9c04207f336b8e64840d0bd40d86e0e"
-uuid = "96374032-68de-5a5b-8d9e-752f78720389"
-version = "0.8.0"
-
 [[Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "e2f47f6d8337369411569fd45ae5753ca10394c6"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.0+6"
-
-[[Calculus]]
-deps = ["LinearAlgebra"]
-git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
-uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
-version = "0.5.1"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
@@ -204,18 +272,6 @@ deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArray
 git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
 uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
 version = "0.14.2"
-
-[[CodecBzip2]]
-deps = ["Bzip2_jll", "Libdl", "TranscodingStreams"]
-git-tree-sha1 = "2e62a725210ce3c3c2e1a3080190e7ca491f18d7"
-uuid = "523fee87-0ab8-5b00-afb7-3ecf72e48cfd"
-version = "0.7.2"
-
-[[CodecZlib]]
-deps = ["TranscodingStreams", "Zlib_jll"]
-git-tree-sha1 = "ded953804d019afa9a3f98981d99b33e3db7b6da"
-uuid = "944b1d66-785c-5afd-91f1-9de20f533193"
-version = "0.7.0"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random", "StaticArrays"]
@@ -342,11 +398,6 @@ git-tree-sha1 = "92d8f9f208637e8d2d28c664051a00569c01493d"
 uuid = "5ae413db-bbd1-5e63-b57d-d24a61df00f5"
 version = "2.1.5+1"
 
-[[ErrorfreeArithmetic]]
-git-tree-sha1 = "d6863c556f1142a061532e79f611aa46be201686"
-uuid = "90fa49ef-747e-5e6f-a989-263ba693cf1a"
-version = "0.5.2"
-
 [[Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "b3bfd02e98aedfa5cf885665493c5598c350cd2f"
@@ -377,17 +428,11 @@ git-tree-sha1 = "3676abafff7e4ff07bbd2c42b3d8201f31653dcc"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.9+8"
 
-[[FastRounding]]
-deps = ["ErrorfreeArithmetic", "Test"]
-git-tree-sha1 = "224175e213fd4fe112db3eea05d66b308dc2bf6b"
-uuid = "fa42c844-2597-5d31-933b-ebd51ab2693f"
-version = "0.2.0"
-
 [[FillArrays]]
-deps = ["LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "25b9cc23ba3303de0ad2eac03f840de9104c9253"
+deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
+git-tree-sha1 = "8c8eac2af06ce35973c3eadb4ab3243076a408e7"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.12.0"
+version = "0.12.1"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -434,28 +479,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcu
 git-tree-sha1 = "dba1e8614e98949abfa60480b13653813d8f0157"
 uuid = "0656b61e-2033-5cc2-a64a-77c0f6c09b89"
 version = "3.3.5+0"
-
-[[GLPK]]
-deps = ["BinaryProvider", "GLPK_jll", "Libdl", "MathOptInterface", "SparseArrays"]
-git-tree-sha1 = "86573ecb852e303b209212046af44871f1c0e49c"
-uuid = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
-version = "0.13.0"
-
-[[GLPKMathProgInterface]]
-deps = ["GLPK", "LinearAlgebra", "MathProgBase", "SparseArrays"]
-git-tree-sha1 = "dcca815a687d8f398c8fc701c3796a36ef6b73a5"
-uuid = "3c7084bd-78ad-589a-b5bb-dbd673274bea"
-version = "0.5.0"
-
-[[GLPK_jll]]
-deps = ["GMP_jll", "Libdl", "Pkg"]
-git-tree-sha1 = "ccc855de74292e478d4278e3a6fdd8212f75e81e"
-uuid = "e8aa6df9-e6ca-548a-97ff-1f85fc5b8b98"
-version = "4.64.0+0"
-
-[[GMP_jll]]
-deps = ["Artifacts", "Libdl"]
-uuid = "781609d7-10c4-51f6-84f2-b8444358ff6d"
 
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
@@ -520,12 +543,6 @@ git-tree-sha1 = "1470c80592cf1f0a35566ee5e93c5f8221ebc33a"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
 version = "0.13.3"
 
-[[IntervalArithmetic]]
-deps = ["CRlibm", "FastRounding", "LinearAlgebra", "Markdown", "Random", "RecipesBase", "RoundingEmulator", "SetRounding", "StaticArrays"]
-git-tree-sha1 = "4902a5ff073d6977e33baad4e8d5c9a77e26eabf"
-uuid = "d1acc4aa-44c8-5952-acd4-ba5d80a2a253"
-version = "0.18.2"
-
 [[InvertedIndices]]
 deps = ["Test"]
 git-tree-sha1 = "15732c475062348b0165684ffe28e85ea8396afc"
@@ -554,23 +571,11 @@ git-tree-sha1 = "81690084b6198a2e1da36fcfda16eeca9f9f24e4"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.1"
 
-[[JSONSchema]]
-deps = ["HTTP", "JSON", "ZipFile"]
-git-tree-sha1 = "b84ab8139afde82c7c65ba2b792fe12e01dd7307"
-uuid = "7d188eb4-7ad8-530c-ae41-71a32a6d4692"
-version = "0.3.3"
-
 [[JpegTurbo_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "d735490ac75c5cb9f1b00d8b5509c11984dc6943"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.1.0+0"
-
-[[JuMP]]
-deps = ["Calculus", "DataStructures", "ForwardDiff", "JSON", "LinearAlgebra", "MathOptInterface", "MutableArithmetics", "NaNMath", "Printf", "Random", "SparseArrays", "SpecialFunctions", "Statistics"]
-git-tree-sha1 = "8dfc5df8aad9f2cfebc8371b69700efd02060827"
-uuid = "4076af6c-e467-56ae-b986-b466b2749572"
-version = "0.21.8"
 
 [[KernelDensity]]
 deps = ["Distributions", "DocStringExtensions", "FFTW", "Interpolations", "StatsBase"]
@@ -604,12 +609,6 @@ version = "0.15.6"
 [[LazyArtifacts]]
 deps = ["Artifacts", "Pkg"]
 uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
-
-[[LazySets]]
-deps = ["Distributed", "GLPK", "GLPKMathProgInterface", "InteractiveUtils", "IntervalArithmetic", "JuMP", "LinearAlgebra", "MathProgBase", "Random", "RecipesBase", "Reexport", "Requires", "SharedArrays", "SparseArrays"]
-git-tree-sha1 = "db3dd8fbf19255ff3e0aea8f774e4568806ea595"
-uuid = "b4f0291d-fe17-52bc-9479-3d1a343d9043"
-version = "1.48.0"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -713,18 +712,6 @@ version = "0.5.6"
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
-[[MathOptInterface]]
-deps = ["BenchmarkTools", "CodecBzip2", "CodecZlib", "JSON", "JSONSchema", "LinearAlgebra", "MutableArithmetics", "OrderedCollections", "SparseArrays", "Test", "Unicode"]
-git-tree-sha1 = "575644e3c05b258250bb599e57cf73bbf1062901"
-uuid = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
-version = "0.9.22"
-
-[[MathProgBase]]
-deps = ["LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "9abbe463a1e9fc507f12a69e7f29346c2cdc472c"
-uuid = "fdba3010-5040-5b88-9595-932c9decdf73"
-version = "0.7.8"
-
 [[MbedTLS]]
 deps = ["Dates", "MbedTLS_jll", "Random", "Sockets"]
 git-tree-sha1 = "1c38e51c3d08ef2278062ebceade0e46cefc96fe"
@@ -757,12 +744,6 @@ deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsBase"]
 git-tree-sha1 = "8d958ff1854b166003238fe191ec34b9d592860a"
 uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
 version = "0.8.0"
-
-[[MutableArithmetics]]
-deps = ["LinearAlgebra", "SparseArrays", "Test"]
-git-tree-sha1 = "3927848ccebcc165952dc0d9ac9aa274a87bfe01"
-uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
-version = "0.2.20"
 
 [[NaNMath]]
 git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
@@ -955,11 +936,6 @@ git-tree-sha1 = "68db32dff12bb6127bac73c209881191bf0efbb7"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
 version = "0.3.0+0"
 
-[[RoundingEmulator]]
-git-tree-sha1 = "40b9edad2e5287e05bd413a38f61a8ff55b9557b"
-uuid = "5eaf0fd0-dfba-4ccb-bf02-d820a40db705"
-version = "0.2.1"
-
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -971,17 +947,12 @@ version = "1.1.0"
 
 [[SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "944ced306c76ae4a5db96fc85ec21f501f06b302"
+git-tree-sha1 = "35927c2c11da0a86bcd482464b93dadd09ce420f"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.4"
+version = "1.3.5"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
-
-[[SetRounding]]
-git-tree-sha1 = "d7a25e439d07a17b7cdf97eecee504c50fedf5f6"
-uuid = "3cc68bcd-71a2-5612-b932-767ffbe40ab0"
-version = "0.2.1"
 
 [[SharedArrays]]
 deps = ["Distributed", "Mmap", "Random", "Serialization"]
@@ -1008,15 +979,15 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[SpecialFunctions]]
 deps = ["ChainRulesCore", "LogExpFunctions", "OpenSpecFun_jll"]
-git-tree-sha1 = "a50550fa3164a8c46747e62063b4d774ac1bcf49"
+git-tree-sha1 = "508822dca004bf62e210609148511ad03ce8f1d8"
 uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
-version = "1.5.1"
+version = "1.6.0"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "1b9a0f17ee0adde9e538227de093467348992397"
+git-tree-sha1 = "5b2f81eeb66bcfe379947c500aae773c85c31033"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.7"
+version = "1.2.8"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1041,9 +1012,9 @@ version = "0.9.8"
 
 [[StatsPlots]]
 deps = ["Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
-git-tree-sha1 = "990daa9c943e7ee108a36ad17769bf3a51622875"
+git-tree-sha1 = "e7d1e79232310bd654c7cef46465c537562af4fe"
 uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
-version = "0.14.25"
+version = "0.14.26"
 
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
@@ -1089,12 +1060,6 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 [[Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[[TranscodingStreams]]
-deps = ["Random", "Test"]
-git-tree-sha1 = "7c53c35547de1c5b9d46a4797cf6d8253807108c"
-uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
-version = "0.9.5"
 
 [[URIs]]
 git-tree-sha1 = "97bbe755a53fe859669cd907f2d96aee8d2c1355"
@@ -1270,12 +1235,6 @@ git-tree-sha1 = "79c31e7844f6ecf779705fbc12146eb190b7d845"
 uuid = "c5fb5394-a638-5e4d-96e5-b29de1b5cf10"
 version = "1.4.0+3"
 
-[[ZipFile]]
-deps = ["Libdl", "Printf", "Zlib_jll"]
-git-tree-sha1 = "c3a5637e27e914a7a445b8d0ad063d701931e9f7"
-uuid = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
-version = "0.9.3"
-
 [[Zlib_jll]]
 deps = ["Libdl"]
 uuid = "83775a58-1f1d-513f-b197-d71354ab007a"
@@ -1338,19 +1297,25 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═41a3c6c6-ebfa-11eb-0a70-d34549d0035e
-# ╠═53707f00-ae48-4855-ab1d-c09140b51986
-# ╟─d5df9d47-52ae-47c7-9191-62a8910cc70a
-# ╠═925e25c6-0d1d-4296-98eb-65e5e568375d
-# ╟─f2014a75-a568-4737-83cd-d7ec68a559e4
-# ╟─6fe825ed-7d95-4a58-a34b-8c46c2f95038
-# ╠═50c57a6a-bac7-4459-966b-88bce380526b
-# ╠═35bab7f8-23ac-43c2-b474-0f26c33052d7
-# ╠═61f7bce4-5950-4bef-b4db-ad2613640d8b
-# ╠═7c485f74-ae6e-45a0-9558-49a42aab43cb
-# ╠═4dc06d87-7e3f-4bae-ab7e-03476e7e65f9
-# ╠═b19370bf-0831-4533-9a0b-6b978c0b9647
-# ╠═6a7b7a36-0e47-40e4-89af-e25f5ea16062
-# ╠═0e33ce40-48f8-406e-bbb1-4ed0fbd6097e
+# ╟─0760404e-938a-4296-b3f4-1d0a96c36bd2
+# ╠═8409e0f3-f782-4787-b1c9-1a88d2e3d6eb
+# ╠═474c09bb-338f-4ab4-85ea-3b547162f975
+# ╟─98bac578-5fe3-4200-a7ee-d48f78ea5e14
+# ╠═c0e6fb72-b5d0-4ced-8e5a-98b437f80c01
+# ╟─7f2135ac-2cb3-4abd-84f2-621c2239d752
+# ╠═c705f453-5687-41ec-8ed3-55f8ed42b91d
+# ╟─894100cc-88fe-457c-aedc-186208431a86
+# ╟─d9db30df-d852-4409-8cf8-fa3699408266
+# ╠═c8666628-0103-4bb5-8311-b6368aeb8bcb
+# ╟─be15ec3f-ddda-4bfc-bb7c-db7d1e366cb6
+# ╠═30cc97af-c25e-475d-838b-d118a9522e59
+# ╠═a0a77b16-3b65-4cb5-aea0-33bd568e5d0f
+# ╠═42309e25-de54-479c-a509-32810ae9ca3c
+# ╠═4f20126d-e06a-4e24-ab03-88e1b2322cd3
+# ╠═772d35f5-c302-49c2-a349-ee81f1cbb4ca
+# ╠═4ae2a391-dbfc-4d0d-8796-bc3aebb792c8
+# ╠═cb9ee551-9d80-4eb4-8005-d4b286095d14
+# ╠═700d10b9-4a85-4ce0-9306-e43b234acaf1
+# ╠═d76821b4-84cf-4e83-ad88-d7fc6283c815
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
