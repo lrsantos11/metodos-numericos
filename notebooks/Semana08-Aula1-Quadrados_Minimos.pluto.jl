@@ -4,342 +4,150 @@
 using Markdown
 using InteractiveUtils
 
-# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
-macro bind(def, element)
-    quote
-        local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
-        el
-    end
-end
-
-# ╔═╡ 9c6074f1-981d-4150-a189-5296ca374e70
+# ╔═╡ d5be3a9f-30c5-4bec-84e8-43a1a044caac
 begin
 	using Plots, PlutoUI, ForwardDiff, DataFrames, CSV, StatsPlots, LinearAlgebra, Random
 	Random.seed!(11)
 	plotly()
 end
 
-# ╔═╡ 28febda9-bb76-448b-89f2-5663b4f8af11
+# ╔═╡ 35168b4a-f4ac-11eb-09aa-87323f62484d
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 07 - Aula 02
+###### Semana 08 - Aula 01
 """
 
-# ╔═╡ 58564077-487a-4721-8ab9-d2ceddb3ba59
+# ╔═╡ f1fbddc2-c866-4692-b20f-27d26d25bce9
 md"""
-# O Problema de Quadrados Mínimos
+#### QM com dados não-lineares
 
-$\min_x \frac{1}{2}\| b - Ax\|^2$
+##### Exemplo 1
 """
 
+# ╔═╡ d390682f-64b4-4553-8e52-369282c2d8f8
+df_ex1 = CSV.read("dados-periodic.csv", DataFrame, header= [:x, :y])
 
+# ╔═╡ 23a39bf8-dd40-4bd0-ba52-0511612a837c
+plt1 = @df df_ex1 scatter(:x, :y, label="Dados não-lineares",framestyle=:origin) 
 
-# ╔═╡ ab6c9311-3a94-4509-8250-b95425a4a07f
+# ╔═╡ 1e997105-6554-455d-850e-a53ce1caec53
 md"""
-## Ajuste de Curvas e Método dos Quadrados Mínimos
-
-- Qual curva melhor representa ou melhor se ajusta a um conjunto de dados?
+- Uma função que possivelmente se ajusta aos dados acima é
+$$f_1(x) = \beta_1 + \beta_2 \sin(x) +  \beta_3 \cos(x) + \beta_4 \sin(2x) +  \beta_5 \cos(2x) + \beta_6 \sin(3x) +  \beta_7 \cos(3x)$$
 """
 
-# ╔═╡ 7f8f25dd-cb97-41f1-a4a4-dadb4c6f7937
-md"Incluir retas $(@bind retas CheckBox())"
+# ╔═╡ 8fb2476c-a021-4169-b007-e75fd7c22444
+m, n = size(df_ex1)
 
-# ╔═╡ e5cd46ba-b49d-4fcc-9ae7-eeb8e4dbe703
-begin
-	Random.seed!(11)
-	# Number of examples to use
-	n = 100
-	
-	# Specify the true value of the variable
-	true_coeffs = [2; -2; .5]
+# ╔═╡ 612f5aa9-5b51-44d4-94d7-fb7e0b75ad49
+A₁ =  [ones(m) sin.(df_ex1.x) cos.(df_ex1.x) sin.(2*df_ex1.x) cos.(2*df_ex1.x) sin.(3*df_ex1.x) cos.(3*df_ex1.x)]
 
-	
-	# Generate data
-	x_data = rand(n, 1)*5
-	x_data_expanded = hcat([x_data .^ i for i in 1 : 3]...)
-	y_data = x_data_expanded * true_coeffs + .5 * rand(n, 1)
-	
-	
-	p = scatter(x_data, y_data, leg=false)
-	xlabel!("Mês")
-	ylabel!("Chuva")
-	if retas
-		plot!(x->2x,lw=2)
-		plot!(x->1.5x - 2,lw=2)
-		plot!(x->.5x + 2,lw=2)
-		plot!(x->-.2x + 4,lw=2)
-		hline!([3.2],lw=2)
-	end
-	# ylims!(2,6)
-end
+# ╔═╡ a6b4e9b3-e027-430e-b6ac-17cecaec9b24
+b₁ = df_ex1.y
 
-# ╔═╡ 0d9877f3-1daf-455a-9c73-38a5f82b7bc4
+# ╔═╡ 35751ed5-3d8b-44e1-8ab9-52bd1c34cdd5
+# Solução de Quadrados Mínimos
+β̄₁ = (A₁'*A₁) \ (A₁'b₁)
+
+# ╔═╡ 3e69168a-ec38-4eff-9f7c-ab76e6cd1e82
+f₁(x) = β̄₁[1]*1 + β̄₁[2]*sin(x) + β̄₁[3]*cos(x) + β̄₁[4]*sin(2*x) + β̄₁[5]cos(2*x) + β̄₁[6]*sin(3*x) + β̄₁[7]cos(3*x)
+
+# ╔═╡ 73b873c4-cf3a-429d-8e76-9c2f205f1c6f
 md"""
-- Resolver equações normais $A^TAx = A^Tb$
+- Equações normais
 """
 
-# ╔═╡ cddc7bf1-0d23-45fc-ab57-2975f90bc778
-begin
-	A = [ones(n) x_data]
-	B = A'*A
-	b = A'*y_data
-	β = B  \ b  # O Comando B \ b resolve o sitema linear Bβ = b
-	plot!(x-> β[1] + β[2]*x,lw = 3)
-end
+# ╔═╡ f37f9f2f-7c56-4af0-b8fd-e2a67f0f6c0b
+r₁ = b₁ - A₁*β̄₁
 
-# ╔═╡ 6c22e329-f596-443e-985c-16cafe3ef5d8
-norm(y_data - A*β)
+# ╔═╡ b4ed6b04-1a7e-412f-b487-d4c66a1a8439
+norm(r₁)
 
-# ╔═╡ f8ca808b-3c9c-416f-85fd-08aab4302f16
-begin
-	A2 = [ones(n) x_data x_data.^2]
-	B2 = A2'*A2
-	b2 = A2'*y_data
-	β2 = B2  \ b2  # O Comando B \ b resolve o sitema linear Bβ = b
-	plot(p, x-> β2[1] + β2[2]*x + β2[3]*x^2,lw = 3)
-end
+# ╔═╡ c8d1fa31-cdc8-4e64-a0c1-b8d2a74c4f2a
+plot(plt1, f₁, 0,6,  label="Curva ajustada")
 
-# ╔═╡ b583cf18-bfe1-4810-b978-b25bf18bca65
-norm(y_data - A2*β2)
+# ╔═╡ 7c5b75b9-b7a6-440a-81dd-1a6e349577a7
+Â₁ =  [ones(m)  sin.(3*df_ex1.x) cos.(3*df_ex1.x)]
 
-# ╔═╡ 2280263a-4971-49c0-ac82-39b51f6c3727
-begin
-	A3 = [ones(n) x_data x_data.^2 x_data.^3]
-	B3 = A3'*A3
-	b3 = A3'*y_data
-	β3 = B3  \ b3  # O Comando B \ b resolve o sitema linear Bβ = b
-	plot(p, x-> β3[1] + β3[2]*x + β3[3]*x^2 + β3[4]*x^3,lw = 3)
-end
+# ╔═╡ fa607228-55be-4ae0-bbf9-20751ce29744
+β̂₁ = (Â₁'*Â₁) \ (Â₁'*b₁)
 
-# ╔═╡ 4006cf16-6495-4d4a-a1ec-0b34ecc6415c
-norm(y_data - A3*β3)
+# ╔═╡ 67017c98-9a79-4145-9691-061733ef3282
+norm(b₁ - Â₁*β̂₁)
 
-# ╔═╡ 71d93229-4cc8-4936-bc43-890a903dc705
+# ╔═╡ 85d2ab61-98a3-4b97-a96f-24c4716c5da9
+plot(plt1, x->  β̂₁[1]*1 + β̂₁[2]*sin(3*x) + β̂₁[3]*sin(3*x),1,5,  label="Curva ajustada")
+
+# ╔═╡ 75c1c340-4841-49f9-b344-febc09780a4a
 md"""
-
-
--  Um dos temas principais de problemas numéricos é a obtenção de funções, ou leis, que ajustem dados experimentais. Por exemplo, imagine que temos dados experimentais de um fenômeno que pode ser explicado pelo seguinte polinômio do segundo grau. 
-$\operatorname{lei}(x) = \pi x^2 + 2x + 1.73$
-
-- Mesmo que o fenômeno seja perfeitamente explicável por esse tipo de função os erros de medidas nunca vão nos permitir observar exatamente o gráfico da verdadeira função. Vamos simular isso no código abaixo.
+##### Exemplo 2
 """
 
-# ╔═╡ 6f52dbf5-ac9d-4e9d-9391-9260cd0712f8
-# Uma função do segundo grau.
-lei(x) =  π*x.^2 + 2.0.*x + 1.73
+# ╔═╡ 968bd7a2-d6c6-4cd3-9d7c-26ea692583b4
+	df_ex2 = DataFrame(:x => [-1, -.7, -.4, -.1, .2, .5, .8, 1], :y => [36.547, 17.264, 8.155, 3.852, 1.820, .860, .406, .246])
 
-# ╔═╡ 803e5e9a-9211-430e-9c95-61e28c5be5c9
-n_pontos = 500
 
-# ╔═╡ 3f70b663-ce3e-4903-9bf8-8f45606f9980
-x = range(-4, stop = 4, length = n_pontos)
+# ╔═╡ bac21645-50a4-46ca-a483-3a6cbacd7df1
+plt2 = @df df_ex2 scatter(:x,:y, label="Dados não-lineares", framestyle = :origin) 
 
-# ╔═╡ ee78d76e-3c4e-4aec-848c-6387138c9d69
+# ╔═╡ 36a3b742-83ae-4a2d-b470-6db8c93aec98
 md"""
--  Vamos simular medidas reais de valores da função introduzindo um erro aleatório uniformo entre $[-5, 5]$.
+- Os dados acima parecem obedecer algum tipo de lei exponencial da forma 
+$$f(x) = \beta_1 e^{\beta_2 x}$$
 """
 
-# ╔═╡ 5b302eba-fb8d-4aa5-aea9-eebce4e085ac
-erro_aleatorio = 10*(rand(n_pontos) .- 0.5)
-
-# ╔═╡ f365f222-46c2-445c-8bb2-39d3a13f5e62
-medida = lei.(x) + erro_aleatorio
-
-# ╔═╡ 3bead87d-dbf7-421d-8229-a99ddfd87547
-plt1 =  scatter(x, medida, label = "Dados aleatorios") 
-
-# ╔═╡ 47142de5-dd02-4c6f-8fa9-29db363d8d2f
+# ╔═╡ 8a21b307-e877-4777-8daf-767a84527e7f
 md"""
-- Ao observar a figura acima podemos ter a intruição que o valor medido vem de fato de um polinômio do segundo grau. Mas como descobrir qual é esse polinômio. Ou seja, como recuperar os coeficientes $a_2 = \pi,\ a_1 = 2, a_0 =1.73$? Este é o assunto dessa parte do curso.
-
-### Modelando o problema de ajuste polinômios de grau 2
-
-- Vamos tentar achar uma formulação matemática razoável para o problema e depois resolvê-lo. O que temos são medidas com erros de uma função $p$ cujo o formato geral conhecemos:
-
-$$p(x) = a_2 x^2 + a_1 x + a_0,$$
-para coeficientes $a_2,\ a_1,\ a_0$ que não conhecemos. 
-
-- Desejamos descobrir os valores dos seus coeficientes $a_2,\ a_1$ e $a_0$. A informação que temos disponível são medidas $(x_i, y_i),\ i = 1, \ldots, m$ e que $y_i = p(x_i)$ mais algum tipo de ruído aleatório. 
-
-- Note que se não houvesse o ruído aleatório, isso é se tivéssemos o valor exato do polinômio desejado a solução seria simples. Bastaria pegar três pontos do plano e encontrar o (único) polinômio do segundo grau que passa por eles. Veremos como fazer esse isso na próxima parte do curso. Note que quaisquer que fosse os três pontos escolhidos iríamos obter o mesmo polinômio.
-
-
+###### Linearizar a função
+1. Definir vetor $z = \ln(y)$ 
 """
 
-# ╔═╡ f28cc256-9f6c-479d-9dc9-23c970e8ec73
+# ╔═╡ a7996f3d-a2a8-4b99-a444-531e2513b3e1
+z = log.(df_ex2.y)
+
+# ╔═╡ 53b9de97-571f-41af-a92d-3219d99c44c5
+m2,n2 = size(df_ex2)
+
+# ╔═╡ 4facd271-5e50-465f-a1ff-1e0051eb46b5
 md"""
-- No caso de erros de medidas na função fica impossível usar a ideia acima já que o polinômio iria mudar um pouco dependendo de quais três pontos fossem escolhidos. Nesse caso, uma ideia razoável nesse caso é procurar qual o polinômio do segundo grau que melhor se "encaixa" a todos os dados ao mesmo tempo. Como fazer isso matematicamente? 
-
-- Dado um $i = 1, \ldots, m$, o erro de uma função $p$ com respeito ao valor medido em um único ponto $x_i$ é 
-$\lvert p(x_i) - y_i \rvert.$
-- Para levar em consideração todos os pontos, os erros em todos eles devem ser combinados de alguma forma. Uma maneira natural é pensar em dois vetores do $\mathbb{R}^m$. 
-
-- O primeiro representa os valores medidos $y = (y_1, y_2, \ldots, y_m)$ e o segundo a função $p$ nos respectivos pontos $p = (p(x_1), p(x_2), \ldots, p(x_m))$. O que gostaríamos é que $y = p$ mas devido aos erros isso é impossível. 
-
-- Podemos então buscar os coeficientes $\beta_2$, $\beta_1$ e $\beta_0$ que minimizem a distância entre $y$ e $p$, já que isso leva em conta todas as coordenadas. Ou seja queremos encontrar os coeficientes para os quais
-$\| p - y \|_2$ **é o menor possível**. 
-- Uma coisa interessante é que minimizar a norma euclidiana ou o seu quadrado dá a mesma resposta. Já a norma euclidiana ao quadrado tem a vantagem de ser diferenciável o que poderemos explorar ao resolver o problema.
-
-Chegamos finalmente ao seguinte problema:
-
->Encontre coeficientes $\beta_2,\ \beta_1,\ \beta_0$ de modo que ao definirmos a função $p(x) = \beta_2 x^2 + \beta_1 x + \beta_0$ o valor de
->
->$\sum_{i = 1}^m (p(x_i) - y_i)^2 = \| p - y \|^2$
->seja o menor possível, em que $p=(p_1,\ldots,p_m)^T$  e $p_i = p(x_i), i=1,\ldots,m$. Equivalentemente, procuramos a solução do seguinte problema de minimização
->
->$\min_{p\in \mathbb{R}^m} \frac{1}{2}\| p - y\|^2.$ 
+2. Resolver QM ajustando para $z = \hat\beta_1 \cdot 1 + \beta_2\cdot x$
 """
 
-# ╔═╡ 01665646-cc2d-4516-870b-5744c7d9dbb3
+# ╔═╡ 502b25a9-cdca-407f-9a31-af60ddad4e16
+A₂ = [ones(m2) df_ex2.x]
+
+# ╔═╡ 2455086c-1dc4-4ec3-8c6b-4f930fd76c94
+b₂ = z
+
+# ╔═╡ 29d4153f-4356-4964-aeb0-dcb720b36250
+β₂ = (A₂'*A₂) \ (A₂'*b₂)
+
+# ╔═╡ 3647502a-e5ef-457d-9c90-3a094a1f5b6f
+norm(b₂ - A₂*β₂)
+
+# ╔═╡ 7eea2385-b815-4287-bcc9-019db5421864
 md"""
-
-### Ajuste linear de curvas
-
-Uma observação importante é que o fato da função que desejamos ajustar aos dados medidos ser um polinômio de grau 2 desempenhou um papel secundário na dedução do problema final acima. A mesma ideia poderia ser aplicada para ajustar um polinômio de grau 5, por exemplo. Mais ainda se função que desejamos ajustar é uma soma de senos e cossenos como
-
-$\beta_0 \sin(x) + \beta_1 \cos(x) + \beta_2 \sin(2x) + \beta_3 \cos(2x)$
-
-o mesmo problema faz sentido e a modelagem é basicamente a mesma. 
-
-De uma maneira geral, considere que temos $n+1$ funções $\phi_0,\ \phi_1, \ldots, \phi_n$ que acreditamos que são linearmente combinadas para definir uma função $\phi$. Isto é, supomos que $\phi$ tem a forma
-
-$\phi(x) = \beta_0 \phi_0(x) + \beta_1 \phi_1(x) + \ldots + \beta_n \phi_n(x)$
-usando um vetor de coeficientes $c = (\beta_0, \beta_1, \ldots, \beta_n) \in \mathbb{R}^{n+1}$. Considere também que temos um conjunto de medidas $(x_i, y_i),\ i = 1, \ldots, m$ que representam, aproximadamente, avaliações da função $\phi$ com o formato acima.
-
-Podemos então desejar encontrar os coeficientes que definem a função $\phi$ que melhor se ajusta aos dados no sentido de minimizar
-$\| \phi - y \|^2,$
-em que $y$ é o vetor de medidas $y = (y_1, y_2, \ldots, y_m)$ e $\phi$ o vetor da função $\phi(\cdot)$ avaliado nos pontos $x_i,\ i = 1, 2, \ldots, m$:
-
-$\phi = 
-\left(
-\begin{array}{c}
-\phi(x_1) \\
-\phi(x_2) \\
-\vdots \\
-\phi(x_m)
-\end{array}
-\right) = 
-\left(
-\begin{array}{c}
-\beta_0 \phi_0(x_1) + \beta_1 \phi_1(x_1) + \ldots + \beta_n \phi_n(x_1) \\
-\beta_0 \phi_0(x_2) + \beta_1 \phi_1(x_2) + \ldots + \beta_n \phi_n(x_2) \\
-\vdots \\
-\beta_0 \phi_0(x_m) + \beta_1 \phi_1(x_m) + \ldots + \beta_n \phi_n(x_m) \\
-\end{array}
-\right).$
-Escolhemos o critério de minimizar a norma euclidiana *elevada ao quadrado* por que assim a função que desejamos minimizar é diferenciável.
-
-Obtemos assim o problema de encontrar um vetor de coeficientes $c = (\beta_0, \beta_1, \ldots, \beta_n)$ tal que ao definirmos a função $\phi(x) = \beta_0 \phi_0(x) + \beta_1 \phi_1(x) + \ldots + \beta_n \phi_n(x)$ o valor de
-
-$\sum_{i = 1}^m (\phi(x_i) - y_i)^2 = \| \phi - y \|^2$
-seja o menor possível.
-
-Para sermos capaz de realizar essa tarefa temos que entender como a expressão acima varia com os coeficientes no vetor $c$. Para isso vamos usar um pouco de notação matricial. Se olharmos a segunda fórmula acima e tentarmos entender o que ela diz colocando $c$ em destaque temos:
-
-$\phi = \underbrace{\left(
-\begin{array}{c}
-\phi(x_1) \\
-\phi(x_2) \\
-\vdots \\
-\phi(x_m)
-\end{array}
-\right)}_{\phi}
-= \underbrace{\left( \begin{array}{cccc}
-\phi_0(x_1) & \phi_1(x_1) & \ldots & \phi_n(x_1) \\
-\phi_0(x_2) & \phi_1(x_2) & \ldots & \phi_n(x_2) \\
-\vdots & \vdots & \vdots & \vdots \\
-\phi_0(x_m) & \phi_1(x_m) & \ldots & \phi_n(x_m) \\
-\end{array}
-\right)}_{A} 
-\underbrace{\left( \begin{array}{c}
-\beta_0  \\
-\beta_1 \\
-\vdots \\
-\beta_n
-\end{array} \right)}_{c}.$
-
+3. Construo a função $f(x) = e^{\hat \beta_1 + \beta_2 \cdot x}$
 """
 
+# ╔═╡ 60afb58b-74e3-459c-bf49-2444aeaf3bde
+f₂(x) = exp(β₂[1] + β₂[2] * x)
 
-# ╔═╡ 77e008d9-9eb5-43f0-a320-e113cb24a866
+# ╔═╡ 95125265-3ad5-437e-b1d6-43c5436301b4
+plot(plt2,f₂, label = "Função ajustada")
+
+# ╔═╡ 73abfc5b-dbbb-4857-94cf-1ba8146697e8
 md"""
-
-Como sugerido acima, podemos definir a matriz $A$ como a matriz acima, ou seja a matriz que contém na primeira coluna a função $\phi_0$ avaliada nos pontos $x_1, x_2, \ldots, x_m$, depois na segunda coluna a função $\phi_1$ avaliada nos mesmos pontos e assim sucessivamente. Com isso podemos escrever essa última expressão na forma compacta
-
-$A c = \phi.$
-Assim, a função que queremos minimizar pode ser escrita tornando explícita sua dependência no vetor de coeficientes como
-
-$\min_{c\in \mathbb{R}^{n+1}} f(c) = \frac{1}{2} \| A c - y \|^2$
-
-Note que $\frac{1}{2} \| A c - y \|^2 = \frac{1}{2}(A c - y)^T(A c - y) =  \frac{1}{2}\left(c^T A^T A c - 2 c^TA^T y - y^T y.\right)$
-Como desejamos minimizar a função $f: \mathbb{R}^{n+1} \rightarrow \mathbb{R}$ podemos usar os nossos conhecimentos de Cálculo. 
-
-- Em primeiro lugar, observe que a função cresce de forma quadrática com $c$, logo para $c$ grande ela passará a crescer até infinito se a norma de $c$ crescer indefinidamente. Logo ela atinge mínimo. Agora, sabemos de cálculo que os candidatos a ponto de mínimo devem obedecer à equação
-
-$\nabla f(c) = 0.$
-
-Precisamos descobrir como calcular a derivada de $f$. Para isso observe as seguintes regras de derivação que são facilmente demonstradas a partir das respectivas fórmulas.
-
-1. Se $g(c) = \frac{1}{2}c^TAc$, para alguma matriz quadrada $A$, então $\nabla g(c) = A c$.
-1. Se $h(c) = c^T b = b^T c$, para algum vetor $b$, então $\nabla h(c) = b$, um vetor constante.
-
-### Equações normais
-
-Aplicando as regras de cálculo acima para obter o gradiente de $f$:
-
-$\nabla f(c) = A^T A c - A^T y.$
-Assim a equação que caracteriza o mínimo é
-
-$0 = \nabla f(c) =  A^T A c -  A^T y.$
-Ou escrevendo de uma forma mais simples, 
-
-$A^T A c = A^T y.$
-
-Um sistema de equações lineares em $c$ com $n+1$ equações e $n+1$ incógnitas. Esse tipo de sistema é conhecido como **Equação normais** associada ao problema de quadrados mínimos. Em particular se a matriz do sistema $A^T A$ for inversível sabemos que haverá uma única solução que será necessariamente então o mínimo da função $f$.  
-
-Nos problemas que vamos enfrentar é natural imaginar que a matriz $A^T A$ é inversível. Isso somente não ocorrerá se uma das funções $\phi_1, \phi_2, \ldots, \phi_m$ for redundante, isto é, se os vetores forem linearmente dependentes, pelo menos nos pontos $(x_1, x_2, \ldots, x_n)$. Para ver isso é necessário usar um pouco de álgebra linear.
-
-Estamos prontos para resolver o problema do início da discussão e usar o vetor `medida` para tentar recuperar a função `lei`. Vamos começar criando a matriz $A$.
+- Observação: Fazer teste de alinhamento, isto é, plotar um gráfico do tipo `scatter` com $x_i$ e $z_i$ e verificar se é de fato linear a relação entre estes dados. 
 """
 
-# ╔═╡ d3b8a593-fbf6-4e4b-8fc5-ca8b3048b5cf
-md"""
-- Construímos uma matriz concatenando uma coluna de 1's de dimensão adequada, o vetor `x` e depois o vetor `x.^2`.
-"""
+# ╔═╡ bd393cf1-3f6b-406d-973b-548dbaeab75d
+@df df_ex2 scatter(:x, z, label="", title = "Teste de alinhamento")
 
-# ╔═╡ 53b208b4-a604-466c-aa99-4f83c1ee2d34
-Φ = [ones(n_pontos) x x.^2];
+# ╔═╡ edd8b3d9-b55e-44b8-9f0c-6de124dda6ab
 
-# ╔═╡ 7be67417-6fda-4598-aadf-3e7923a48460
-md"""
-- Resolvemos a equação normal `Φ'Φ c = Φ'b` medida, usando o operador `\` de Julia
-"""
-
-# ╔═╡ 39fec8ab-9660-4cf7-88cd-6b8e4f3f8b6a
-c = (Φ'*Φ) \ (Φ'*medida)
-
-# ╔═╡ 34b4b134-7433-4407-9d4d-f791d2f387fe
-md"""
-- Veja como os valores se aproximam dos valores originais que eram 1.73 para o termos constante, $2$ para o coeficiente de $x$ e $\pi$ para o coeficiente associado a $x^2$. Outra coisa interessante de fazer é mostrar o gráfico da função final obtida e mostrar como ele se ajusta bem nos pontos medidos.
-
-- Define a função `ϕ` a partir dos coeficientes calculados e das funções originais `1, x` , e `x^2`.
-"""
-
-# ╔═╡ 042578e6-f615-4df9-9a89-32d17d7e0380
-phi(x) = c[1].*1  + c[2].*x +  c[3].*x.^2
-
-# ╔═╡ 162b937f-2f80-4ed3-a271-c949aa6255af
-begin
-	# Plota os pontos medidos e o gráfico da função obtida.
-	plot(plt1, x, phi, linewidth=4, c=:red, label="Phi")
-	plot!(x,lei,label = "Original",lw=2, s = :dash, c = :yellow) 
-end
-
-# ╔═╡ 505f1842-374c-4ab6-82c8-d6b2a813a3e5
-c
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -356,7 +164,7 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 [compat]
 CSV = "~0.8.5"
 DataFrames = "~1.2.1"
-ForwardDiff = "~0.10.18"
+ForwardDiff = "~0.10.19"
 Plots = "~1.19.4"
 PlutoUI = "~0.7.9"
 StatsPlots = "~0.14.26"
@@ -524,9 +332,9 @@ version = "1.0.3"
 
 [[DiffRules]]
 deps = ["NaNMath", "Random", "SpecialFunctions"]
-git-tree-sha1 = "214c3fcac57755cfda163d91c58893a8723f93e9"
+git-tree-sha1 = "85d2d9e2524da988bffaf2a381864e20d2dae08d"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
-version = "1.0.2"
+version = "1.2.1"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
@@ -616,9 +424,9 @@ version = "0.4.2"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "NaNMath", "Printf", "Random", "SpecialFunctions", "StaticArrays"]
-git-tree-sha1 = "e2af66012e08966366a43251e1fd421522908be6"
+git-tree-sha1 = "b5e930ac60b613ef3406da6d4f42c35d8dc51419"
 uuid = "f6369f11-7733-5829-9624-2563aa707210"
-version = "0.10.18"
+version = "0.10.19"
 
 [[FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
@@ -979,9 +787,9 @@ version = "0.11.1"
 
 [[Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "c8abc88faa3f7a3950832ac5d6e690881590d6dc"
+git-tree-sha1 = "94bf17e83a0e4b20c8d77f6af8ffe8cc3b386c0a"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "1.1.0"
+version = "1.1.1"
 
 [[Pixman_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1162,9 +970,9 @@ version = "1.0.0"
 
 [[StatsBase]]
 deps = ["DataAPI", "DataStructures", "LinearAlgebra", "Missings", "Printf", "Random", "SortingAlgorithms", "SparseArrays", "Statistics", "StatsAPI"]
-git-tree-sha1 = "2f6792d523d7448bbe2fec99eca9218f06cc746d"
+git-tree-sha1 = "fed1ec1e65749c4d96fc20dd13bea72b55457e62"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
-version = "0.33.8"
+version = "0.33.9"
 
 [[StatsFuns]]
 deps = ["LogExpFunctions", "Rmath", "SpecialFunctions"]
@@ -1459,38 +1267,42 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─28febda9-bb76-448b-89f2-5663b4f8af11
-# ╟─9c6074f1-981d-4150-a189-5296ca374e70
-# ╟─58564077-487a-4721-8ab9-d2ceddb3ba59
-# ╟─ab6c9311-3a94-4509-8250-b95425a4a07f
-# ╟─0d9877f3-1daf-455a-9c73-38a5f82b7bc4
-# ╟─7f8f25dd-cb97-41f1-a4a4-dadb4c6f7937
-# ╟─e5cd46ba-b49d-4fcc-9ae7-eeb8e4dbe703
-# ╠═cddc7bf1-0d23-45fc-ab57-2975f90bc778
-# ╠═6c22e329-f596-443e-985c-16cafe3ef5d8
-# ╠═f8ca808b-3c9c-416f-85fd-08aab4302f16
-# ╠═b583cf18-bfe1-4810-b978-b25bf18bca65
-# ╠═2280263a-4971-49c0-ac82-39b51f6c3727
-# ╠═4006cf16-6495-4d4a-a1ec-0b34ecc6415c
-# ╟─71d93229-4cc8-4936-bc43-890a903dc705
-# ╠═6f52dbf5-ac9d-4e9d-9391-9260cd0712f8
-# ╠═803e5e9a-9211-430e-9c95-61e28c5be5c9
-# ╠═3f70b663-ce3e-4903-9bf8-8f45606f9980
-# ╠═ee78d76e-3c4e-4aec-848c-6387138c9d69
-# ╠═5b302eba-fb8d-4aa5-aea9-eebce4e085ac
-# ╠═f365f222-46c2-445c-8bb2-39d3a13f5e62
-# ╠═3bead87d-dbf7-421d-8229-a99ddfd87547
-# ╟─47142de5-dd02-4c6f-8fa9-29db363d8d2f
-# ╟─f28cc256-9f6c-479d-9dc9-23c970e8ec73
-# ╟─01665646-cc2d-4516-870b-5744c7d9dbb3
-# ╟─77e008d9-9eb5-43f0-a320-e113cb24a866
-# ╟─d3b8a593-fbf6-4e4b-8fc5-ca8b3048b5cf
-# ╠═53b208b4-a604-466c-aa99-4f83c1ee2d34
-# ╟─7be67417-6fda-4598-aadf-3e7923a48460
-# ╠═39fec8ab-9660-4cf7-88cd-6b8e4f3f8b6a
-# ╟─34b4b134-7433-4407-9d4d-f791d2f387fe
-# ╠═042578e6-f615-4df9-9a89-32d17d7e0380
-# ╠═162b937f-2f80-4ed3-a271-c949aa6255af
-# ╠═505f1842-374c-4ab6-82c8-d6b2a813a3e5
+# ╟─35168b4a-f4ac-11eb-09aa-87323f62484d
+# ╠═d5be3a9f-30c5-4bec-84e8-43a1a044caac
+# ╟─f1fbddc2-c866-4692-b20f-27d26d25bce9
+# ╠═d390682f-64b4-4553-8e52-369282c2d8f8
+# ╠═23a39bf8-dd40-4bd0-ba52-0511612a837c
+# ╟─1e997105-6554-455d-850e-a53ce1caec53
+# ╠═8fb2476c-a021-4169-b007-e75fd7c22444
+# ╠═612f5aa9-5b51-44d4-94d7-fb7e0b75ad49
+# ╠═a6b4e9b3-e027-430e-b6ac-17cecaec9b24
+# ╠═3e69168a-ec38-4eff-9f7c-ab76e6cd1e82
+# ╠═35751ed5-3d8b-44e1-8ab9-52bd1c34cdd5
+# ╟─73b873c4-cf3a-429d-8e76-9c2f205f1c6f
+# ╠═f37f9f2f-7c56-4af0-b8fd-e2a67f0f6c0b
+# ╠═b4ed6b04-1a7e-412f-b487-d4c66a1a8439
+# ╠═c8d1fa31-cdc8-4e64-a0c1-b8d2a74c4f2a
+# ╠═7c5b75b9-b7a6-440a-81dd-1a6e349577a7
+# ╠═fa607228-55be-4ae0-bbf9-20751ce29744
+# ╠═67017c98-9a79-4145-9691-061733ef3282
+# ╠═85d2ab61-98a3-4b97-a96f-24c4716c5da9
+# ╟─75c1c340-4841-49f9-b344-febc09780a4a
+# ╠═968bd7a2-d6c6-4cd3-9d7c-26ea692583b4
+# ╠═bac21645-50a4-46ca-a483-3a6cbacd7df1
+# ╟─36a3b742-83ae-4a2d-b470-6db8c93aec98
+# ╟─8a21b307-e877-4777-8daf-767a84527e7f
+# ╠═a7996f3d-a2a8-4b99-a444-531e2513b3e1
+# ╠═53b9de97-571f-41af-a92d-3219d99c44c5
+# ╟─4facd271-5e50-465f-a1ff-1e0051eb46b5
+# ╠═502b25a9-cdca-407f-9a31-af60ddad4e16
+# ╠═2455086c-1dc4-4ec3-8c6b-4f930fd76c94
+# ╠═29d4153f-4356-4964-aeb0-dcb720b36250
+# ╠═3647502a-e5ef-457d-9c90-3a094a1f5b6f
+# ╠═7eea2385-b815-4287-bcc9-019db5421864
+# ╠═60afb58b-74e3-459c-bf49-2444aeaf3bde
+# ╠═95125265-3ad5-437e-b1d6-43c5436301b4
+# ╟─73abfc5b-dbbb-4857-94cf-1ba8146697e8
+# ╠═bd393cf1-3f6b-406d-973b-548dbaeab75d
+# ╠═edd8b3d9-b55e-44b8-9f0c-6de124dda6ab
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
