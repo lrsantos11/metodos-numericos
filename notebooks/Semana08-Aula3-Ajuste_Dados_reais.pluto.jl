@@ -102,7 +102,7 @@ num_rows, num_cols = size(df_sc)
 xdata = collect(1:num_rows)
 
 # ╔═╡ ac6739df-8cdc-4cd0-bb47-88b0175307f9
-plt_casos = @df df_sc plot(xdata, :totalCases, label = "Total de Casos", leg = :bottomright)
+plt_casos = @df df_sc plot(xdata, :totalCases, label = "Total de Casos", leg = :bottomright, size=(600,300),lw=2)
 
 # ╔═╡ 3c5cc6ea-4697-4f03-ae8f-30a01461f48e
 md"""
