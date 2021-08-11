@@ -165,7 +165,7 @@ plot(plt_casos, x->gompertz_model(x,β_gom), 0,1200,  label = "Gompertz", Title 
 last(df_sc.vaccinated_second_per_100_inhabitants)
 
 # ╔═╡ Cell order:
-# ╟─f903bc7e-5ead-4e30-a8ec-ba7523e21f98
+# ╠═f903bc7e-5ead-4e30-a8ec-ba7523e21f98
 # ╟─21595edc-d9bf-11eb-233f-abb831d37641
 # ╟─85ebfc47-80dd-45ce-9427-007593a2fc61
 # ╟─7ceaa98c-b3d2-4ce7-8ccc-33c187087208
