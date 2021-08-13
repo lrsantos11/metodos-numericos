@@ -4,9 +4,18 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
 # ╔═╡ 9cee1f22-fa37-11eb-3dbb-adee03240694
 begin
-	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots
+	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra
 	plotly()
 end
 
@@ -53,11 +62,96 @@ begin
 	plot!(x-> a1[1] + a1[2]*x + a1[3]*x^2, -1,4,leg=false, lw =2)
 end
 
+# ╔═╡ ae3e582a-50dd-4e8e-a2d2-fdf221834448
+md"""
+#### Matrizes mal-conditionadas (ill-conditioned)
+
+ - Número de condição da matriz inversível $A$
+
+$\kappa(A) = \lVert A \rVert \cdot \lVert A^{-1} \rVert$
+
+- Se $\kappa(A) \gg 1$, $A$ é quase singular, isto é, é mal-conditionada. 
+
+- Em Julia, `cond(A)` encontra o número de condição de `A`.
+"""
+
+# ╔═╡ d04f62e9-2e28-4aca-9566-c1be7fd0fed2
+@bind β Slider(1:10)
+
+# ╔═╡ 2c24a8ce-a781-476b-a6c7-6cdf0d629350
+ε = exp10(-β)
+
+# ╔═╡ 430a4705-308e-4383-b978-c7a7546517d8
+A = [1 ε; 1 1/ε]
+
+# ╔═╡ 62e42e60-e607-4e23-a4f8-e24d50cc7888
+cond(A)
+
+# ╔═╡ 1c309efe-ba4c-4a05-b5d5-99693b3418ec
+B = [1 1; 1 1+ε]
+
+# ╔═╡ c9976cae-d45c-4463-a0fd-073cb7592454
+cond(B)
+
+# ╔═╡ 69f860cf-cbdd-4083-bd78-541e9f32977d
+@bind k Slider(2:20)
+
+# ╔═╡ ad2c2af8-ec03-4fea-84f6-3e6053c3daed
+x =range(0, stop=2, length = k)
+
+# ╔═╡ 8a197d82-e97c-4d71-afa8-fdc6c47ad7fd
+n = length(x)-1
+
+# ╔═╡ 99c3af43-3edb-4544-8989-66863b86f79e
+V = [x[i]^(j-1) for i in 1:n, j in 1:n ]
+
+# ╔═╡ fdd1ffec-067b-4d39-949f-2c056fb029b7
+cond(V)
+
+# ╔═╡ 1aad8bc8-bf72-46ae-b856-f4b80d6b437b
+md"""
+ - Exemplo 1
+"""
+
+# ╔═╡ 0030647a-830b-4ff5-a8c0-a06e85136e7c
+f1(x) = 1/x^2
+
+# ╔═╡ 2d65a9b4-a91c-443b-86db-5b79dbaf705c
+
+
+# ╔═╡ 294a4d15-22b6-484b-b402-281214b98122
+x1 = [2, 2.5, 4]
+
+# ╔═╡ c7489196-bd7f-480e-ab2d-5749f4488cf7
+y1 = f1.(x1)
+
+# ╔═╡ ad0c7d91-dc9f-45d4-9099-3dd1b0dc571a
+p₂(x) = 0.0575x^2 - 0.4388x + 0.8975
+
+# ╔═╡ 688d547a-afbd-4357-9da9-95010aa1b21c
+f1(3)
+
+# ╔═╡ d8f6bb9d-5aa0-4de0-80b6-77ac0f26d092
+p₂(3)
+
+# ╔═╡ e601a47e-d9f5-410f-a9d5-04e595625bc2
+erro = f1(3) - p₂(3)
+
+# ╔═╡ 792e5b49-ff05-4dae-a8bc-4039e9491815
+begin
+	plot(f1,1,5, label="f(x) = 1/x²")
+	scatter!(x1, y1,label="")
+	scatter!([3], [f1(3)],label="")
+	scatter!([3], [p₂(3)],label="")
+	plot!(p₂, label="p₂(x)",lw=2)
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
@@ -1173,5 +1267,27 @@ version = "0.9.1+5"
 # ╠═0cf665bf-0fca-4289-af99-5cfcc7eb4199
 # ╠═0fb8abc8-733a-4824-8a03-d398e0e9ef4c
 # ╠═d51c9e46-4ad0-49d7-adce-a73255bd8026
+# ╟─ae3e582a-50dd-4e8e-a2d2-fdf221834448
+# ╟─d04f62e9-2e28-4aca-9566-c1be7fd0fed2
+# ╟─2c24a8ce-a781-476b-a6c7-6cdf0d629350
+# ╠═430a4705-308e-4383-b978-c7a7546517d8
+# ╠═62e42e60-e607-4e23-a4f8-e24d50cc7888
+# ╠═1c309efe-ba4c-4a05-b5d5-99693b3418ec
+# ╠═c9976cae-d45c-4463-a0fd-073cb7592454
+# ╠═69f860cf-cbdd-4083-bd78-541e9f32977d
+# ╠═fdd1ffec-067b-4d39-949f-2c056fb029b7
+# ╠═ad2c2af8-ec03-4fea-84f6-3e6053c3daed
+# ╠═8a197d82-e97c-4d71-afa8-fdc6c47ad7fd
+# ╠═99c3af43-3edb-4544-8989-66863b86f79e
+# ╠═1aad8bc8-bf72-46ae-b856-f4b80d6b437b
+# ╠═0030647a-830b-4ff5-a8c0-a06e85136e7c
+# ╠═2d65a9b4-a91c-443b-86db-5b79dbaf705c
+# ╠═294a4d15-22b6-484b-b402-281214b98122
+# ╠═c7489196-bd7f-480e-ab2d-5749f4488cf7
+# ╠═ad0c7d91-dc9f-45d4-9099-3dd1b0dc571a
+# ╠═688d547a-afbd-4357-9da9-95010aa1b21c
+# ╠═d8f6bb9d-5aa0-4de0-80b6-77ac0f26d092
+# ╠═e601a47e-d9f5-410f-a9d5-04e595625bc2
+# ╠═792e5b49-ff05-4dae-a8bc-4039e9491815
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
