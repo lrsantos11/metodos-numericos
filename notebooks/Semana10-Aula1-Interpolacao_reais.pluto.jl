@@ -27,12 +27,6 @@ md"""
 ###### Semana 10 - Aula 01
 """
 
-# ╔═╡ a238147b-b85b-47fd-9d02-c293304b6f18
-
-
-# ╔═╡ 1d37b705-13b3-4523-b672-fd4c77f237ad
-
-
 # ╔═╡ f9cf143f-e5e0-412b-9e6a-dcdce847d78e
 md"""
 ## Interpolação
@@ -51,7 +45,7 @@ p₄(x) = p₃(x) - 1/24*x*(x^2-1)*(x-2)
 
 # ╔═╡ b311457a-7e5a-4358-a79c-8c5c54dd7ce4
 begin
-	@df df0 scatter(:x, :y, label="Dados")
+	plt0 = @df df0 scatter(:x, :y, label="Dados")
 	plot!(p₃,-1.1,3.1, label = "p₃")
 	plot!(p₄,-1.1,3.1, label = "p₄")
 end
@@ -93,38 +87,85 @@ begin
 	plot!(plt,pₙ,-1,1,label ="pₙ(x) - Grau $n")
 end
 
-# ╔═╡ 430d4dc6-1eb9-4f14-9d45-fd93a732e95f
-
-
 # ╔═╡ a1597bed-8352-4d12-8e6e-9cc57a4c66e1
 md"""
 ## Algoritmo Diferença Dividida
 """
 
 # ╔═╡ af869c9d-c655-4bbb-989d-5fea3c2feefc
-function difdiv(data,y_data)
-
-	
+function difdiv(x_data,y_data)
+	num_data = length(x_data)
+	@assert num_data == length(y_data) "Tamanho de x_data diferente de tamanho de y_data."
+	# Tabela de difrenças dividas 	
+	tab = zeros(num_data,num_data)
+	# Primeira coluna de tab =  y_data
+	tab[:,1] = y_data
+	# Preenchimento de tab triangular inferior
+	for j in 2:num_data
+		for i in j:num_data
+			tab[i,j] = (tab[i,j-1] - tab[i-1,j-1]) / (x_data[i] - x_data[i-j+1] )
+		end
+	end
+	return LowerTriangular(tab)
 end
 
-# ╔═╡ 9507fa7e-b1e7-4f50-9ea8-f944ee79b0c7
-x = [1,2,4,5]
-
-# ╔═╡ ada207d0-dc83-4562-9b74-615f6be60448
-y = [1,3,3,4]
-
-# ╔═╡ a3b82c79-8141-4146-885d-f75186d5157b
-tabela  = difdiv(x,y)
-
-# ╔═╡ 89b883ca-d4ad-4385-8405-c54a39f44542
-coef = diag(tabela)
+# ╔═╡ 430d4dc6-1eb9-4f14-9d45-fd93a732e95f
+difdiv(xi,yi)
 
 # ╔═╡ c6873de8-276d-4eee-a045-5bcd6a698d17
-function comp_poli(data,tabela, x̄)
-
-
+function calcula_poli_newton(x̄::Number, x_data::Vector, tab::LowerTriangular)
+	num_data = length(x_data)
+	# Testes de consistência de dados
+	@assert (num_data, num_data) == size(tab)
+	@assert istril(tab)
+	coef = diag(tab)
+	pol_val = coef[num_data]
+	for j = num_data-1:-1:1
+		pol_val = pol_val*(x̄ - x_data[j]) + coef[j]
+	end
+    return pol_val
 end
 
+
+# ╔═╡ 09e5570e-1904-487d-9143-4d1e3c23f0a7
+md"""
+Exemplo 0
+"""
+
+# ╔═╡ 1df956a7-231c-44b9-b3cd-519bfacb20b9
+df0
+
+# ╔═╡ e441d549-bb43-4ce5-af38-adc3817218db
+tab0 = difdiv(df0.x,df0.y)
+
+# ╔═╡ 461b9460-e8d2-4827-9ad2-d196efd1b685
+size(tab0)
+
+# ╔═╡ 0aa5aa15-8b6e-4935-8b04-0e1bd78e6f02
+coef = diag(tab0)
+
+# ╔═╡ a5470771-01ac-490b-840b-f4dd75a066ad
+p̄₄(x) = calcula_poli_newton(x,df0.x,tab0)
+
+# ╔═╡ d92d6abf-6824-48a9-90e8-83ddbf6e59cc
+plot(plt0,p̄₄,-1,3,label="p̄₄",ls=:dash,lw=2)
+
+# ╔═╡ d2219b5e-ec0f-4888-99d3-561c75f358d2
+md"""
+- Exemplo 2
+"""
+
+# ╔═╡ 2e4ad0bb-3cff-49e8-9d30-f66064e5ad46
+x2 = [0,0.1,0.2,0.3,0.4,0.5]
+
+# ╔═╡ 47ac7bd2-3990-432d-8f34-8b58f008c71e
+y2 = exp.(x2)
+
+# ╔═╡ 036d0f88-3db6-4ded-b268-fc4a19620775
+md"""
+#### Tarefa
+- Data a tabela acima, econtrar uma aproximação para `exp(0.25)`, usando interpolação linear e quadrática.
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1245,8 +1286,6 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─dfec6a32-ffa4-11eb-374b-d3703cb52be3
 # ╠═a385b7b2-740f-4cd6-8c3d-091b944fce12
-# ╠═a238147b-b85b-47fd-9d02-c293304b6f18
-# ╠═1d37b705-13b3-4523-b672-fd4c77f237ad
 # ╟─f9cf143f-e5e0-412b-9e6a-dcdce847d78e
 # ╠═dcb1ac50-8f2c-4d57-8e6a-45b3b445273f
 # ╠═3b07b25f-2293-40e6-bf68-4330da282fc4
@@ -1264,10 +1303,17 @@ version = "0.9.1+5"
 # ╠═430d4dc6-1eb9-4f14-9d45-fd93a732e95f
 # ╟─a1597bed-8352-4d12-8e6e-9cc57a4c66e1
 # ╠═af869c9d-c655-4bbb-989d-5fea3c2feefc
-# ╠═9507fa7e-b1e7-4f50-9ea8-f944ee79b0c7
-# ╠═ada207d0-dc83-4562-9b74-615f6be60448
-# ╠═a3b82c79-8141-4146-885d-f75186d5157b
-# ╠═89b883ca-d4ad-4385-8405-c54a39f44542
 # ╠═c6873de8-276d-4eee-a045-5bcd6a698d17
+# ╟─09e5570e-1904-487d-9143-4d1e3c23f0a7
+# ╠═1df956a7-231c-44b9-b3cd-519bfacb20b9
+# ╠═e441d549-bb43-4ce5-af38-adc3817218db
+# ╠═461b9460-e8d2-4827-9ad2-d196efd1b685
+# ╠═0aa5aa15-8b6e-4935-8b04-0e1bd78e6f02
+# ╠═a5470771-01ac-490b-840b-f4dd75a066ad
+# ╠═d92d6abf-6824-48a9-90e8-83ddbf6e59cc
+# ╟─d2219b5e-ec0f-4888-99d3-561c75f358d2
+# ╠═2e4ad0bb-3cff-49e8-9d30-f66064e5ad46
+# ╠═47ac7bd2-3990-432d-8f34-8b58f008c71e
+# ╠═036d0f88-3db6-4ded-b268-fc4a19620775
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
