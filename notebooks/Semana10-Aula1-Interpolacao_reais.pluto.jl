@@ -167,6 +167,91 @@ md"""
 - Data a tabela acima, econtrar uma aproximação para `exp(0.25)`, usando interpolação linear e quadrática.
 """
 
+# ╔═╡ 6a60fd3d-3f0a-4ce5-a8c2-688a19089be7
+x̄ = exp(0.25)
+
+# ╔═╡ 286afdda-add4-4bba-964c-6bf98caccd6e
+tab_exp_linear = difdiv(x2[3:4],y2[3:4])
+
+# ╔═╡ 89470027-c1d8-451f-a7fc-0e960ed9da83
+x̄₁ = calcula_poli_newton(0.25,x2[3:4],tab_exp_linear)	
+
+# ╔═╡ 60a5ee9e-09bd-41b3-8192-636e7c05ad78
+e₁ = abs(x̄ - x̄₁)
+
+# ╔═╡ 2b3dadbf-f6e4-4820-ae87-02f2d4372f23
+tab_exp_quad1 = difdiv(x2[2:4],y2[2:4])
+
+# ╔═╡ 14863b74-1bb2-49ef-a304-082b81c0efe2
+x̄₂ = calcula_poli_newton(0.25,x2[2:4],tab_exp_quad1)	
+
+# ╔═╡ c3ff9ed8-2f11-43e0-be84-53b09e944b83
+e₂ = abs(x̄ - x̄₂)
+
+# ╔═╡ 08da3796-8f82-47a3-9c8c-7b04e8ce46b5
+tab_exp_quad2 = difdiv(x2[3:5],y2[3:5])
+
+# ╔═╡ 7451fc5d-0923-4539-b545-a62a30827f7e
+x̄₂₂ = calcula_poli_newton(0.25,x2[3:5],tab_exp_quad2)	
+
+# ╔═╡ 1818bf6a-0b17-4d3a-9948-3fd6b3570696
+e₂₂ = abs(x̄ - x̄₂₂)
+
+# ╔═╡ 7466b65e-2d4a-4591-8361-0d6021ef44ef
+p̄₂(x) = calcula_poli_newton(x,x2[2:4],tab_exp_quad1)
+
+# ╔═╡ bc126ca6-3d3c-4da2-9613-7953ad2e155b
+begin
+	plot(exp,0,1,label="exp")
+	plot!(p̄₂,0,1,label="p̄₂",ls=:dash)
+	scatter!(x2,y2,label="")
+end
+
+# ╔═╡ b65646b4-0214-44a8-8e4b-de7b187dfe7d
+md"""
+- Exercício 11
+"""
+
+# ╔═╡ 42d1e698-a563-4d86-838a-b0e6b68cd09a
+f₁₁(x) = x - exp(-x)
+
+# ╔═╡ e6c8c8ac-5d73-48fa-8b09-c0629a982b91
+x₁₁ = [0.06862502700517605 ,0.5, 
+0.6279414105857047]
+
+# ╔═╡ cb46ca01-0560-44da-8365-c01688cffe97
+y₁₁ = f₁₁.(x₁₁)
+
+# ╔═╡ 9c479aa9-5053-4225-9a13-70b985f2a7f6
+tab₁₁ = difdiv(x₁₁,y₁₁)
+
+# ╔═╡ d3d3cec5-2db4-48ca-babc-353f90ab4b3d
+a = diag(tab₁₁)
+
+# ╔═╡ de4e4df8-125f-4ddb-8f81-dacbc024dffc
+x̄₁₁ = (-a[2] + √(a[2]^2 - 4*a[3]*a[1]))/(2*a[3])
+
+# ╔═╡ e1e97698-ff46-4561-bb66-0909234bf54a
+x̂₁₁ = (- a[2] - √(a[2]^2 - 4*a[3]*a[1]))/(2*a[3])
+
+# ╔═╡ fc98d914-10e4-4135-95d1-79c56391bec1
+abs(f₁₁(x̄₁₁))
+
+# ╔═╡ 6bfced88-c79b-4226-95aa-2bdbc9b916cb
+function newton()
+	xk = 0.5
+	for k in 1:5
+		xk = xk - f₁₁(xk)/(ForwardDiff.derivative(f₁₁, xk))
+	end
+	return xk
+end
+
+# ╔═╡ 0cfe191e-960d-4633-9462-c959decc6ec3
+newton()
+
+# ╔═╡ 609b8247-b9ff-4acd-b43a-213b81b29837
+abs(f₁₁(newton()))
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -1314,6 +1399,30 @@ version = "0.9.1+5"
 # ╟─d2219b5e-ec0f-4888-99d3-561c75f358d2
 # ╠═2e4ad0bb-3cff-49e8-9d30-f66064e5ad46
 # ╠═47ac7bd2-3990-432d-8f34-8b58f008c71e
-# ╠═036d0f88-3db6-4ded-b268-fc4a19620775
+# ╟─036d0f88-3db6-4ded-b268-fc4a19620775
+# ╠═6a60fd3d-3f0a-4ce5-a8c2-688a19089be7
+# ╠═286afdda-add4-4bba-964c-6bf98caccd6e
+# ╠═89470027-c1d8-451f-a7fc-0e960ed9da83
+# ╠═60a5ee9e-09bd-41b3-8192-636e7c05ad78
+# ╠═2b3dadbf-f6e4-4820-ae87-02f2d4372f23
+# ╠═14863b74-1bb2-49ef-a304-082b81c0efe2
+# ╠═c3ff9ed8-2f11-43e0-be84-53b09e944b83
+# ╠═08da3796-8f82-47a3-9c8c-7b04e8ce46b5
+# ╠═7451fc5d-0923-4539-b545-a62a30827f7e
+# ╠═1818bf6a-0b17-4d3a-9948-3fd6b3570696
+# ╠═7466b65e-2d4a-4591-8361-0d6021ef44ef
+# ╠═bc126ca6-3d3c-4da2-9613-7953ad2e155b
+# ╠═b65646b4-0214-44a8-8e4b-de7b187dfe7d
+# ╠═42d1e698-a563-4d86-838a-b0e6b68cd09a
+# ╠═e6c8c8ac-5d73-48fa-8b09-c0629a982b91
+# ╠═cb46ca01-0560-44da-8365-c01688cffe97
+# ╠═9c479aa9-5053-4225-9a13-70b985f2a7f6
+# ╠═d3d3cec5-2db4-48ca-babc-353f90ab4b3d
+# ╠═de4e4df8-125f-4ddb-8f81-dacbc024dffc
+# ╠═e1e97698-ff46-4561-bb66-0909234bf54a
+# ╠═fc98d914-10e4-4135-95d1-79c56391bec1
+# ╠═6bfced88-c79b-4226-95aa-2bdbc9b916cb
+# ╠═0cfe191e-960d-4633-9462-c959decc6ec3
+# ╠═609b8247-b9ff-4acd-b43a-213b81b29837
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
