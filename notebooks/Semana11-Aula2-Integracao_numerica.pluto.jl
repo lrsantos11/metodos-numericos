@@ -4,274 +4,229 @@
 using Markdown
 using InteractiveUtils
 
-# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
-macro bind(def, element)
-    quote
-        local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
-        el
-    end
-end
-
-# ╔═╡ a385b7b2-740f-4cd6-8c3d-091b944fce12
+# ╔═╡ 707d02d9-5ce4-4a8e-aae6-c804d9aa1a95
 begin
-	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra, LaTeXStrings
+	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra, SpecialFunctions,LaTeXStrings
 	gr()
 end
 
-# ╔═╡ dfec6a32-ffa4-11eb-374b-d3703cb52be3
+# ╔═╡ 1864dd04-05ef-11ec-10e5-c9e213811e2b
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 10 - Aula 01
+###### Semana 11 - Aula 02
 """
 
-# ╔═╡ f9cf143f-e5e0-412b-9e6a-dcdce847d78e
+# ╔═╡ 3ba8f3f0-ba65-4e10-b683-e0089d329af1
 md"""
-## Interpolação
+# Integração Numérica
 
- - Exemplo 0
+Imagine que estamos interessado em calcular a integral de uma função $f$ em um intervalo $[a, b]$.
+$$I \equiv \int_a^b f(x) dx.$$
+Em cálculo vimos que isso pode ser feito usando o teorema fundametal do cálculo sempre que conhecemos uma primitiva de $f$. Infelizmente em alguns casos não conhecemos uma primitiva. Um exemplo interessante é a integral
+
+$$\operatorname{erf}(x) = \frac{2}{\sqrt{\pi}} \int_0^x e^{-t^2} dt$$
+para qual não se conhece primitiva usando função usuais.
+
+- Esta integral tem nome de [função erro de Gauss](https://pt.wikipedia.org/wiki/Fun%C3%A7%C3%A3o_erro)
+- Em Julia, usando o pacote `SpecialFunctions.jl` tem uma implementação para chamarmos a função `erf`.
+
+Há ainda outras situações em que o processo de calcular a intergral a partir de uma primitiva pode ser indesejável ou impossível. Por exemplo, a expressão da primitiva pode ser muito complexa ou não conhecemos a expressão explícita de $f$ mas apenas temos $f$ tabelada em alguns pontos.
+
+Nesses casos uma possibilidade interessante é tentar realizar uma integração numérica de $f$, ou seja, tentar encontrar aproximações da integral desejada usando fórmulas que envolvam apenas o cômputo da função que se deseja integrar em alguns pontos pré-escolhidos ou mesmo nos pontos que temos à disposição. Vamos ver algumas alternativas para isso.
+
+## Regra do trapézio
+
+Imagine que queremos integrar uma função $f$ no intervalo $[a, b]$. Uma das possibilidades mais simples é aproximar a integral pela área do trapézio definido por $(a, f(a))$ e $(b, f(b))$.
+
 """
 
-# ╔═╡ dcb1ac50-8f2c-4d57-8e6a-45b3b445273f
-df0 = DataFrame(x = [-1,0,1,2,3.], y = [1,1,0,-1,-2.])
-
-# ╔═╡ 3b07b25f-2293-40e6-bf68-4330da282fc4
-p₃(x) = 1 - 1/2*(x^2 + x) + 1/6* x*(x^2 -1)
-
-# ╔═╡ bec6d313-7ad9-4296-b474-4ceeb95e974f
-p₄(x) = p₃(x) - 1/24*x*(x^2-1)*(x-2)
-
-# ╔═╡ b311457a-7e5a-4358-a79c-8c5c54dd7ce4
+# ╔═╡ bfc9bf80-efef-4e72-a7b9-58df1af16e24
 begin
-	plt0 = @df df0 scatter(:x, :y, label="Dados")
-	plot!(p₃,-1.1,3.1, label = "p₃")
-	plot!(p₄,-1.1,3.1, label = "p₄")
+	f(x) = sin.(x) + 0.1*x.^2
+	a, b = 1, 2.0
 end
 
-# ╔═╡ f373b04e-25d7-44a7-b10c-041be10525b7
-md"""
-### Fenômento de Runge
 
-- Exemplo 1: $f(x)  = \frac{1}{1 + 25x^2}$ tabelada no intervalo $[-1,1]$ nos pontos $x_i = -1 + \frac{2i}{n}$, para $i = 0, 1, 2, \ldots, n.$
-  - Se $n\to\infty$, temos que  $\lvert f(\bar x) - p_n(\bar x)\rvert \to \infty$, para algum $\bar x \in [-1,1]$.
-"""
-
-
-# ╔═╡ 3a0a50ab-3605-460a-836d-45ea4437e91a
-f1(x) = 1/(1+25x^2)
-
-# ╔═╡ 140f6d8e-f62e-456a-875a-af4abed0c686
-@bind n Slider(4:20, show_value=true)
-
-# ╔═╡ 6b241e37-4393-48aa-884c-7732f0a4ce8c
-xi = [-1 + 2*i/n for i = 0:n]
-
-# ╔═╡ d1a96ec0-1ec0-4ead-b2aa-d0b4b17237d9
-yi = f1.(xi)
-
-# ╔═╡ d89cf5bf-2812-4b3b-afc6-09752e702e95
-V = [xi[i]^j for i=1:n+1 ,j = 0:n]
-
-# ╔═╡ 46d7be0c-47eb-4b07-851e-5c15c72cab3b
-coef0 = V \ yi
-
-# ╔═╡ 40f9df30-d7af-49e1-859f-c05ef35b6eca
-pₙ(x) = sum(coef0[i+1]*x^(i) for i = 0:n)
-
-# ╔═╡ 46ee2096-693a-4825-bf95-50530e6defee
+# ╔═╡ 21ad270c-60d0-4826-9e7e-51142094b775
 begin
-	plt = plot(f1,-1,1,label=L"f(x) = \frac{1}{1+25x^2}")
-	scatter!(plt,xi,yi,label="Dados")
-	plot!(plt,pₙ,-1,1,label ="pₙ(x) - Grau $n")
+# Desenha f
+	plot(f)
+
+	#Desenha o polinomio interpolador de f
+	plot!([a, b], [f(a), f(b)], color=:green,lw=2, fill=(:green,0,0.2))
+	xlims!(0.5,2.5)
+	ylims!(0.,1.5)
+	# Desenha duas linhas verticais para facilitar a visualizacao
+	plot!([a, a], [0.0, f(a)], color=:green,lw=2)
+	plot!([b, b], [0.0, f(b)], color=:green,leg=false,lw=2)
+	vline!([1,2],c=:red,lw=1)
+	scatter!([a, b], [f(a), f(b)])
 end
 
-# ╔═╡ a1597bed-8352-4d12-8e6e-9cc57a4c66e1
+# ╔═╡ a4fa65b1-ab0c-4794-9b44-8fc0d6b34eb5
 md"""
-## Algoritmo Diferença Dividida
+Se chamarmos a distância entre $a$ e $b$ de $h$, temos imediatamente a aproximação
+
+$$\int_a^b f(x) dx \approx \frac{f(a) + f(b)}{2}h \equiv Q_T[f].$$
+Que no caso acima resulta em.
 """
 
-# ╔═╡ af869c9d-c655-4bbb-989d-5fea3c2feefc
-function difdiv(x_data,y_data)
-	num_data = length(x_data)
-	@assert num_data == length(y_data) "Tamanho de x_data diferente de tamanho de y_data."
-	# Tabela de difrenças dividas 	
-	tab = zeros(num_data,num_data)
-	# Primeira coluna de tab =  y_data
-	tab[:,1] = y_data
-	# Preenchimento de tab triangular inferior
-	for j in 2:num_data
-		for i in j:num_data
-			tab[i,j] = (tab[i,j-1] - tab[i-1,j-1]) / (x_data[i] - x_data[i-j+1] )
-		end
+# ╔═╡ e06de210-d295-453b-936c-6ac064c9977a
+
+
+# ╔═╡ 6f03a493-dd91-4b5c-9c99-a810d0ec082b
+md"""
+Valor aproximado: $((f(1.0) + f(2.0))/2.0)
+"""
+
+# ╔═╡ a02819b7-4c58-4d8e-b336-88f049fa803b
+md"Podemos comparar com o valor exato já que é fácil calcular a primitiva de $f$."
+
+# ╔═╡ 4ce2d655-efee-4951-96c8-e9f6e70da43d
+F(x) = -cos(x) + 0.1/3.0*x.^3
+
+# ╔═╡ fca06861-b636-4007-b0ac-8c8fc89902ed
+If = (F(2.0) - F(1.0))
+
+# ╔═╡ ef79875a-cdf4-4dc9-82e2-9ff653b99238
+md"""
+Como podemos ver a fórmula simples de aproximação acima já acerta a primeira casa do resultado e erro por pouco a segunda. 
+
+Agora como podemos melhorar isso? Basta seguir a ideia da definição de integral e subdividir o intervalo $[a, b]$ em $n$ intervalos menores, isto é definir pontos $a = x_0 < x_1 < x_2 < \ldots < x_n = b$. 
+
+Para simplificar vamos sempre considerar que os intervalos tem todos os mesmos tamanhos que chamaremos mais uma vez de $h$. Podemos então usar a fórmula do trapézio em cada subintervalo e por fim somar todas as áreas obtidas para a aproximar a área total. Ou seja fazemos
+
+$$\begin{aligned}
+\int_a^b f(x) dx &\approx h \left( \frac{f(x_0) + f(x_1)}{2} + \frac{f(x_1) + f(x_2)}{2} + \dots + \frac{f(x_{n - 1}) + f(x_n)}{2} \right) \\
+&= h \left( \frac{f(x_0)}{2} + f(x_1) + f(x_2) + \ldots + f(x_{n - 1}) + \frac{f(x_n)}{2} \right) \equiv Q_{TC}[f].
+\end{aligned}$$
+Essa fórmula é conhecida com regra do trapézio composta. Vamos vê-la em ação.
+"""
+
+# ╔═╡ 2b5ca14c-1589-4384-98d0-8f8296b18268
+md"""
+- Integracao numérica usando a regra dos trapezios composta com $n + 1$ pontos.
+"""
+
+# ╔═╡ b099d2d2-f6f1-4847-8680-e70f82f0b82a
+md"""
+ - Note que $x_{k+1} = x_k + h$, para todo $k=1,\ldots, n$.
+"""
+
+# ╔═╡ b013bc34-1fda-4e0e-bf7d-b0ec67db8bde
+function Trapezios(f,a,b;n=10)
+	h = (b - a)/n
+	xk = a # x₀
+	integral = f(xk)/2
+# 	Fazendo f(x_1) até f(x_{n-1})
+	for k in 1:n-1
+		xk += h # xₖ₊₁ = xₖ + h  
+		integral += f(xk)
 	end
-	return LowerTriangular(tab)
+	integral += f(b)/2
+	integral *= h
 end
 
-# ╔═╡ 430d4dc6-1eb9-4f14-9d45-fd93a732e95f
-difdiv(xi,yi)
+# ╔═╡ f6777bf2-c5bf-4785-8703-d9c24d9cb79b
+Q_TCf = Trapezios(f,1,2,n=600)
 
-# ╔═╡ c6873de8-276d-4eee-a045-5bcd6a698d17
-function calcula_poli_newton(x̄::Number, x_data::Vector, tab::LowerTriangular)
-	num_data = length(x_data)
-	# Testes de consistência de dados
-	@assert (num_data, num_data) == size(tab)
-	@assert istril(tab)
-	coef = diag(tab)
-	pol_val = coef[num_data]
-	for j = num_data-1:-1:1
-		pol_val = pol_val*(x̄ - x_data[j]) + coef[j]
-	end
-    return pol_val
-end
+# ╔═╡ 8544b9aa-8702-4459-8502-9367d35b2f8d
+norm(Q_TCf - If)
 
-
-# ╔═╡ 09e5570e-1904-487d-9143-4d1e3c23f0a7
+# ╔═╡ 95e7b14e-1a15-4001-98b0-f9f050783261
 md"""
-Exemplo 0
+Em resumo temos uma regra bastante simples, que pode ser usada inclusive com intervalos irregulares se as alterações óbvias forem feitas. O erro de integração com múltiplos intervalos cai com $h^2$. 
+
+Mas será que podemos fazer melhor do que isso?
+
+## Regra de Simpson
+
+Podemos obter outras regras de aproximação de integrais simplesmente usando interpolação quadrática por partes que interpola $f$ em três pontos consecutivos. Nesse caso, precisamos avaliar $f$ em pelo menos três pontos. Se considerarmos um intervalo $[a, b]$ e $m$ seu ponto médio o polinômio interpolador fica:
+
+$$p_2(x) = f_a + \frac{x - a}{h} \left( (f_m - f_a) + \frac{f_b - 2f_m + f_a}{2h} (x - m) \right),$$
+em que $h = (b - a)/2$, ou seja a distância entre dois pontos de interpolação. Para ver que o polinômio acima interpola $f$ em $a$, $m$ e $b$ basta calcular o seu valor nesses pontos e ver que ele recupera os valores originais $f_a = f(a)$, $f_m = f(m)$ e $f_b = f(b)$.
 """
 
-# ╔═╡ 1df956a7-231c-44b9-b3cd-519bfacb20b9
-df0
+# ╔═╡ 290409fc-8a81-4021-b46d-f4815512b920
+let
+	f(x) = sin(x) + cos(2*x)+ 0.1*x^2
+	a, b = 1.0, 2.0
+	m = (b + a) / 2
 
-# ╔═╡ e441d549-bb43-4ce5-af38-adc3817218db
-tab0 = difdiv(df0.x,df0.y)
+	# Desenha f
+	plot(f, label=L"$f$")
+	xlims!(0.5, 2.5)
+	ylims!(0.0, 1.5)
+	#Desenha o polinomio interpolador de grau 2 de f
+	h = (b - a) / 2 
+	fa = f(a)
+	fb = f(b)
+	fm = f(m)
+	p2(x) = fa + (x - a)/h .* ((fm - fa) + (fb - 2*fm + fa)/(2*h) .* (x - m) )
+	plot!(p2, color = :green, label=L"$p$",lw=2)
 
-# ╔═╡ 461b9460-e8d2-4827-9ad2-d196efd1b685
-size(tab0)
-
-# ╔═╡ 0aa5aa15-8b6e-4935-8b04-0e1bd78e6f02
-coef = diag(tab0)
-
-# ╔═╡ a5470771-01ac-490b-840b-f4dd75a066ad
-p̄₄(x) = calcula_poli_newton(x,df0.x,tab0)
-
-# ╔═╡ d92d6abf-6824-48a9-90e8-83ddbf6e59cc
-plot(plt0,p̄₄,-1,3,label="p̄₄",ls=:dash,lw=2)
-
-# ╔═╡ d2219b5e-ec0f-4888-99d3-561c75f358d2
-md"""
-- Exemplo 2
-"""
-
-# ╔═╡ 2e4ad0bb-3cff-49e8-9d30-f66064e5ad46
-x2 = [0,0.1,0.2,0.3,0.4,0.5]
-
-# ╔═╡ 47ac7bd2-3990-432d-8f34-8b58f008c71e
-y2 = exp.(x2)
-
-# ╔═╡ 036d0f88-3db6-4ded-b268-fc4a19620775
-md"""
-#### Tarefa
-- Data a tabela acima, econtrar uma aproximação para `exp(0.25)`, usando interpolação linear e quadrática.
-"""
-
-# ╔═╡ 6a60fd3d-3f0a-4ce5-a8c2-688a19089be7
-x̄ = exp(0.25)
-
-# ╔═╡ 286afdda-add4-4bba-964c-6bf98caccd6e
-tab_exp_linear = difdiv(x2[3:4],y2[3:4])
-
-# ╔═╡ 89470027-c1d8-451f-a7fc-0e960ed9da83
-x̄₁ = calcula_poli_newton(0.25,x2[3:4],tab_exp_linear)	
-
-# ╔═╡ 60a5ee9e-09bd-41b3-8192-636e7c05ad78
-e₁ = abs(x̄ - x̄₁)
-
-# ╔═╡ 2b3dadbf-f6e4-4820-ae87-02f2d4372f23
-tab_exp_quad1 = difdiv(x2[2:4],y2[2:4])
-
-# ╔═╡ 14863b74-1bb2-49ef-a304-082b81c0efe2
-x̄₂ = calcula_poli_newton(0.25,x2[2:4],tab_exp_quad1)	
-
-# ╔═╡ c3ff9ed8-2f11-43e0-be84-53b09e944b83
-e₂ = abs(x̄ - x̄₂)
-
-# ╔═╡ 08da3796-8f82-47a3-9c8c-7b04e8ce46b5
-tab_exp_quad2 = difdiv(x2[3:5],y2[3:5])
-
-# ╔═╡ 7451fc5d-0923-4539-b545-a62a30827f7e
-x̄₂₂ = calcula_poli_newton(0.25,x2[3:5],tab_exp_quad2)	
-
-# ╔═╡ 1818bf6a-0b17-4d3a-9948-3fd6b3570696
-e₂₂ = abs(x̄ - x̄₂₂)
-
-# ╔═╡ 7466b65e-2d4a-4591-8361-0d6021ef44ef
-p̄₂(x) = calcula_poli_newton(x,x2[2:4],tab_exp_quad1)
-
-# ╔═╡ bc126ca6-3d3c-4da2-9613-7953ad2e155b
-begin
-	plot(exp,0,1,label="exp")
-	plot!(p̄₂,0,1,label="p̄₂",ls=:dash)
-	scatter!(x2,y2,label="")
+	# Desenha duas linhas verticais para facilitar a visualizacao
+	plot!([a, a], [0.0, f(a)], color=:green,label="",lw=2)
+	plot!([b, b], [0.0, f(b)], color=:green,label="",lw=2)
+	scatter!([a,m,b],[f(a),f(m),f(b)],label="")
 end
 
-# ╔═╡ b65646b4-0214-44a8-8e4b-de7b187dfe7d
+# ╔═╡ 8bd2de1c-73b8-41f2-aad6-9ccb5041f635
 md"""
-- Exercício 11
+Apesar da fórmula de $p_2(x)$ ser um pouco assustadora, a fórmula de sua integral é simples:
+
+$$I = \int_a^b f(x) dx \approx \int_a^b p_2(x) dx = \frac{h}{3}(f_a + 4f_m + f_b) \equiv Q_S[f].$$
+
+Aplicando essa fórmula no exemplo acima temos.
 """
 
-# ╔═╡ 42d1e698-a563-4d86-838a-b0e6b68cd09a
-f₁₁(x) = x - exp(-x)
+# ╔═╡ 52c65b4f-8a42-4b7a-997a-32647cd7ebce
+# Implementação
 
-# ╔═╡ e6c8c8ac-5d73-48fa-8b09-c0629a982b91
-x₁₁ = [0.06862502700517605 ,0.5, 
-0.6279414105857047]
+# ╔═╡ 4d81bbf4-b23a-4f12-9d6e-4b16d10b0587
+md"""
+Agora como estender essa fórmula subdividindo o intervalo? Nesse caso precisamos de um número par de pontos para poder separar os grupos em 3 em 3 com extremos comuns.
 
-# ╔═╡ cb46ca01-0560-44da-8365-c01688cffe97
-y₁₁ = f₁₁.(x₁₁)
 
-# ╔═╡ 9c479aa9-5053-4225-9a13-70b985f2a7f6
-tab₁₁ = difdiv(x₁₁,y₁₁)
+Ou seja, quebramos o intervalo de integração em grupos de dois em dois subintervalos a aplicamos a regra de Simpson em cada um deles.
 
-# ╔═╡ d3d3cec5-2db4-48ca-babc-353f90ab4b3d
-a = diag(tab₁₁)
+Isso, é claro pode ser generalizado para mais intervalos. Se temos $n + 1 $ pontos, com $n$ par, podemos construir $n / 2$ intervalos e obtemos a fórmula
 
-# ╔═╡ de4e4df8-125f-4ddb-8f81-dacbc024dffc
-x̄₁₁ = (-a[2] + √(a[2]^2 - 4*a[3]*a[1]))/(2*a[3])
+$$I = \int_a^b f(x) dx = \sum_{k = 1}^{n/2} \int_{x_{2k - 2}}^{x_{2k}} f(x) dx \approx \sum_{k = 1}^{n /2} \frac{h}{3} [f(x_{2k-2}) + 4 f(x_{2k - 1}) + f(x_{2k}) ] \equiv Q_{SC}[f].$$
+conhecida como regra de Simpson composta.
 
-# ╔═╡ e1e97698-ff46-4561-bb66-0909234bf54a
-x̂₁₁ = (- a[2] - √(a[2]^2 - 4*a[3]*a[1]))/(2*a[3])
+Mais uma vez podemos implementá-la.
+"""
 
-# ╔═╡ fc98d914-10e4-4135-95d1-79c56391bec1
-abs(f₁₁(x̄₁₁))
+# ╔═╡ 6120288c-d6fe-470c-8f14-74a5d3f9bcb2
+# Implementação
 
-# ╔═╡ 6bfced88-c79b-4226-95aa-2bdbc9b916cb
-function newton()
-	xk = 0.5
-	for k in 1:5
-		xk = xk - f₁₁(xk)/(ForwardDiff.derivative(f₁₁, xk))
-	end
-	return xk
-end
+# ╔═╡ a49c88a8-f02d-4a41-8a47-dcf8f02dd1db
+md"""
+Veja que o resultado obtido pelo emprego da regra de Simpson composta é bem melhor do que o resultado obtido pela regra dos trapézios composta. Uma limitação da regra Simpson é que ela assume que os intervalos entre os pontos são sempre de mesmo comprimento, isso foi usando quando apresentamos a fórmula do polinômio interpolador de segundo grau.
 
-# ╔═╡ 0cfe191e-960d-4633-9462-c959decc6ec3
-newton()
+No caso da regra de Simpson é também possível estimar o erro esperado e observar que, qualitativamente, ele deve ser menor do que o erro da regra dos trapézios. De fato, usando uma análise semelhante a feita no caso dos trapézios podemos obter a seguinte expressão para o erro na regra de Simpson em um intervalo.
 
-# ╔═╡ 609b8247-b9ff-4acd-b43a-213b81b29837
-abs(f₁₁(newton()))
+$\begin{aligned}
+|I - Q_S[f]| & = \int_a^b f(x) dx - \int_a^b p_2(x) dx \\
+&= \left| \int_a^b \frac{f'''(\xi_x)}{3!}(x - a)(x - m)(x - b) dx \right| \\
+&\leq \int_a^b \frac{| f'''(\xi_x)|}{3!} \left| (x - a)(x - m)(x - b) dx \right| \\
+&= \frac{| f'''(\eta) |}{6} \int_a^b | (x - a)(x - m)(x - b) | dx, \quad \eta \in (a, b) \\
+&= \frac{| f'''(\eta) |}{6} \frac{1}{2} \left( \frac{b - a}{2} \right)^4, \quad \eta \in (a, b) \\
+&= \frac{| f'''(\eta) | h^4}{12}, \quad \eta \in (a, b).
+\end{aligned}$
 
-# ╔═╡ 521461dd-1f3a-430a-adbc-57d1f256bdfa
-df_casos = DataFrame(Data = [10,18,25,32,39], H1N1 = [153695,160129,174565,185067,190765])
 
-# ╔═╡ 8c28317e-4740-453b-94d1-06dc548567ba
-tab_h1n1 = difdiv(df_casos.Data[3:5],df_casos.H1N1[3:5])
+De novo usamos o teorema do valor intermediário para integrais na passagem mais complicada e o fato que $h = (b - a)/2$. Compare com o resultado obtido para o caso do método dos trapézios em particular observe que há uma tendência do erro ser menor já que a potência do $h$ é maior.
 
-# ╔═╡ f019b63a-b6b8-4448-82c5-197bf8e75a65
-coef_h1n1 = diag(tab_h1n1)
+Agora, uma análise um pouco mais sofisticada da expressão original permite provar que:
 
-# ╔═╡ 23af43bb-d81d-4a07-bc9f-f1c7b6a7c6a6
-p₂_h1n1(x) = calcula_poli_newton(x,df_casos.Data[3:5],tab_h1n1 )
+$$I - Q_S[f] = -\frac{f^{(4)}(\eta)h^5}{90}, \quad \eta \in (a, b).$$
+Note que, como o erro depende da derivada quarta de $f$, se a função original for um polinômio de grau até 3 o erro será zero. Isso é mais do que era esperado pela estratégia de construção da regra já que polinômio interpolador usado foi de grau 2. A potência real de $h$ também é maior, aumentando para 5. 
 
-# ╔═╡ c2fcc647-c561-48bf-8a17-a16dc09c1871
-p₂_h1n1(36)
-
-# ╔═╡ 5e8534c1-2262-498e-bab8-5c8c8a09d648
-begin
-	@df df_casos scatter(:Data,:H1N1, label="casos H1N1",leg=:bottomright)
-	plot!(p₂_h1n1)
-end
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -282,6 +237,7 @@ LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
@@ -290,6 +246,7 @@ ForwardDiff = "~0.10.19"
 LaTeXStrings = "~1.2.1"
 Plots = "~1.20.1"
 PlutoUI = "~0.7.9"
+SpecialFunctions = "~1.6.1"
 StatsPlots = "~0.14.26"
 """
 
@@ -386,9 +343,9 @@ version = "0.3.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "79b9563ef3f2cc5fc6d3046a5ee1a57c9de52495"
+git-tree-sha1 = "727e463cfebd0c7b999bbf3e9e7e16f254b94193"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.33.0"
+version = "3.34.0"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -517,9 +474,9 @@ version = "3.3.9+8"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays", "Statistics"]
-git-tree-sha1 = "8c8eac2af06ce35973c3eadb4ab3243076a408e7"
+git-tree-sha1 = "7c365bdef6380b29cfc5caaf99688cd7489f9b87"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.12.1"
+version = "0.12.2"
 
 [[FixedPointNumbers]]
 deps = ["Statistics"]
@@ -821,9 +778,9 @@ version = "0.3.1"
 
 [[Missings]]
 deps = ["DataAPI"]
-git-tree-sha1 = "4ea90bd5d3985ae1f9a908bd4500ae88921c5ce7"
+git-tree-sha1 = "2ca267b08821e86c5ef4376cffed98a46c2cb205"
 uuid = "e1d29d7a-bbdc-5cf2-9ac0-f12de2c33e28"
-version = "1.0.0"
+version = "1.0.1"
 
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
@@ -909,9 +866,9 @@ version = "0.11.1"
 
 [[Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "477bf42b4d1496b454c10cce46645bb5b8a0cf2c"
+git-tree-sha1 = "438d35d2d95ae2c5e8780b330592b6de8494e779"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.0.2"
+version = "2.0.3"
 
 [[Pixman_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -996,9 +953,9 @@ uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
 version = "0.4.1"
 
 [[RecipesBase]]
-git-tree-sha1 = "b3fb709f3c97bfc6e948be68beeecb55a0b340ae"
+git-tree-sha1 = "44a75aa7a527910ee3d1751d1f0e4148698add9e"
 uuid = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-version = "1.1.1"
+version = "1.1.2"
 
 [[RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
@@ -1007,9 +964,9 @@ uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
 version = "0.3.4"
 
 [[Reexport]]
-git-tree-sha1 = "5f6c21241f0f655da3952fd60aa18477cf96c220"
+git-tree-sha1 = "22a05aff275f6704f8769799beafe47ee7d14416"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
-version = "1.1.0"
+version = "1.2.1"
 
 [[Requires]]
 deps = ["UUIDs"]
@@ -1040,9 +997,9 @@ version = "1.1.0"
 
 [[SentinelArrays]]
 deps = ["Dates", "Random"]
-git-tree-sha1 = "a3a337914a035b2d59c9cbe7f1a38aaba1265b02"
+git-tree-sha1 = "54f37736d8934a12a200edea2f9206b03bdf3159"
 uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
-version = "1.3.6"
+version = "1.3.7"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -1130,9 +1087,9 @@ uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 
 [[TableOperations]]
 deps = ["SentinelArrays", "Tables", "Test"]
-git-tree-sha1 = "a7cf690d0ac3f5b53dd09b5d613540b230233647"
+git-tree-sha1 = "019acfd5a4a6c5f0f38de69f2ff7ed527f1881da"
 uuid = "ab02a1b2-a7df-11e8-156e-fb1833f50b87"
-version = "1.0.0"
+version = "1.1.0"
 
 [[TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
@@ -1390,66 +1347,29 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═dfec6a32-ffa4-11eb-374b-d3703cb52be3
-# ╠═a385b7b2-740f-4cd6-8c3d-091b944fce12
-# ╟─f9cf143f-e5e0-412b-9e6a-dcdce847d78e
-# ╠═dcb1ac50-8f2c-4d57-8e6a-45b3b445273f
-# ╠═3b07b25f-2293-40e6-bf68-4330da282fc4
-# ╠═bec6d313-7ad9-4296-b474-4ceeb95e974f
-# ╠═b311457a-7e5a-4358-a79c-8c5c54dd7ce4
-# ╟─f373b04e-25d7-44a7-b10c-041be10525b7
-# ╠═3a0a50ab-3605-460a-836d-45ea4437e91a
-# ╠═46ee2096-693a-4825-bf95-50530e6defee
-# ╟─140f6d8e-f62e-456a-875a-af4abed0c686
-# ╠═6b241e37-4393-48aa-884c-7732f0a4ce8c
-# ╠═d1a96ec0-1ec0-4ead-b2aa-d0b4b17237d9
-# ╠═d89cf5bf-2812-4b3b-afc6-09752e702e95
-# ╠═46d7be0c-47eb-4b07-851e-5c15c72cab3b
-# ╠═40f9df30-d7af-49e1-859f-c05ef35b6eca
-# ╠═430d4dc6-1eb9-4f14-9d45-fd93a732e95f
-# ╟─a1597bed-8352-4d12-8e6e-9cc57a4c66e1
-# ╠═af869c9d-c655-4bbb-989d-5fea3c2feefc
-# ╠═c6873de8-276d-4eee-a045-5bcd6a698d17
-# ╟─09e5570e-1904-487d-9143-4d1e3c23f0a7
-# ╠═1df956a7-231c-44b9-b3cd-519bfacb20b9
-# ╠═e441d549-bb43-4ce5-af38-adc3817218db
-# ╠═461b9460-e8d2-4827-9ad2-d196efd1b685
-# ╠═0aa5aa15-8b6e-4935-8b04-0e1bd78e6f02
-# ╠═a5470771-01ac-490b-840b-f4dd75a066ad
-# ╠═d92d6abf-6824-48a9-90e8-83ddbf6e59cc
-# ╟─d2219b5e-ec0f-4888-99d3-561c75f358d2
-# ╠═2e4ad0bb-3cff-49e8-9d30-f66064e5ad46
-# ╠═47ac7bd2-3990-432d-8f34-8b58f008c71e
-# ╟─036d0f88-3db6-4ded-b268-fc4a19620775
-# ╠═6a60fd3d-3f0a-4ce5-a8c2-688a19089be7
-# ╠═286afdda-add4-4bba-964c-6bf98caccd6e
-# ╠═89470027-c1d8-451f-a7fc-0e960ed9da83
-# ╠═60a5ee9e-09bd-41b3-8192-636e7c05ad78
-# ╠═2b3dadbf-f6e4-4820-ae87-02f2d4372f23
-# ╠═14863b74-1bb2-49ef-a304-082b81c0efe2
-# ╠═c3ff9ed8-2f11-43e0-be84-53b09e944b83
-# ╠═08da3796-8f82-47a3-9c8c-7b04e8ce46b5
-# ╠═7451fc5d-0923-4539-b545-a62a30827f7e
-# ╠═1818bf6a-0b17-4d3a-9948-3fd6b3570696
-# ╠═7466b65e-2d4a-4591-8361-0d6021ef44ef
-# ╠═bc126ca6-3d3c-4da2-9613-7953ad2e155b
-# ╠═b65646b4-0214-44a8-8e4b-de7b187dfe7d
-# ╠═42d1e698-a563-4d86-838a-b0e6b68cd09a
-# ╠═e6c8c8ac-5d73-48fa-8b09-c0629a982b91
-# ╠═cb46ca01-0560-44da-8365-c01688cffe97
-# ╠═9c479aa9-5053-4225-9a13-70b985f2a7f6
-# ╠═d3d3cec5-2db4-48ca-babc-353f90ab4b3d
-# ╠═de4e4df8-125f-4ddb-8f81-dacbc024dffc
-# ╠═e1e97698-ff46-4561-bb66-0909234bf54a
-# ╠═fc98d914-10e4-4135-95d1-79c56391bec1
-# ╠═6bfced88-c79b-4226-95aa-2bdbc9b916cb
-# ╠═0cfe191e-960d-4633-9462-c959decc6ec3
-# ╠═609b8247-b9ff-4acd-b43a-213b81b29837
-# ╠═521461dd-1f3a-430a-adbc-57d1f256bdfa
-# ╠═8c28317e-4740-453b-94d1-06dc548567ba
-# ╠═f019b63a-b6b8-4448-82c5-197bf8e75a65
-# ╠═23af43bb-d81d-4a07-bc9f-f1c7b6a7c6a6
-# ╠═c2fcc647-c561-48bf-8a17-a16dc09c1871
-# ╠═5e8534c1-2262-498e-bab8-5c8c8a09d648
+# ╟─1864dd04-05ef-11ec-10e5-c9e213811e2b
+# ╠═707d02d9-5ce4-4a8e-aae6-c804d9aa1a95
+# ╟─3ba8f3f0-ba65-4e10-b683-e0089d329af1
+# ╠═bfc9bf80-efef-4e72-a7b9-58df1af16e24
+# ╠═21ad270c-60d0-4826-9e7e-51142094b775
+# ╟─a4fa65b1-ab0c-4794-9b44-8fc0d6b34eb5
+# ╟─e06de210-d295-453b-936c-6ac064c9977a
+# ╠═6f03a493-dd91-4b5c-9c99-a810d0ec082b
+# ╟─a02819b7-4c58-4d8e-b336-88f049fa803b
+# ╠═4ce2d655-efee-4951-96c8-e9f6e70da43d
+# ╠═fca06861-b636-4007-b0ac-8c8fc89902ed
+# ╟─ef79875a-cdf4-4dc9-82e2-9ff653b99238
+# ╟─2b5ca14c-1589-4384-98d0-8f8296b18268
+# ╟─b099d2d2-f6f1-4847-8680-e70f82f0b82a
+# ╠═b013bc34-1fda-4e0e-bf7d-b0ec67db8bde
+# ╠═f6777bf2-c5bf-4785-8703-d9c24d9cb79b
+# ╠═8544b9aa-8702-4459-8502-9367d35b2f8d
+# ╟─95e7b14e-1a15-4001-98b0-f9f050783261
+# ╠═290409fc-8a81-4021-b46d-f4815512b920
+# ╟─8bd2de1c-73b8-41f2-aad6-9ccb5041f635
+# ╠═52c65b4f-8a42-4b7a-997a-32647cd7ebce
+# ╟─4d81bbf4-b23a-4f12-9d6e-4b16d10b0587
+# ╠═6120288c-d6fe-470c-8f14-74a5d3f9bcb2
+# ╟─a49c88a8-f02d-4a41-8a47-dcf8f02dd1db
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
