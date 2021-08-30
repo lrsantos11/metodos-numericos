@@ -130,7 +130,7 @@ function Trapezios(f,a,b;n=10)
 end
 
 # ╔═╡ f6777bf2-c5bf-4785-8703-d9c24d9cb79b
-Q_TCf = Trapezios(f,1,2,n=600)
+Q_TCf = Trapezios(f,1,2,n=15)
 
 # ╔═╡ 8544b9aa-8702-4459-8502-9367d35b2f8d
 norm(Q_TCf - If)
@@ -183,7 +183,15 @@ Aplicando essa fórmula no exemplo acima temos.
 """
 
 # ╔═╡ 52c65b4f-8a42-4b7a-997a-32647cd7ebce
-# Implementação
+md"""
+Valor aproximado: QS[f] = $(0.5/3 * (f(1.0) + 4* f(1.5) + f(2.0)))
+"""
+
+# ╔═╡ ad7be6ab-4942-45ac-ba5a-c2fa15a146d2
+If
+
+# ╔═╡ bd40fa1d-4479-430a-9eef-4773bd53133c
+abs(If - 1.1901247263416326)
 
 # ╔═╡ 4d81bbf4-b23a-4f12-9d6e-4b16d10b0587
 md"""
@@ -194,7 +202,7 @@ Ou seja, quebramos o intervalo de integração em grupos de dois em dois subinte
 
 Isso, é claro pode ser generalizado para mais intervalos. Se temos $n + 1 $ pontos, com $n$ par, podemos construir $n / 2$ intervalos e obtemos a fórmula
 
-$$I = \int_a^b f(x) dx = \sum_{k = 1}^{n/2} \int_{x_{2k - 2}}^{x_{2k}} f(x) dx \approx \sum_{k = 1}^{n /2} \frac{h}{3} [f(x_{2k-2}) + 4 f(x_{2k - 1}) + f(x_{2k}) ] \equiv Q_{SC}[f].$$
+$$I = \int_a^b f(x) dx = \approx \frac{h}{3} [f(x_{0}) + 4 \sum_{i=1}^{n/2} f(x_{2i-1}) + 2 \sum_{i=1}^{n/2-1}f(x_{2i}) + f(x_n) ] \equiv Q_{SR}[f].$$
 conhecida como regra de Simpson composta.
 
 Mais uma vez podemos implementá-la.
@@ -202,6 +210,52 @@ Mais uma vez podemos implementá-la.
 
 # ╔═╡ 6120288c-d6fe-470c-8f14-74a5d3f9bcb2
 # Implementação
+function Simpson(f,a,b;n::Int = 10)
+	@assert iseven(n) "O valor de n não é par"
+	h = (b - a)/n
+	xk = a # x₀
+	integral = f(xk)
+# 	Fazendo f(x_1) até f(x_{n-1})
+	for k in 1:n-1
+		xk += h # xₖ₊₁ = xₖ + h
+		if isodd(k) # Verifica se n é ímpar
+			mult = 4.
+		else
+			mult = 2.
+		end
+		# isodd(n) ? mult = 4. : mult = 2.
+		integral += mult * f(xk)
+	end
+	integral += f(b)
+	integral *= h/3
+	return integral
+end
+
+# ╔═╡ f8470103-342f-4f06-b064-8471d645347d
+Q_SR = Simpson(f,1,2,n=2)
+
+# ╔═╡ 64238f71-3e9b-4c23-8318-4ddeff1c6fb2
+abs(If - Q_SR)
+
+# ╔═╡ 36ab23e8-93cc-4ecd-bcf9-5648fadab333
+Simpson(exp,0,1,n=20) - (ℯ - 1)
+
+# ╔═╡ de030295-d90f-4b33-91ab-1dffd6600253
+md"""
+ - Usando `erf`
+"""
+
+# ╔═╡ 8c3b33da-64ad-4f67-8381-9843344a7d77
+func_erf(t) = 2/√π * exp(-t^2)
+
+# ╔═╡ 0e13a168-0a7a-45ec-8144-0dfe23b5d44d
+erf_simpson(x) = Simpson(func_erf, 0, x,n=10)
+
+# ╔═╡ 11fa72b9-0f84-4794-bb39-94b1fe9d74df
+erf(4)
+
+# ╔═╡ 12369310-8242-47cd-a869-2ec0ce6ea45e
+erf_simpson(4)
 
 # ╔═╡ a49c88a8-f02d-4a41-8a47-dcf8f02dd1db
 md"""
@@ -422,9 +476,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "3889f646423ce91dd1055a76317e9a1d3a23fff1"
+git-tree-sha1 = "f389cb8974e02d7eaa6ae2ccedbbfb43174cd8e8"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.11"
+version = "0.25.14"
 
 [[DocStringExtensions]]
 deps = ["LibGit2"]
@@ -888,9 +942,9 @@ version = "2.0.1"
 
 [[PlotUtils]]
 deps = ["ColorSchemes", "Colors", "Dates", "Printf", "Random", "Reexport", "Statistics"]
-git-tree-sha1 = "501c20a63a34ac1d015d5304da0e645f42d91c9f"
+git-tree-sha1 = "c67334c786157d6ef091ce622b365d3d60b1e2c4"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
-version = "1.0.11"
+version = "1.0.12"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
@@ -959,14 +1013,14 @@ version = "1.1.2"
 
 [[RecipesPipeline]]
 deps = ["Dates", "NaNMath", "PlotUtils", "RecipesBase"]
-git-tree-sha1 = "2a7a2469ed5d94a98dea0e85c46fa653d76be0cd"
+git-tree-sha1 = "32efa73dece357e9c834cae8af00265752c80061"
 uuid = "01d81517-befc-4cb6-b9ec-a95719d0359c"
-version = "0.3.4"
+version = "0.3.5"
 
 [[Reexport]]
-git-tree-sha1 = "22a05aff275f6704f8769799beafe47ee7d14416"
+git-tree-sha1 = "45e428421666073eab6f2da5c9d310d99bb12f9b"
 uuid = "189a3867-3050-52da-a836-e630ba90ab69"
-version = "1.2.1"
+version = "1.2.2"
 
 [[Requires]]
 deps = ["UUIDs"]
@@ -1068,9 +1122,9 @@ version = "0.14.26"
 
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
-git-tree-sha1 = "000e168f5cc9aded17b6999a560b7c11dda69095"
+git-tree-sha1 = "1700b86ad59348c0f9f68ddc95117071f947072d"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
-version = "0.6.0"
+version = "0.6.1"
 
 [[SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
@@ -1368,8 +1422,18 @@ version = "0.9.1+5"
 # ╠═290409fc-8a81-4021-b46d-f4815512b920
 # ╟─8bd2de1c-73b8-41f2-aad6-9ccb5041f635
 # ╠═52c65b4f-8a42-4b7a-997a-32647cd7ebce
+# ╠═ad7be6ab-4942-45ac-ba5a-c2fa15a146d2
+# ╠═bd40fa1d-4479-430a-9eef-4773bd53133c
 # ╟─4d81bbf4-b23a-4f12-9d6e-4b16d10b0587
 # ╠═6120288c-d6fe-470c-8f14-74a5d3f9bcb2
+# ╠═f8470103-342f-4f06-b064-8471d645347d
+# ╠═64238f71-3e9b-4c23-8318-4ddeff1c6fb2
+# ╠═36ab23e8-93cc-4ecd-bcf9-5648fadab333
+# ╟─de030295-d90f-4b33-91ab-1dffd6600253
+# ╠═8c3b33da-64ad-4f67-8381-9843344a7d77
+# ╠═0e13a168-0a7a-45ec-8144-0dfe23b5d44d
+# ╠═11fa72b9-0f84-4794-bb39-94b1fe9d74df
+# ╠═12369310-8242-47cd-a869-2ec0ce6ea45e
 # ╟─a49c88a8-f02d-4a41-8a47-dcf8f02dd1db
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
