@@ -4,282 +4,604 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 707d02d9-5ce4-4a8e-aae6-c804d9aa1a95
+# ╔═╡ 2b0f8ca8-2bce-4784-9110-1fdbb18b27d0
 begin
 	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra, SpecialFunctions,LaTeXStrings
-	gr()
+	plotly()
 end
 
-# ╔═╡ 1864dd04-05ef-11ec-10e5-c9e213811e2b
+# ╔═╡ 83c15f2c-d266-4ec4-bcd3-a464615cf7ae
+using SparseArrays
+
+# ╔═╡ 7ac099ac-0aa4-11ec-014c-b7e75ef5ebf5
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 11 - Aula 02
+###### Semana 12 - Aula 01
 """
 
-# ╔═╡ 3ba8f3f0-ba65-4e10-b683-e0089d329af1
+# ╔═╡ a983ec5b-2d81-4210-a1f1-5c478bcbbede
 md"""
-# Integração Numérica
-
-Imagine que estamos interessado em calcular a integral de uma função $f$ em um intervalo $[a, b]$.
-$$I \equiv \int_a^b f(x) dx.$$
-Em cálculo vimos que isso pode ser feito usando o teorema fundametal do cálculo sempre que conhecemos uma primitiva de $f$. Infelizmente em alguns casos não conhecemos uma primitiva. Um exemplo interessante é a integral
-
-$$\operatorname{erf}(x) = \frac{2}{\sqrt{\pi}} \int_0^x e^{-t^2} dt$$
-para qual não se conhece primitiva usando função usuais.
-
-- Esta integral tem nome de [função erro de Gauss](https://pt.wikipedia.org/wiki/Fun%C3%A7%C3%A3o_erro)
-- Em Julia, usando o pacote `SpecialFunctions.jl` tem uma implementação para chamarmos a função `erf`.
-
-Há ainda outras situações em que o processo de calcular a intergral a partir de uma primitiva pode ser indesejável ou impossível. Por exemplo, a expressão da primitiva pode ser muito complexa ou não conhecemos a expressão explícita de $f$ mas apenas temos $f$ tabelada em alguns pontos.
-
-Nesses casos uma possibilidade interessante é tentar realizar uma integração numérica de $f$, ou seja, tentar encontrar aproximações da integral desejada usando fórmulas que envolvam apenas o cômputo da função que se deseja integrar em alguns pontos pré-escolhidos ou mesmo nos pontos que temos à disposição. Vamos ver algumas alternativas para isso.
-
-## Regra do trapézio
-
-Imagine que queremos integrar uma função $f$ no intervalo $[a, b]$. Uma das possibilidades mais simples é aproximar a integral pela área do trapézio definido por $(a, f(a))$ e $(b, f(b))$.
-
+# Sistemas lineares
 """
 
-# ╔═╡ bfc9bf80-efef-4e72-a7b9-58df1af16e24
+# ╔═╡ f266e93d-3c65-4ef5-8e91-ee63ade7d39c
+md"""
+## Fatoração LU
+
+Dada uma matriz $A\in \mathbb{R}^n$, a eliminação de Gauss pode ser entendida como a fatoração da matriz $A$ em 
+
+$A = LU$. 
+Em `julia` usamos o comando `lu` para este cálculo. 
+
+Vejam que de fato $LU$ é igual à matriz $A$ original. Na verdade, essa igualdade absoluta é obtida nesse caso por que todas as contas, apesar de serem feitas com ponto flutante, geraram números inteiros que podem ser representados. De uma forma geral esperamos que o resultado final sejam aproximadamente a $L$ e a $U$ desejadas. Voltaremos a discutir erros depois.
+
+### Utilizando a fatoração LU para resolver sistemas
+
+Começamos essa discussão falando sobre a solução de sistemas lineares mas fizemos um desvio acima para comentar sobre uma fatoração de matrizes. Vamos agora voltar a trilha original, vendo como usar a fatoração LU para resolver um sistema linear. Desejamos encontrar $x$ tal que
+
+$$Ax = b.$$
+Isso é equivalente a buscar $x$ tal que
+
+$$LUx = b.$$
+Como lidar com sistemas que tem produtos de matrizes como acima? Uma ideia é criar variáveis intermediárias, resolvendo o sistema da esquerda para a direita. Por exemplo, no caso acima podemos inicialmente buscar $y$ tal que
+
+$$L y = b.$$
+Isso é fácil de calcular porque o sistema é triangular inferior. Depois disso resolvemos
+
+$$U x = y.$$
+Assim, obtemos o $x$ desejado, solução do sistema original. Note que de novo basta resolver um sistema triangular, mas agora superior. De fato colocando as duas últimas expressões juntas temos
+$$U x = y \implies L (U x) = b \implies Ax = b.$$
+A primeira implicação usa a definição de $y$. 
+"""
+
+# ╔═╡ 93b645f3-0af2-467b-9cf0-dc7c36c1fa54
+# Exemplo1
 begin
-	f(x) = sin.(x) + 0.1*x.^2
-	a, b = 1, 2.0
+	A1 = [2.0 3 1 1; 4 7 4 3; 4 7 6 4; 6 9 9 8]
+	b1 = [3.0, 6, 4, 3]
+	fat_lu1 = lu(A1, Val(false))
 end
 
+# ╔═╡ f6d227ec-23c4-45bf-9621-c45f37bab0c8
+fat_lu1.L
 
-# ╔═╡ 21ad270c-60d0-4826-9e7e-51142094b775
-begin
-# Desenha f
-	plot(f)
+# ╔═╡ 162ef5fa-5d89-4a4a-98fe-13afcebc69f4
+istril(fat_lu1.L)
 
-	#Desenha o polinomio interpolador de f
-	plot!([a, b], [f(a), f(b)], color=:green,lw=2, fill=(:green,0,0.2))
-	xlims!(0.5,2.5)
-	ylims!(0.,1.5)
-	# Desenha duas linhas verticais para facilitar a visualizacao
-	plot!([a, a], [0.0, f(a)], color=:green,lw=2)
-	plot!([b, b], [0.0, f(b)], color=:green,leg=false,lw=2)
-	vline!([1,2],c=:red,lw=1)
-	scatter!([a, b], [f(a), f(b)])
-end
+# ╔═╡ 4d5b260c-b311-40fa-afc5-4f10a9f3d7b8
+fat_lu1.U
 
-# ╔═╡ a4fa65b1-ab0c-4794-9b44-8fc0d6b34eb5
+# ╔═╡ b4085a60-69be-42f5-abad-50173d107e7c
+istriu(fat_lu1.U)
+
+# ╔═╡ 941f8135-fe39-4ed4-a391-0b1e617d3da3
+fat_lu1.L * fat_lu1.U
+
+# ╔═╡ cdc1dfbe-45ec-4e67-aa1c-49a3de442153
+y1 = fat_lu1.L \ b1
+
+# ╔═╡ a953ea17-f22f-4880-b31a-e16e2d16f698
+x1 = fat_lu1.U \ y1
+
+# ╔═╡ 043b30f0-3d40-4d87-bdfa-96158c8ee690
+norm(b1 - A1*x1)
+
+# ╔═╡ 4477ef3d-c3ae-4cde-9708-8a4ed292b194
+x12 = fat_lu1 \ b1
+
+# ╔═╡ a30599d2-c700-4f6c-ad0f-707ab92c137a
+A1 \ b1
+
+# ╔═╡ 28d44316-c5ab-4b84-92f0-ec254734f323
+lu([0 1; 1 1.],Val(false))
+
+# ╔═╡ 0de91742-2a39-42c6-8094-56602e0ac393
 md"""
-Se chamarmos a distância entre $a$ e $b$ de $h$, temos imediatamente a aproximação
+### Pivoteamento
 
-$$\int_a^b f(x) dx \approx \frac{f(a) + f(b)}{2}h \equiv Q_T[f].$$
-Que no caso acima resulta em.
+A fatoração LU é de fato muito interessante. Uma pergunta natural é se essa fatoração existe para qualquer matriz quadrada. A resposta é não. Se algum dos pivôs (da eliminação de Gauss) se anular não poderemos prosseguir. 
+
+> **Teorema.** Uma matriz $A \in \mathbb{R}^{n \times n}$ possui *fatoração LU (sem pivoteamento)*, se, e somente se, as submatrizes $A[1:k, 1:k],\ k = 1 \ldots n - 1$, tiverem determinantes não nulos.
+
+**Observação.** Os determinantes das submatrizes $A[1:k, 1:k],\ k = 1 \ldots n$ são conhecidos como *menores principais* de $A$.
+
+Mas o que fazer nesse caso?  Se isso for possível, trocamos duas equações de posição no sistema linear e obtemos um sistema equivalente para o qual o algoritmo pode continuar. Essa operação de troca é de novo uma operação elementar, que pode ser representada por uma matriz identidade com as respectivas linhas trocadas, multiplicada à esquerda. 
+
+A aplicação dessa regra permite calcular uma fatoração LU, não mais de $A$ mas de uma versão de $A$ com linhas permutadas. Esse tipo de matriz pode ser representado pela multiplicação à esquerda de $A$ por uma matriz de permutação $P$ que é uma matriz identidade com linhas trocadas de lugar representando as várias trocas de linhas necessárias para levar o processo à cabo. Ou seja, ao final obteremos algo na forma
+
+$$PA = LU.$$
+
+>**Teorema** Se uma matriz $A \in \mathbb{R}^{n \times n}$ for inversível, então ela admite fatoração LU com pivoteamento parcial.
+
+- `lu` de `julia` faz pivoteamento parcial, por padrão.
 """
 
-# ╔═╡ e06de210-d295-453b-936c-6ac064c9977a
+# ╔═╡ ea520c60-558a-4542-9b05-0a44c868ddf2
+[0 1 ; 1 0]*[0 1; 1  1]
 
+# ╔═╡ af88ce3b-cb74-4c8b-9a35-d719d53aec84
+fat_lu11 = lu([0 1; 1 1])
 
-# ╔═╡ 6f03a493-dd91-4b5c-9c99-a810d0ec082b
+# ╔═╡ 709b1b0b-6ea4-4b6e-8cff-52bacc27af2f
+fat_lu11.L * fat_lu11.U
+
+# ╔═╡ 17cafa2e-0102-43d7-b923-3c20d322ba3a
+fat_lu11.P
+
+# ╔═╡ 2079219f-043f-4d17-956c-d2665943b78a
+fat_lu11.P*fat_lu11.L*fat_lu11.U
+
+# ╔═╡ d5142365-3e56-4bc3-8294-2977e227243c
+b11 = [1,2]
+
+# ╔═╡ 0c284979-9e53-46c1-8775-4fb559b26c69
+y11 =fat_lu11.L \ b11[fat_lu11.p]
+
+# ╔═╡ edff7c0f-428b-443d-8fdb-4b0c87155550
+x11 = fat_lu11.U \ y11
+
+# ╔═╡ a01483ea-5ab4-4c55-84f9-faacda4217aa
+[0 1; 1 1] \ b11
+
+# ╔═╡ cf3d979e-7293-4b32-9afc-68184785ec89
 md"""
-Valor aproximado: $((f(1.0) + f(2.0))/2.0)
-"""
+### Número de condição
 
-# ╔═╡ a02819b7-4c58-4d8e-b336-88f049fa803b
-md"Podemos comparar com o valor exato já que é fácil calcular a primitiva de $f$."
+A menos que tomemos cuidado de fazer pivoteamento parcial $(PA = LU)$ a fatoração LU pode falhar em resolver sistemas lineares simples. Pelo menos a precisão final obtida pode ser muito ruim.
 
-# ╔═╡ 4ce2d655-efee-4951-96c8-e9f6e70da43d
-F(x) = -cos(x) + 0.1/3.0*x.^3
+Vamos agora ver que há sistemas lineares que tem uma propriedade intrínseca que impede que eles sejam resolvidos com alta precisão. Para entender isso vamos apresentar dois casos de sistemas no plano e relembrar um pouco sobre a sua solução geométrica.
 
-# ╔═╡ fca06861-b636-4007-b0ac-8c8fc89902ed
-If = (F(2.0) - F(1.0))
-
-# ╔═╡ ef79875a-cdf4-4dc9-82e2-9ff653b99238
-md"""
-Como podemos ver a fórmula simples de aproximação acima já acerta a primeira casa do resultado e erro por pouco a segunda. 
-
-Agora como podemos melhorar isso? Basta seguir a ideia da definição de integral e subdividir o intervalo $[a, b]$ em $n$ intervalos menores, isto é definir pontos $a = x_0 < x_1 < x_2 < \ldots < x_n = b$. 
-
-Para simplificar vamos sempre considerar que os intervalos tem todos os mesmos tamanhos que chamaremos mais uma vez de $h$. Podemos então usar a fórmula do trapézio em cada subintervalo e por fim somar todas as áreas obtidas para a aproximar a área total. Ou seja fazemos
-
-$$\begin{aligned}
-\int_a^b f(x) dx &\approx h \left( \frac{f(x_0) + f(x_1)}{2} + \frac{f(x_1) + f(x_2)}{2} + \dots + \frac{f(x_{n - 1}) + f(x_n)}{2} \right) \\
-&= h \left( \frac{f(x_0)}{2} + f(x_1) + f(x_2) + \ldots + f(x_{n - 1}) + \frac{f(x_n)}{2} \right) \equiv Q_{TC}[f].
-\end{aligned}$$
-Essa fórmula é conhecida com regra do trapézio composta. Vamos vê-la em ação.
-"""
-
-# ╔═╡ 2b5ca14c-1589-4384-98d0-8f8296b18268
-md"""
-- Integracao numérica usando a regra dos trapezios composta com $n + 1$ pontos.
-"""
-
-# ╔═╡ b099d2d2-f6f1-4847-8680-e70f82f0b82a
-md"""
- - Note que $x_{k+1} = x_k + h$, para todo $k=1,\ldots, n$.
-"""
-
-# ╔═╡ b013bc34-1fda-4e0e-bf7d-b0ec67db8bde
-function Trapezios(f,a,b;n=10)
-	h = (b - a)/n
-	xk = a # x₀
-	integral = f(xk)/2
-# 	Fazendo f(x_1) até f(x_{n-1})
-	for k in 1:n-1
-		xk += h # xₖ₊₁ = xₖ + h  
-		integral += f(xk)
-	end
-	integral += f(b)/2
-	integral *= h
-end
-
-# ╔═╡ f6777bf2-c5bf-4785-8703-d9c24d9cb79b
-Q_TCf = Trapezios(f,1,2,n=15)
-
-# ╔═╡ 8544b9aa-8702-4459-8502-9367d35b2f8d
-norm(Q_TCf - If)
-
-# ╔═╡ 95e7b14e-1a15-4001-98b0-f9f050783261
-md"""
-Em resumo temos uma regra bastante simples, que pode ser usada inclusive com intervalos irregulares se as alterações óbvias forem feitas. O erro de integração com múltiplos intervalos cai com $h^2$. 
-
-Mas será que podemos fazer melhor do que isso?
-
-## Regra de Simpson
-
-Podemos obter outras regras de aproximação de integrais simplesmente usando interpolação quadrática por partes que interpola $f$ em três pontos consecutivos. Nesse caso, precisamos avaliar $f$ em pelo menos três pontos. Se considerarmos um intervalo $[a, b]$ e $m$ seu ponto médio o polinômio interpolador fica:
-
-$$p_2(x) = f_a + \frac{x - a}{h} \left( (f_m - f_a) + \frac{f_b - 2f_m + f_a}{2h} (x - m) \right),$$
-em que $h = (b - a)/2$, ou seja a distância entre dois pontos de interpolação. Para ver que o polinômio acima interpola $f$ em $a$, $m$ e $b$ basta calcular o seu valor nesses pontos e ver que ele recupera os valores originais $f_a = f(a)$, $f_m = f(m)$ e $f_b = f(b)$.
-"""
-
-# ╔═╡ 290409fc-8a81-4021-b46d-f4815512b920
-let
-	f(x) = sin(x) + cos(2*x)+ 0.1*x^2
-	a, b = 1.0, 2.0
-	m = (b + a) / 2
-
-	# Desenha f
-	plot(f, label=L"$f$")
-	xlims!(0.5, 2.5)
-	ylims!(0.0, 1.5)
-	#Desenha o polinomio interpolador de grau 2 de f
-	h = (b - a) / 2 
-	fa = f(a)
-	fb = f(b)
-	fm = f(m)
-	p2(x) = fa + (x - a)/h .* ((fm - fa) + (fb - 2*fm + fa)/(2*h) .* (x - m) )
-	plot!(p2, color = :green, label=L"$p$",lw=2)
-
-	# Desenha duas linhas verticais para facilitar a visualizacao
-	plot!([a, a], [0.0, f(a)], color=:green,label="",lw=2)
-	plot!([b, b], [0.0, f(b)], color=:green,label="",lw=2)
-	scatter!([a,m,b],[f(a),f(m),f(b)],label="")
-end
-
-# ╔═╡ 8bd2de1c-73b8-41f2-aad6-9ccb5041f635
-md"""
-Apesar da fórmula de $p_2(x)$ ser um pouco assustadora, a fórmula de sua integral é simples:
-
-$$I = \int_a^b f(x) dx \approx \int_a^b p_2(x) dx = \frac{h}{3}(f_a + 4f_m + f_b) \equiv Q_S[f].$$
-
-Aplicando essa fórmula no exemplo acima temos.
-"""
-
-# ╔═╡ 52c65b4f-8a42-4b7a-997a-32647cd7ebce
-md"""
-Valor aproximado: QS[f] = $(0.5/3 * (f(1.0) + 4* f(1.5) + f(2.0)))
-"""
-
-# ╔═╡ ad7be6ab-4942-45ac-ba5a-c2fa15a146d2
-If
-
-# ╔═╡ bd40fa1d-4479-430a-9eef-4773bd53133c
-abs(If - 1.1901247263416326)
-
-# ╔═╡ 4d81bbf4-b23a-4f12-9d6e-4b16d10b0587
-md"""
-Agora como estender essa fórmula subdividindo o intervalo? Nesse caso precisamos de um número par de pontos para poder separar os grupos em 3 em 3 com extremos comuns.
-
-
-Ou seja, quebramos o intervalo de integração em grupos de dois em dois subintervalos a aplicamos a regra de Simpson em cada um deles.
-
-Isso, é claro pode ser generalizado para mais intervalos. Se temos $n + 1 $ pontos, com $n$ par, podemos construir $n / 2$ intervalos e obtemos a fórmula
-
-$$I = \int_a^b f(x) dx = \approx \frac{h}{3} [f(x_{0}) + 4 \sum_{i=1}^{n/2} f(x_{2i-1}) + 2 \sum_{i=1}^{n/2-1}f(x_{2i}) + f(x_n) ] \equiv Q_{SR}[f].$$
-conhecida como regra de Simpson composta.
-
-Mais uma vez podemos implementá-la.
-"""
-
-# ╔═╡ 6120288c-d6fe-470c-8f14-74a5d3f9bcb2
-# Implementação
-function Simpson(f,a,b;n::Int = 10)
-	@assert iseven(n) "O valor de n não é par"
-	h = (b - a)/n
-	xk = a # x₀
-	integral = f(xk)
-# 	Fazendo f(x_1) até f(x_{n-1})
-	for k in 1:n-1
-		xk += h # xₖ₊₁ = xₖ + h
-		if isodd(k) # Verifica se n é ímpar
-			mult = 4.
-		else
-			mult = 2.
-		end
-		# isodd(n) ? mult = 4. : mult = 2.
-		integral += mult * f(xk)
-	end
-	integral += f(b)
-	integral *= h/3
-	return integral
-end
-
-# ╔═╡ f8470103-342f-4f06-b064-8471d645347d
-Q_SR = Simpson(f,1,2,n=2)
-
-# ╔═╡ 64238f71-3e9b-4c23-8318-4ddeff1c6fb2
-abs(If - Q_SR)
-
-# ╔═╡ 36ab23e8-93cc-4ecd-bcf9-5648fadab333
-Simpson(exp,0,1,n=20) - (ℯ - 1)
-
-# ╔═╡ de030295-d90f-4b33-91ab-1dffd6600253
-md"""
- - Usando `erf`
-"""
-
-# ╔═╡ 8c3b33da-64ad-4f67-8381-9843344a7d77
-func_erf(t) = 2/√π * exp(-t^2)
-
-# ╔═╡ 0e13a168-0a7a-45ec-8144-0dfe23b5d44d
-erf_simpson(x) = Simpson(func_erf, 0, x,n=10)
-
-# ╔═╡ 11fa72b9-0f84-4794-bb39-94b1fe9d74df
-erf(4)
-
-# ╔═╡ 12369310-8242-47cd-a869-2ec0ce6ea45e
-erf_simpson(4)
-
-# ╔═╡ a49c88a8-f02d-4a41-8a47-dcf8f02dd1db
-md"""
-Veja que o resultado obtido pelo emprego da regra de Simpson composta é bem melhor do que o resultado obtido pela regra dos trapézios composta. Uma limitação da regra Simpson é que ela assume que os intervalos entre os pontos são sempre de mesmo comprimento, isso foi usando quando apresentamos a fórmula do polinômio interpolador de segundo grau.
-
-No caso da regra de Simpson é também possível estimar o erro esperado e observar que, qualitativamente, ele deve ser menor do que o erro da regra dos trapézios. De fato, usando uma análise semelhante a feita no caso dos trapézios podemos obter a seguinte expressão para o erro na regra de Simpson em um intervalo.
+Dado um sistema de duas equações e duas incógnitas, por exemplo
 
 $\begin{aligned}
-|I - Q_S[f]| & = \int_a^b f(x) dx - \int_a^b p_2(x) dx \\
-&= \left| \int_a^b \frac{f'''(\xi_x)}{3!}(x - a)(x - m)(x - b) dx \right| \\
-&\leq \int_a^b \frac{| f'''(\xi_x)|}{3!} \left| (x - a)(x - m)(x - b) dx \right| \\
-&= \frac{| f'''(\eta) |}{6} \int_a^b | (x - a)(x - m)(x - b) | dx, \quad \eta \in (a, b) \\
-&= \frac{| f'''(\eta) |}{6} \frac{1}{2} \left( \frac{b - a}{2} \right)^4, \quad \eta \in (a, b) \\
-&= \frac{| f'''(\eta) | h^4}{12}, \quad \eta \in (a, b).
+x + y &= 2 \\
+x - 2y &= -1.
 \end{aligned}$
 
+Aprendemos que podemos resolvê-lo graficamente desenhando as retas que representam cada uma das duas equações e procurando o seu ponto de cruzamento. Nesse caso teríamos.
+"""
 
-De novo usamos o teorema do valor intermediário para integrais na passagem mais complicada e o fato que $h = (b - a)/2$. Compare com o resultado obtido para o caso do método dos trapézios em particular observe que há uma tendência do erro ser menor já que a potência do $h$ é maior.
+# ╔═╡ da3c023a-ddd3-4885-8ce7-8650c71b0abb
+begin 
+	plot(x->2-x,0,2,lab = "")
+	plot!(x->(x+1)/2,0,2,lab = "")
+end
 
-Agora, uma análise um pouco mais sofisticada da expressão original permite provar que:
+# ╔═╡ 274dd537-f7d6-4173-a9d9-d0bd98613cdd
+A2 = [1 1 ; 1 -2]
 
-$$I - Q_S[f] = -\frac{f^{(4)}(\eta)h^5}{90}, \quad \eta \in (a, b).$$
-Note que, como o erro depende da derivada quarta de $f$, se a função original for um polinômio de grau até 3 o erro será zero. Isso é mais do que era esperado pela estratégia de construção da regra já que polinômio interpolador usado foi de grau 2. A potência real de $h$ também é maior, aumentando para 5. 
+# ╔═╡ 24666d56-e103-4949-b351-eeba9dd78cc3
+b2 = [2, -1]
 
+# ╔═╡ 34cf2ada-1a97-45c7-b81a-cf11f763883f
+A2 \ b2
+
+# ╔═╡ 3b286a50-26d6-472c-8584-c3ea98464d8a
+md"""
+Nessa imagem vemos claramento o ponto de cruzamento que é $(1, 1)$. A situação ficaria bem menos clara se as duas retas fossem quase paralelas. Isso ocorre por exemplo com o sistema
+
+$\begin{aligned}
+x + y &= 2 \\
+(1.0 + 10^{-1})x + y &= 2 + 10^{-1}.
+\end{aligned}$
+Nesse caso a figura fica:
+"""
+
+# ╔═╡ 8cf0c701-42b7-4a73-95d9-69437cc306be
+begin 
+	plot(x->2-x,0,2,lab = "")
+	plot!(x->2.01 - 1.01x,0,2,lab = "")
+end
+
+# ╔═╡ 3b219946-200b-42b3-8481-780a0b21341c
+md"""
+Agora o ponto de intersecção continua sendo $(1, 1)$ mas isso é muito menos claro visualmente. A única solução é ir tentando aumentar a imagem próximo à região de intersecção (zoom) para tentar ver melhor. Por outro lado se você imaginar que as linhas tem espessura fixa o zoom não vai adiantar muito. Há uma precisão máxima que pode ser obtida. De forma análoga ao caso de linhas de espessura fixa, a precisão que pode ser atingida com números do tipo ponto flutuante é também limitada.
+
+Dessa forma, é de se esperar que quando queremos resolver um sistema associado a equações quase paralelas o computador tenha problemas. Vamos ver isso.
+"""
+
+# ╔═╡ 6763b10a-28c7-4b75-9018-cc0d04a6ff08
+begin
+	# Constroi um sistema que tem solucao exata (1, 1) mas com a segunda # equacao muito parecida com a primeira.
+	pertubacao = 1.0e-13
+	A3 = [1.0 1.0; 1.0+pertubacao 1.0-pertubacao]
+	b3 = [2.0, 2.0]
+	fat_lu3 = lu(A3)
+	y3 = fat_lu3.L\b3[fat_lu3.p]
+	x3 = fat_lu3.U\y3
+end
+
+# ╔═╡ 9dbe3737-56f4-49f8-a923-9a1d7f561c7f
+norm(x3 - [1,1])/norm([1.1])
+
+# ╔═╡ 8c7facd7-3a76-4e35-b8e8-f5e84d1bbef5
+md"""
+Veja que a solução calculada tem erro confirmado pelo calculo do erro relativo. Um fato interessante é que é possível calcular um valor a partir da matriz que nos diz quando esperar que problemas numéricos como os que vimos acima podem ocorrer. Mas para isso precisamos fazer um pequeno desvio e falar sobre normas de matrizes.
+
+### Distâncias e normas de vetores e matrizes.
+
+Em Matemática chamamos de norma, ou comprimento de um vetor $x \in \mathbb{R}^n$, uma função $x \mapsto \| x \| \in \mathbb{R}$ tal que:
+1. Para todo $x \in \mathbb{R}^n$  $\| x \| \geq 0$ e $\| x \| = 0$ somente se $x = 0$.
+
+1. Para todo $x \in \mathbb{R}^n$ e $\alpha \in \mathbb{R}$ temos $\| \alpha x \| = |\alpha| \| x \|$.
+
+1. Vale a desigualdade triangular, isto é, $\| x + y \| \leq \| x \| + \| y \|$ para todos $x, y \in \mathbb{R}^n$.
+
+A ideia por detrás dessa definição é capturar diferentes formas de medir tamanho ou distância, mas preservando a propriedade que vetores pequenos tem tamanhos pequenos, somente o vetor nulo tem tamanho $0$ e que o tamanho do lado de um triângulo é menor ou igual a soma dos tamanhos dos outros dois lados.
+
+Com a norma definida podemos definir a distância entre dois vetores como a norma de sua diferença, como é natural.
+
+Vejamos agora alguns os exemplos mais importantes de norma.
+
+$\begin{align}
+\| x \|_1 &= | x_1 | + | x_2 | + \ldots + | x_n |. \\
+\| x \|_2 &= \sqrt{x_1^2 + x_2^2 + \ldots + x_n^2}. \\
+\| x \|_\infty &= \max \{ | x_1 |, | x_2 |, \ldots, | x_n | \}.
+\end{align}$
+
+
+"""
+
+# ╔═╡ 99f6a0d9-18cd-4689-9127-4365b6e772bc
+x4 = fill(1.,5)
+
+# ╔═╡ ed52fe75-26d9-488b-9a41-eb4ca86d2d40
+norm(x4,1)
+
+# ╔═╡ 06a54494-4b71-4bd7-8443-76f2f4bb4e6b
+norm(x4,2) # = norm(x4)
+
+# ╔═╡ 686d1d28-c67a-45eb-b91c-73a472b669c4
+norm(x4,Inf)
+
+# ╔═╡ ec36911d-8e73-4d3c-bff5-566a111c00f5
+md"""
+É fácil mostrar que as definições acima obedecem às três propriedades que definem uma norma usando as propriedades relacionadas da função módulo.
+
+Uma pergunta natural é: porque se preocupar com formas alternativas de medir comprimento de vetor ou distância entre dois vetores que não seja a distância usual, euclidiana, que é capturada na definição da norma 2? Para entender disso imagine que você mora em uma cidade com ruas formando um quadriculado. Se você está em um ponto $(x_1, y_1)$ nessa cidade e quer ir para o ponto $(x_2, y_2)$ é fácil entender que o mínimo que você precisa se movimentar é justamente $| x_1 - x_ 2 |$ na horizontal $| y_1 - y_2 |$ na vertical. Ou seja, na prática a distância entre esses pontos é $| x_1 - x_ 2 | + | y_1 - y_2 |$ que está justamente relacionada à norma 1.
+
+Da mesma forma que podemos estar interessados em definir o comprimento ou de vetores podemos também querer definir o comprimento ou tamanho de matrizes. Isso é usualmente feito referindo-se a normas de vetores. Vamos mais uma vez apresentar as definições mais importantes para o curso. Seja $A \in \mathbb{R}^{n \times n}$ temos
+
+$\begin{align}
+\| A \|_1 &= \max \{ \| a_{1:n, i} \|_1,\ i = 1, \ldots, n \} \quad\quad \text{(máxima norma 1 das colunas de A)}. \\
+\| A \|_2 &= \max_{\| x \|_2 = 1} \{ \| Ax \|_2 \}.\\
+\| A \|_\infty &= \max \{ \| a_{i, 1:n} \|_1,\ i = 1, \ldots, n \} \quad\quad \text{(máxima norma 1 das linhas de A)}. \\
+\end{align}$
+
+Uma propriedade fundamental que relaciona as normas de matrizes com as respectivas normas de vetores é apresentada a seguir.
+
+> **Proposição.** $$\| Ax \|_\dagger \leq \| A \|_\dagger \| x \|_\dagger,$$ em que $\dagger$  pode ser substituido (nas três posições ao mesmo tempo) por $1$, $2$, ou $\infty$.
+
+Vejamos um exemplo numérico.
+"""
+
+# ╔═╡ 3e2ad1e9-7501-43bc-8a75-197e564a50c3
+A4= 5*rand(5,5)
+
+# ╔═╡ f248faa7-8bbd-4638-af36-2953ee9ff6cc
+norm(reshape(A4,25))
+
+# ╔═╡ 9fc810b3-e815-4988-98ed-119f3e47c2c0
+norm(A4) #Norma de Frobenius
+
+# ╔═╡ c7b066a3-4d2b-49da-9168-a412d2a07474
+opnorm(A4,1)
+
+# ╔═╡ f1120902-cea7-4d64-b896-f7e59f6ae9e1
+opnorm(A4,2)
+
+# ╔═╡ ff0e6e4c-3bdf-4091-9ec3-8703b432b046
+opnorm(A4,Inf)
+
+# ╔═╡ 29ac9cc6-135f-4c09-8284-9618a93abb0f
+md"""
+De posse dessas definições, estamos prontos para retomar o nosso objetivo original: apresentar um valor que pode ser calculado a partir da matriz associada ao sistema que desejamos resolver e que seja capaz de estimar a risco de corremos de ter grandes erros numéricos.
+
+### Número de condição
+
+Esse valor é conhecido como *número de condição* e pode ser entendido como uma forma de estimar o quanto a matriz está perto de ser não-inversível, ou seja o quão perto suas linhas (ou colunas) estão de se tornarem linearmente dependentes. Ele é dado por
+
+$\kappa(A) = \| A \| \| A^{-1} \|.$
+
+Vamos inicialmente calcular o número de condição das duas matrizes associados aos sistemas no plano vistos anteriormente:
+"""
+
+# ╔═╡ 96b7683f-29ed-4ff3-82f2-fca950793cd6
+A2
+
+# ╔═╡ 0c4fc7e4-4f09-454f-b21c-fa9952550f05
+opnorm(A2)*opnorm(inv(A2))
+
+# ╔═╡ bb87f148-afbb-4a7f-aa70-334a10fd093e
+A3
+
+# ╔═╡ 43c230d2-ad37-465f-ac4b-3ad335894cce
+opnorm(A3)*opnorm(inv(A3))
+
+# ╔═╡ 9e135f63-2388-4f31-a2ae-419e857a1633
+cond(A3)
+
+# ╔═╡ 493b9408-fdd9-41e4-a073-f0a93a67ee6f
+md"""
+Como vocês podem ver o número de condição da segunda matriz é muito grande, da ordem de $10^{13}$. Isso sugere que é possível que encontremos dificuldades numéricos ao calcular a fatoração LU (mesmo usando pivoteamento) dessa matriz ou ao tentar resolver um sistema linear baseado nela, como já observamos.
+"""
+
+# ╔═╡ 1d57abfb-b54e-40c3-83c0-687ded116ab5
+spA1 = sprand(250,250,0.027)
+
+# ╔═╡ 1cca2a8d-4bf4-4fad-aa0c-8d5667bb963d
+250*250
+
+# ╔═╡ feee670a-666e-4381-a863-273044e80ed8
+nnz(spA1)
+
+# ╔═╡ 1c98a26f-8cf4-4820-bf97-be098a0c9c3b
+lu(spA1)
+
+# ╔═╡ 892b8d10-7591-4eb3-bf74-169126a2c885
+md"""
+## Métodos iterativos
+
+Os metodos que apresentamos acima, escalonamento (eliminação de Gauss) e fatoração LU, têm como característica a modificação do sistema original para colocá-lo em um formato que pode ser resolvido rapidamente. O grosso do trabalho, que é da ordem $O(\frac{2}{3} n^3)$, é gasto nesse processo de transformação do sistema ou da respectiva matriz. Até que ele seja terminado não se obtém nenhuma aproximação da solução. Esse tipo de método tem então uma característica do tipo "tudo ou nada". Ou o usuário espera que todo o trabalho seja feito ou ele sai sem nenhuma resposta. Esses métodos são conhecidos como métodos diretos.
+
+Uma alternativa ao métodos diretos são os métodos iterativos. Neles o objetivo é aproximar, o mais rapidamente possível, a resposta. O que se perde é que em geral não é possível calculá-la exatamente. Esses métodos são usados quando, por exemplo, $n$ é muito grande e então não é possível esperar que um método direto termine o seu trabalho. Outra situação onde pode ser desejável usar métodos iterativos é quando a matriz $A$ possui muitos elementos nulos. Nesse caso dizemos que $A$ é uma matriz *esparsa*. Voltaremos a comentar isso depois.
+
+Vamos apresentar agora as ideias por trás do método iterativo mais simples. Ele se baseia em uma observação trivial. Para fixar as ideias vamos iniciar com um sistema $2$ por $2$.
+
+$\left\{ \begin{array}{rcrcl}
+2.5x &-& y &=& 1.5 \\
+x &-& 2y &=& -1.
+\end{array}\right.$
+Podemos facilmente resolver o sistema e verificarque é solução é em $(x, y) = (1, 1)$. Veja o gráfico dele abaixo
+"""
+
+# ╔═╡ 1a72d395-5891-4802-b35a-bae043d0ffaa
+begin 
+	eq1(x) = 2.5*x - 1.5
+	eq2(x) = (x+1)/2
+	plt1 = plot(eq1,0,2,lab="")
+	plot!(eq2,0,2,lab="") 
+end
+
+# ╔═╡ d19cac04-4277-46d8-8f87-f9dab4d055e6
+md"""
+### Método de Jacobi
+Uma outra forma de encarar as equações do sistema é vê-las como fórmulas de como calcular uma das variáveis das soluções se conhecêssemos a outra. Isso fica claro se reorganizarmos um pouco as duas equações.
+
+$\begin{align}
+x &= (1.5 + y)/2.5 \\
+y &= (1 + x)/2.
+\end{align}$
+A ideia do método de Jacobi é melhorar uma aproximação da solução que obtivemos até o momento $k$, que vamos denotar por $(x^k, y^k)$, usando essas duas equações como se elas estivessem partindo da solução exata. Isto é fazer
+
+$\begin{align}
+x^{k+1} &= (1.5 + y^k)/2.5 \\
+y^{k+1} &= (1 + x^k)/2.
+\end{align}$
+
+Geometricamente, o que a primeira equação faz é encontrar a coordenada $x$ do ponto na reta azul que tem coordenada $y = y^k$, ou seja a intersecção da reta azul com uma reta paralela ao eixo x que passar por $(x^k, y^k)$. Já a segunda equação busca a coordenada $y$ do ponto na reta vermelha que cruza com uma reta vertical que passa também por $(x^k, y^k)$.
+
+Para entender isso melhor, imagine que temos $(x^k, y^k) = (1.4, 1.3)$. O código abaixo representa as contas feitas a apresenta o novo ponto calculado bem como o ponto de partida. Note que o novo ponto se aproxima da solução que é a intersecção das retas.
+"""
+
+# ╔═╡ adc47a26-5820-4b6a-a17d-a020ea2df030
+begin
+	# Implementação
+	xk, yk = 1.4, 1.3
+	xk₊ = (1.5 + yk)/2.5 
+	yk₊ = (1 + xk)/2
+	scatter!(plt1,[xk, xk₊], [yk, yk₊],leg=false)
+	deltax = xk₊:0.01:xk 
+	deltay = yk₊:0.01:yk
+	plot!(plt1, deltax, yk*ones(length(deltax)),c=:black,ls=:dash)
+	plot!(plt1, deltax, yk₊*ones(length(deltax)),c=:black,ls=:dash)
+	plot!(plt1,  xk₊*ones(length(deltay)), deltay ,c=:black,ls=:dash)
+	plot!(plt1,  xk*ones(length(deltay)), deltay ,c=:black,ls=:dash)
+end
+
+
+# ╔═╡ 50da2ae6-387c-4e17-a6c5-6b3d33422b09
+md"""
+Podemos ainda continuar fazendo isso, gerando então uma sequencia e ver se ela se aproxima ou não da solução:
+"""
+
+# ╔═╡ 77350f6c-c0cc-4d37-b3b0-d4122f817345
+# Implementação
+function iteracao(xk₊, yk₊;k = 10)
+	xk, yk = xk₊, yk₊
+	for i in 1:k
+		xk = (1.5 + yk)/2.5
+		yk = (1 + xk)/2
+	end
+	return [xk, yk]
+end
+		
+
+
+# ╔═╡ 06342a78-0735-4922-aada-1b82fcc0c9e4
+norm(iteracao(xk, yk,k=5) - [1,1])
+
+# ╔═╡ 46a4a97f-f307-4fcb-aeda-6303ceb2ffcb
+md"""
+É interessante brincar um pouco com o código acima variando o número de passos dados e o ponto de partida. Note também que o último ponto computado é impresso logo após o gráfico. Verifique como ele muda quando você muda os parâmetros sugeridos.
+
+Vemos então que a ideia simples de Jacobi pode funcionar, pelo menos em alguns casos. Será possível identificar de antemão se o método funcionará ou não? Isso será o tema da subseção Análise de Convergência abaixo. Por enquanto vamos fazer mais um experimento.
+
+O que ocorreria se o sistema tivesse as duas equações trocadas? Ou seja se ele fosse
+
+$$\left\{ \begin{array}{rcrcl}
+x &-& 2y &=& -1 \\
+2.5x &-& y &=& 1.5. 
+\end{array}\right.$$
+Nesse caso as fórmulas de atualização seriam
+
+$\begin{align}
+x^{k+1} &= -1 + 2y^k \\
+y^{k+1} &= 2.5x - 1.5.
+\end{align}$
+
+Podemos copiar a implementação do método acima com as devidas modificações para ver o que ocorre. Vamos agora marcar o ponto inicial na cor magenta para destacar um fenômeno interessante. Observe também que o ponto inicial está bem mais perto da solução. Ele é $(0.01, 0.01)$.
+"""
+
+# ╔═╡ 305a3754-cccc-4069-8473-ed52ff14c698
+# Implementalçao
+
+# ╔═╡ 4f4103d1-33c9-4eac-8e0d-ed36788852c6
+md"""
+O que observamos acima é um pouco surpreendente. A sequencia gerada pelo Método de Jacobi agora se afasta da solução. Isso ocorreu devido a simples troca da ordem das equações, o que mostra que o método é bastante sensível. Vamos entender isso melhor na seção sobre convergência abaixo. Ainda, destacamos que apesar de o método ter sido apresentado para o caso de duas equações e duas variáveis, a sua extensão para o caso com $n$ equações e variáveis é direta. Basta isolar a variável $i$ usando a linha $i$ e obtemos a fórmula geral.
+
+$$x^{k+1}_i = \frac{b_i - \sum_{j = 1}^{i - 1} a_{ij} x^k_j - \sum_{j = i + 1}^{n} a_{ij} x^k_j}{a_{ii}},\ i = 1, \ldots, n.$$
+
+Podemos também intrduzir uma pequena variação que busca melhorar o método de Jacobi. Para isso vamos escrever as fórmulas genéricas de Jacobi para um sistema de 3 variáveis e 3 equações com matriz associada $A = (a_{ij})$.
+
+$\begin{align}
+x^{k+1}_1 &= \frac{b_1 - a_{12} x^k_2 - a_{13}x^k_3}{a_{11}} \\
+x^{k+1}_2 &= \frac{b_2 - a_{21} x^k_1 - a_{23}x^k_3}{a_{22}} \\
+x^{k+1}_3 &= \frac{b_3 - a_{31} x^k_1 - a_{32}x^k_2}{a_{33}}.
+\end{align}$
+
+### Método de Gauss-Seidel
+
+Observe que no momento que vamos calcular $x^{k+1}_3$ já temos as novas aproximações das duas primeiras coordenadas $x^{k + 1}_1$ e $x^{k + 1}_2$. Se o método estiver indo bem, temos a expectativas que essas aproximações sejam melhores que os valores de $x^k$. Então por que não aproveitá-los? Essa é a ideia do método de Gauss-Seidel. Nele as novas coordenadas já computadas são aproveitadas no cômputo da próxima coordenada. No caso de 3 variáveis teríamos:
+
+$\begin{align}
+x^{k+1}_1 &= \frac{b_1 - a_{12} x^k_2 - a_{13}x^k_3}{a_{11}} \\
+x^{k+1}_2 &= \frac{b_2 - a_{21} x^{k+1}_1 - a_{23}x^k_3}{a_{22}} \\
+x^{k+1}_3 &= \frac{b_3 - a_{31} x^{k+1}_1 - a_{32}x^{k+1}_2}{a_{33}}.
+\end{align}$
+Podemos também apresentar a versão geral do método de Gauss-Seidel, adaptando a fórmula geral do método de Jacobi acima.
+
+$$x^{k+1}_i = \frac{b_i - \sum_{j = 1}^{i - 1} a_{ij} x^{k+1}_j - \sum_{j = i + 1}^{n} a_{ij} x^k_j}{a_{ii}},\ i = 1, \ldots, n.$$
+
+
+Abaixo modificamos a implementação anterior do método de Jacobi para o sistema do início desta seção de modo usar a ideia de Gauss-Seidel. Note que a aproximação da solução obtida após um número fixo de iterações é melhor do que o método de Jacobi. Isso ocorre devido ao uso de informação mais recente à medida que as coordenadas são calculadas.
+"""
+
+# ╔═╡ b97ef960-45d6-40b6-8574-80005682e593
+# Método de Gauss-Seidel
+
+
+# ╔═╡ f191e877-b219-467a-87f8-06798f07391d
+md"""
+Porém o método sofre de problemas semelhantes ao de Jacobi. Uma simples troca da ordem das equações faz com que o método se afaste da solução ao invés de se aproximar. Vamos agora começar a estudar quando podemos garantir que um método converge à solução do problema.
+
+
+Nessa seção vamos supor que a matriz do sistema
+
+$$Ax = b$$
+é inversível. Isso garante que o sistema tem solução única que vamos denotar por $x^*$. 
+
+Como vimos, os métodos de Jacobi e Gauss-Seidel não tentam calcular uma solução diretamente. Eles tentam melhorar uma aproximação da solução cada vez mais, gerando uma sequencia $x^1, x^2, x^2, \ldots$. Quando podemos dizer que a solução obtida é suficiente boa? Quando podemos dizer que um método desses funciona?
+
+>**Definição.** Seja $x^1, x^2, x^2, \ldots$, uma sequência gerada por um método iterativo. Dizemos que o método *converge* se existe $x^*$ solução do problema de interesse tal que a sequencia calculada $\{ x^k \}$ converge para $x^*$. Ou seja se a distância entre $x^k$ e $x^*$ converge para 0 (zero).
+
+Nosso objetivo agora é apresentar condições que possam garantir que os métodos iterativos que estudamos convergem à solução $x^*$ do sistema $Ax = b$. Para isso vamos começar observando que uma forma interessante de se ver um método iterativo é como uma função que é calculada em uma aproximação $x$ do ponto desejado resultando em uma nova aproximação $x^+$ que é potencialmente melhor. Ou seja, podemos imaginar que um algoritmo pode muitas vezes ser descrito por uma função $\phi: \mathbb{R}^n \rightarrow \mathbb{R}^n$ e a regra
+
+$$x^{k + 1} = \phi(x^k).$$
+Caso tal função de iteração $\phi$ exista, é natural que ela tenha a propriedade de que se o ponto de partida já é a solução $x^*$ então a $\phi$ diga que "se deve ficar parado" para não perder a solução. Isto é
+
+$$x^* = \phi(x^*).$$
+Além disso, também é natural pedir que se o ponto não for uma solução então $\phi$ devolva um ponto diferente. Caso contrário método iterativo poderia ficar parado em cima de pontos que não são soluções. Isso em linguagem matemática é o mesmo que dizer que $\phi$ deve ter como único ponto fixo justamente a solução do problema de interesse.
+
+Retomando o problema de sistemas lineares, vamos tentar re-escrever os métodos de Jacobi e Gauss-Seidel descobrindo a expressão da função $\phi$. Para isso é útil quebrar a matriz $A$ do sistema que desejamos resolver
+
+$$A x = b$$
+em três submatrizes. Vamos escrever $A = L + D + U$, em que $L$ contém os elementos abaixo da diagonal de $A$ (e tem zero na diagonal e acima dela), $D$ contém a diagonal de $A$ (e zero fora da diagonal) e $U$ possui os elementos que ficam acima da diagonal.
+
+Retomando a formula do Jacobi.
+
+$$x^{k+1}_i = \frac{b_i - \sum_{j = 1}^{i - 1} a_{ij} x^k_j - \sum_{j = i + 1}^{n} a_{ij} x^k_j}{a_{ii}},\ i = 1, \ldots, n,$$
+podemos escrevê-la de forma mais compacta como
+
+$$x^{k + 1} = D^{-1}(b - Lx^k - U x^k).$$
+Reorganizando os termos temos
+
+$$x^{k + 1} = -D^{-1}(L + U)x^k + D^{-1}b.$$
+Isso sugere a função de iteração
+
+$$\phi_J(x) = -D^{-1}(L + U)x + D^{-1}b.$$
+
+No caso do método de Gauss-Seidel a situação é semelhante, porém um pouco mais interessante.
+
+$\begin{gather}
+x^{k + 1} = D^{-1}(b - Lx^{k+1} - U x^k) \iff \\
+D x^{k + 1} = b - Lx^{k+1} - U x^k \iff \\
+D x^{k + 1} + L x^{k + 1} = -Ux^k + b \iff \\
+(D + L) x^{k + 1} = -Ux^k + b \iff \\
+x^{k + 1} = -(D + L)^{-1}Ux^k + (D + L)^{-1}b.
+\end{gather}$
+Nesse caso a função de iteração é 
+
+$$\phi_{GS}(x) = -(D + L)^{-1}Ux + (D + L)^{-1}b.$$
+
+Nos dois casos vemos que a função de iteração pode ser escrita como 
+
+$$\phi(x) = Bx + c,$$ 
+em que $B$ é uma matriz e c um vetor constante. Também nos dois casos como $x^*$ é tal que $A x^* = b$ temos $\phi(x^*) = x^*$, como gostaríamos. Vamos ver isso no caso de Gauss-Seidel
+
+$\begin{align}
+\phi_{GS}(x^*) &= -(D + L)^{-1}Ux^* + (D + L)^{-1}b \\
+               &= -(A - U)^{-1}Ux^* + (A - U)^{-1}b \\
+               &= -(A - U)^{-1}Ux^* + (A - U)^{-1} A x^* \\
+               &= (A - U)^{-1}(-U + A)x^* \\
+&= x^*.\end{align}$
+
+
+
+"""
+
+# ╔═╡ 994d6967-ab00-4efe-93a2-fd3c14f1fc10
+# Método de Gauss-Seidel
+
+
+# ╔═╡ 29500930-27a2-430c-b5eb-463124cc96a9
+md"""
+## Convergência
+
+
+A pergunta sobre a convergência dos métodos pode então ser repensada da seguinte forma: se $\phi(x)$ tem a expressão $Bx + c$, quando podemos garantir que o $\| x^k - x^* \|$ converge para $0$? Para isso façamos algumas manipulações simples
+
+$\begin{align}
+\| x^{k + 1} - x^* \|_\dagger &= \| \phi(x^k) - x^* \|_\dagger \\
+                              &= \| \phi(x^k) - \phi(x^*) \|_\dagger \\
+                              &= \| Bx^k + c - Bx^* - c \|_\dagger \\
+                              &= \| B(x^k - x^*) \|_\dagger \\
+                              &\leq \| B \|_\dagger \| x^k - x^* \|_\dagger.
+\end{align}$
+Na última passagem usamos a propriedade que relaciona a norma de matrizes com a respectiva norma de vetores.
+
+Aplicando isso recursivamente vemos que 
+
+$$\| x^{k + 1} - x^* \|_\dagger \leq  \| B \|_\dagger^k \| x^1 - x^* \|_\dagger.$$
+Note que isso garante que $\| x^{k + 1} - x^* \|_\dagger \rightarrow 0$ sempre que $\| B \|_\dagger < 1$. Podemos imediatamente enunciar o seguinte resultado:
+
+>**Teorema.** Considere que um sistema linear $Ax = b$ com solução única. Considere também um método iterativo descrito por uma função $\phi$ que tenha a solução do sistema como único ponto fixo. Se $\phi$ é descrita por $\phi(x) = Bx + c$ então o método converge sempre que $\| B \|_\dagger < 1$ para alguma das normas consideradas.
+
+**Observação.** Note que acima não escrevemos "converge na norma $\| \cdot \|_\dagger$" mas simplesmente usamos "converge". Isso porque é fácil de provar, pelo menos paras as normas vistas nessa seção que se $\| x^k - x^* \|_\dagger \rightarrow 0$ para alguma das normas o mesmo ocorre para as outras. Isso ocorre porque é possível achar para cada par de normas uma constante, que geralmente depende da dimensão do espaço, tal que uma norma é menor do que essa constante vezes a outra.
+
+O que esse teorema nos ensina sobre os métodos de Jacobi e Gauss-Seidel? Por exemplo, no caso do método de Jacobi, em que a matriz $B = -D^{-1}(L + U)$ podemos ver que
+
+>**Teorema.** A matriz associada ao método de Jacobi $B = -D^{-1}(L + U)$ tem norma infinito menor estrita que $1$ se 
+>
+>$$| a_{ii} | > \sum_{j = 1, j \neq i}^n | a_{ij} |.$$
+
+**Prova.** Lembremos que a norma infinito de uma matriz é a máxima norma 1 de suas linhas. Mas os elementos da linha $i$ de $B$ são exatamente 
+
+$$b_{ij} = \begin{cases} \frac{a_{ij}}{a_{ii}},\ j = 1, \ldots, n, I \neq j \\ 0,\ i = j. \end{cases}$$
+Assim, a norma 1 da linha $i$ de b é igual a
+
+$$\sum_{\substack{j = 1\\ i \neq j}}^n \left| \frac{a_{ij}}{a_{ii}} \right| < 1.$$
+A última desigualdade segue imediatamente da hipótese do teorema. Ou seja, todas as linhas de $B$ tem norma $1$ menor que $1$ e portanto $\| B \|_\infty < 1$. $\blacksquare$
+
+**Observação.**  Uma matriz cujos elementos da diagonal superam em módulo somas dos módulos dos outros elementos da mesma linha é chamada de *matriz diagonal dominante por linhas*. O que o teorema diz é que o método de Jacobi converge se a matriz do sistema for diagonal dominante por linhas. Observe que esse resultado ajuda a entender porque a ordem das equações, que estão relacionadas às linhas da matriz, é importante para a convergência. Se a linha escolhilda para isolar o termo $x_i$ tiver a constante que multiplica essa variável muito pequena em módulo o método pode não convergir. Isso é exatamente o que ocorre quando trocamos as ordem das duas equações no sistema usando como exemplo anteriormente.
+
+Acabamos essa seção com dois comentários e com um exemplo de implementação do método de Jacobi.
+
+1. Pode-se mostrar que o critério de dominância por linhas também é válido para Gauss-Seidel.
+
+1. O método de Gauss-Seidel é tipicamente mais rápido do que o de Jacobi. Porém ele estabelece uma ordem na qual as variáveis devem ser atualizadas e por isso é de paralelização mais difícil. Nesse sentido há problemas em que Jacobi ainda pode valer à pena se o ganho com seu palelismo inerente foi maior do que o ganho obtido por Gauss-Seidel por aproveitar os valores das vairáveis já atualizadas. Isso tem se tornado mais importante nos últimos anos em que o crescimento de poder computacional tem vindo mais do aumento do número de processadores do que no aumento de velocidade de cada unidade de processamento.
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -291,6 +613,7 @@ LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
@@ -298,7 +621,7 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 DataFrames = "~1.2.2"
 ForwardDiff = "~0.10.19"
 LaTeXStrings = "~1.2.1"
-Plots = "~1.20.1"
+Plots = "~1.21.1"
 PlutoUI = "~0.7.9"
 SpecialFunctions = "~1.6.1"
 StatsPlots = "~0.14.26"
@@ -947,10 +1270,10 @@ uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.0.12"
 
 [[Plots]]
-deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
-git-tree-sha1 = "8365fa7758e2e8e4443ce866d6106d8ecbb4474e"
+deps = ["Base64", "Contour", "Dates", "Downloads", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
+git-tree-sha1 = "0036d433cacff4767ff622be3cb2c281b773a2b4"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.20.1"
+version = "1.21.1"
 
 [[PlutoUI]]
 deps = ["Base64", "Dates", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "Suppressor"]
@@ -1401,39 +1724,79 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═1864dd04-05ef-11ec-10e5-c9e213811e2b
-# ╠═707d02d9-5ce4-4a8e-aae6-c804d9aa1a95
-# ╟─3ba8f3f0-ba65-4e10-b683-e0089d329af1
-# ╠═bfc9bf80-efef-4e72-a7b9-58df1af16e24
-# ╠═21ad270c-60d0-4826-9e7e-51142094b775
-# ╟─a4fa65b1-ab0c-4794-9b44-8fc0d6b34eb5
-# ╟─e06de210-d295-453b-936c-6ac064c9977a
-# ╠═6f03a493-dd91-4b5c-9c99-a810d0ec082b
-# ╟─a02819b7-4c58-4d8e-b336-88f049fa803b
-# ╠═4ce2d655-efee-4951-96c8-e9f6e70da43d
-# ╠═fca06861-b636-4007-b0ac-8c8fc89902ed
-# ╟─ef79875a-cdf4-4dc9-82e2-9ff653b99238
-# ╟─2b5ca14c-1589-4384-98d0-8f8296b18268
-# ╟─b099d2d2-f6f1-4847-8680-e70f82f0b82a
-# ╠═b013bc34-1fda-4e0e-bf7d-b0ec67db8bde
-# ╠═f6777bf2-c5bf-4785-8703-d9c24d9cb79b
-# ╠═8544b9aa-8702-4459-8502-9367d35b2f8d
-# ╟─95e7b14e-1a15-4001-98b0-f9f050783261
-# ╠═290409fc-8a81-4021-b46d-f4815512b920
-# ╟─8bd2de1c-73b8-41f2-aad6-9ccb5041f635
-# ╠═52c65b4f-8a42-4b7a-997a-32647cd7ebce
-# ╠═ad7be6ab-4942-45ac-ba5a-c2fa15a146d2
-# ╠═bd40fa1d-4479-430a-9eef-4773bd53133c
-# ╟─4d81bbf4-b23a-4f12-9d6e-4b16d10b0587
-# ╠═6120288c-d6fe-470c-8f14-74a5d3f9bcb2
-# ╠═f8470103-342f-4f06-b064-8471d645347d
-# ╠═64238f71-3e9b-4c23-8318-4ddeff1c6fb2
-# ╠═36ab23e8-93cc-4ecd-bcf9-5648fadab333
-# ╟─de030295-d90f-4b33-91ab-1dffd6600253
-# ╠═8c3b33da-64ad-4f67-8381-9843344a7d77
-# ╠═0e13a168-0a7a-45ec-8144-0dfe23b5d44d
-# ╠═11fa72b9-0f84-4794-bb39-94b1fe9d74df
-# ╠═12369310-8242-47cd-a869-2ec0ce6ea45e
-# ╟─a49c88a8-f02d-4a41-8a47-dcf8f02dd1db
+# ╟─7ac099ac-0aa4-11ec-014c-b7e75ef5ebf5
+# ╠═2b0f8ca8-2bce-4784-9110-1fdbb18b27d0
+# ╟─a983ec5b-2d81-4210-a1f1-5c478bcbbede
+# ╟─f266e93d-3c65-4ef5-8e91-ee63ade7d39c
+# ╠═93b645f3-0af2-467b-9cf0-dc7c36c1fa54
+# ╠═f6d227ec-23c4-45bf-9621-c45f37bab0c8
+# ╠═162ef5fa-5d89-4a4a-98fe-13afcebc69f4
+# ╠═4d5b260c-b311-40fa-afc5-4f10a9f3d7b8
+# ╠═b4085a60-69be-42f5-abad-50173d107e7c
+# ╠═941f8135-fe39-4ed4-a391-0b1e617d3da3
+# ╠═cdc1dfbe-45ec-4e67-aa1c-49a3de442153
+# ╠═a953ea17-f22f-4880-b31a-e16e2d16f698
+# ╠═043b30f0-3d40-4d87-bdfa-96158c8ee690
+# ╠═4477ef3d-c3ae-4cde-9708-8a4ed292b194
+# ╠═a30599d2-c700-4f6c-ad0f-707ab92c137a
+# ╠═28d44316-c5ab-4b84-92f0-ec254734f323
+# ╟─0de91742-2a39-42c6-8094-56602e0ac393
+# ╠═ea520c60-558a-4542-9b05-0a44c868ddf2
+# ╠═af88ce3b-cb74-4c8b-9a35-d719d53aec84
+# ╠═709b1b0b-6ea4-4b6e-8cff-52bacc27af2f
+# ╠═17cafa2e-0102-43d7-b923-3c20d322ba3a
+# ╠═2079219f-043f-4d17-956c-d2665943b78a
+# ╠═d5142365-3e56-4bc3-8294-2977e227243c
+# ╠═0c284979-9e53-46c1-8775-4fb559b26c69
+# ╠═edff7c0f-428b-443d-8fdb-4b0c87155550
+# ╠═a01483ea-5ab4-4c55-84f9-faacda4217aa
+# ╟─cf3d979e-7293-4b32-9afc-68184785ec89
+# ╠═da3c023a-ddd3-4885-8ce7-8650c71b0abb
+# ╠═274dd537-f7d6-4173-a9d9-d0bd98613cdd
+# ╠═24666d56-e103-4949-b351-eeba9dd78cc3
+# ╠═34cf2ada-1a97-45c7-b81a-cf11f763883f
+# ╟─3b286a50-26d6-472c-8584-c3ea98464d8a
+# ╠═8cf0c701-42b7-4a73-95d9-69437cc306be
+# ╟─3b219946-200b-42b3-8481-780a0b21341c
+# ╠═6763b10a-28c7-4b75-9018-cc0d04a6ff08
+# ╠═9dbe3737-56f4-49f8-a923-9a1d7f561c7f
+# ╟─8c7facd7-3a76-4e35-b8e8-f5e84d1bbef5
+# ╠═99f6a0d9-18cd-4689-9127-4365b6e772bc
+# ╠═ed52fe75-26d9-488b-9a41-eb4ca86d2d40
+# ╠═06a54494-4b71-4bd7-8443-76f2f4bb4e6b
+# ╠═686d1d28-c67a-45eb-b91c-73a472b669c4
+# ╟─ec36911d-8e73-4d3c-bff5-566a111c00f5
+# ╠═3e2ad1e9-7501-43bc-8a75-197e564a50c3
+# ╠═f248faa7-8bbd-4638-af36-2953ee9ff6cc
+# ╠═9fc810b3-e815-4988-98ed-119f3e47c2c0
+# ╠═c7b066a3-4d2b-49da-9168-a412d2a07474
+# ╠═f1120902-cea7-4d64-b896-f7e59f6ae9e1
+# ╠═ff0e6e4c-3bdf-4091-9ec3-8703b432b046
+# ╟─29ac9cc6-135f-4c09-8284-9618a93abb0f
+# ╠═96b7683f-29ed-4ff3-82f2-fca950793cd6
+# ╠═0c4fc7e4-4f09-454f-b21c-fa9952550f05
+# ╠═bb87f148-afbb-4a7f-aa70-334a10fd093e
+# ╠═43c230d2-ad37-465f-ac4b-3ad335894cce
+# ╠═9e135f63-2388-4f31-a2ae-419e857a1633
+# ╟─493b9408-fdd9-41e4-a073-f0a93a67ee6f
+# ╠═83c15f2c-d266-4ec4-bcd3-a464615cf7ae
+# ╠═1d57abfb-b54e-40c3-83c0-687ded116ab5
+# ╠═1cca2a8d-4bf4-4fad-aa0c-8d5667bb963d
+# ╠═feee670a-666e-4381-a863-273044e80ed8
+# ╠═1c98a26f-8cf4-4820-bf97-be098a0c9c3b
+# ╟─892b8d10-7591-4eb3-bf74-169126a2c885
+# ╠═1a72d395-5891-4802-b35a-bae043d0ffaa
+# ╟─d19cac04-4277-46d8-8f87-f9dab4d055e6
+# ╠═adc47a26-5820-4b6a-a17d-a020ea2df030
+# ╠═50da2ae6-387c-4e17-a6c5-6b3d33422b09
+# ╠═77350f6c-c0cc-4d37-b3b0-d4122f817345
+# ╠═06342a78-0735-4922-aada-1b82fcc0c9e4
+# ╠═46a4a97f-f307-4fcb-aeda-6303ceb2ffcb
+# ╠═305a3754-cccc-4069-8473-ed52ff14c698
+# ╠═4f4103d1-33c9-4eac-8e0d-ed36788852c6
+# ╠═b97ef960-45d6-40b6-8574-80005682e593
+# ╠═f191e877-b219-467a-87f8-06798f07391d
+# ╠═994d6967-ab00-4efe-93a2-fd3c14f1fc10
+# ╟─29500930-27a2-430c-b5eb-463124cc96a9
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
