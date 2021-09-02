@@ -4,6 +4,15 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
 # ╔═╡ 2b0f8ca8-2bce-4784-9110-1fdbb18b27d0
 begin
 	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra, SpecialFunctions,LaTeXStrings
@@ -362,7 +371,7 @@ begin
 	eq1(x) = 2.5*x - 1.5
 	eq2(x) = (x+1)/2
 	plt1 = plot(eq1,0,2,lab="")
-	plot!(eq2,0,2,lab="") 
+	plot!(eq2,0,2,lab="")    
 end
 
 # ╔═╡ d19cac04-4277-46d8-8f87-f9dab4d055e6
@@ -383,23 +392,30 @@ y^{k+1} &= (1 + x^k)/2.
 
 Geometricamente, o que a primeira equação faz é encontrar a coordenada $x$ do ponto na reta azul que tem coordenada $y = y^k$, ou seja a intersecção da reta azul com uma reta paralela ao eixo x que passar por $(x^k, y^k)$. Já a segunda equação busca a coordenada $y$ do ponto na reta vermelha que cruza com uma reta vertical que passa também por $(x^k, y^k)$.
 
-Para entender isso melhor, imagine que temos $(x^k, y^k) = (1.4, 1.3)$. O código abaixo representa as contas feitas a apresenta o novo ponto calculado bem como o ponto de partida. Note que o novo ponto se aproxima da solução que é a intersecção das retas.
+Para entender isso melhor, imagine que temos $(x^k, y^k) = (1.6, 2)$. O código abaixo representa as contas feitas a apresenta o novo ponto calculado bem como o ponto de partida. Note que o novo ponto se aproxima da solução que é a intersecção das retas.
 """
 
 # ╔═╡ adc47a26-5820-4b6a-a17d-a020ea2df030
 begin
 	# Implementação
-	xk, yk = 1.4, 1.3
+	xk, yk = 1.6, 2
 	xk₊ = (1.5 + yk)/2.5 
 	yk₊ = (1 + xk)/2
-	scatter!(plt1,[xk, xk₊], [yk, yk₊],leg=false)
-	deltax = xk₊:0.01:xk 
-	deltay = yk₊:0.01:yk
-	plot!(plt1, deltax, yk*ones(length(deltax)),c=:black,ls=:dash)
-	plot!(plt1, deltax, yk₊*ones(length(deltax)),c=:black,ls=:dash)
-	plot!(plt1,  xk₊*ones(length(deltay)), deltay ,c=:black,ls=:dash)
-	plot!(plt1,  xk*ones(length(deltay)), deltay ,c=:black,ls=:dash)
+	deltax = [xk₊,xk] 
+	deltay = [yk₊,yk]
+	plot(eq1,0,2,lab="")
+	plot!(eq2,0,2,lab="")    
+	plot!(deltax, yk*ones(length(deltax)),c=:black,ls=:dash)
+	plot!(deltax, yk₊*ones(length(deltax)),c=:black,ls=:dash)
+	plot!(xk₊*ones(length(deltay)), deltay ,c=:black,ls=:dash)
+	plot!(xk*ones(length(deltay)), deltay ,c=:black,ls=:dash)
+	scatter!([xk, xk₊], [yk, yk₊],leg=false,c=:red)
+	vline!([xk, xk₊], ls=:dot, lw=.5)
+	hline!([yk, yk₊], ls=:dot, lw=.5)
 end
+
+
+# ╔═╡ 2062c40a-ad82-421a-ade2-4f99816dbde4
 
 
 # ╔═╡ 50da2ae6-387c-4e17-a6c5-6b3d33422b09
@@ -409,19 +425,35 @@ Podemos ainda continuar fazendo isso, gerando então uma sequencia e ver se ela 
 
 # ╔═╡ 77350f6c-c0cc-4d37-b3b0-d4122f817345
 # Implementação
-function iteracao(xk₊, yk₊;k = 10)
-	xk, yk = xk₊, yk₊
+function plot_jacobi1(xk, yk;k = 10)
+	plt = plot(eq1,-1,2,lab="")
+	plot!(eq2,-1,2,lab="")    
+	scatter!([xk], [yk],leg=false,c=:red)
 	for i in 1:k
-		xk = (1.5 + yk)/2.5
-		yk = (1 + xk)/2
+		xk₊ = (1.5 + yk)/2.5
+		yk₊ = (1 + xk)/2
+		deltax = [xk₊,xk] 
+		deltay = [yk₊,yk]
+		plot!(deltax, [yk, yk],c=:black,ls=:dash)
+		plot!(deltax, [yk₊, yk₊],c=:black,ls=:dash)
+		plot!([xk, xk], deltay ,c=:black,ls=:dash)
+		plot!([xk₊, xk₊], deltay ,c=:black,ls=:dash)
+		scatter!([xk₊], [yk₊],leg=false,c=:green,ms=3)
+		xk, yk = xk₊, yk₊
 	end
-	return [xk, yk]
+	return plt
 end
 		
 
 
+# ╔═╡ 8b9c90cb-adcd-4b02-a07d-ceacce480709
+@bind k Slider(0:7)
+
 # ╔═╡ 06342a78-0735-4922-aada-1b82fcc0c9e4
-norm(iteracao(xk, yk,k=5) - [1,1])
+plot_jacobi1(xk, yk,k=k)
+
+# ╔═╡ 498d9889-d122-4bdc-9f33-364973432cc9
+norm([1,1] - [1.25,2.2])
 
 # ╔═╡ 46a4a97f-f307-4fcb-aeda-6303ceb2ffcb
 md"""
@@ -447,6 +479,30 @@ Podemos copiar a implementação do método acima com as devidas modificações 
 
 # ╔═╡ 305a3754-cccc-4069-8473-ed52ff14c698
 # Implementalçao
+function plot_jacobi2(xk, yk;k = 10)
+	plt = plot(eq2,0,2,lab="")
+	plot!(eq1,0,2,lab="")    
+	scatter!([xk], [yk],leg=false,c=:red)
+	for i in 1:k
+		xk₊ = -1 + 2*yk
+		yk₊ = 2.5xk - 1.5
+		deltax = [xk₊,xk] 
+		deltay = [yk₊,yk]
+		plot!(deltax, [yk, yk],c=:black,ls=:dash)
+		plot!(deltax, [yk₊, yk₊],c=:black,ls=:dash)
+		plot!([xk, xk], deltay ,c=:black,ls=:dash)
+		plot!([xk₊, xk₊], deltay ,c=:black,ls=:dash)
+		scatter!([xk₊], [yk₊],leg=false,c=:red)
+		xk, yk = xk₊, yk₊
+	end
+	return plt
+end
+
+# ╔═╡ 3d621404-c5f1-4157-8fe2-47d1ec4ccdcb
+@bind k2 Slider(0:7)
+
+# ╔═╡ 218a1084-079c-4c16-9c9d-e99f7c2d76c9
+ plot_jacobi2(1.1, 1.2,k = k2)
 
 # ╔═╡ 4f4103d1-33c9-4eac-8e0d-ed36788852c6
 md"""
@@ -551,10 +607,6 @@ $\begin{align}
 
 
 """
-
-# ╔═╡ 994d6967-ab00-4efe-93a2-fd3c14f1fc10
-# Método de Gauss-Seidel
-
 
 # ╔═╡ 29500930-27a2-430c-b5eb-463124cc96a9
 md"""
@@ -1788,15 +1840,19 @@ version = "0.9.1+5"
 # ╠═1a72d395-5891-4802-b35a-bae043d0ffaa
 # ╟─d19cac04-4277-46d8-8f87-f9dab4d055e6
 # ╠═adc47a26-5820-4b6a-a17d-a020ea2df030
+# ╠═2062c40a-ad82-421a-ade2-4f99816dbde4
 # ╠═50da2ae6-387c-4e17-a6c5-6b3d33422b09
 # ╠═77350f6c-c0cc-4d37-b3b0-d4122f817345
+# ╟─8b9c90cb-adcd-4b02-a07d-ceacce480709
 # ╠═06342a78-0735-4922-aada-1b82fcc0c9e4
-# ╠═46a4a97f-f307-4fcb-aeda-6303ceb2ffcb
+# ╠═498d9889-d122-4bdc-9f33-364973432cc9
+# ╟─46a4a97f-f307-4fcb-aeda-6303ceb2ffcb
 # ╠═305a3754-cccc-4069-8473-ed52ff14c698
-# ╠═4f4103d1-33c9-4eac-8e0d-ed36788852c6
+# ╠═3d621404-c5f1-4157-8fe2-47d1ec4ccdcb
+# ╠═218a1084-079c-4c16-9c9d-e99f7c2d76c9
+# ╟─4f4103d1-33c9-4eac-8e0d-ed36788852c6
 # ╠═b97ef960-45d6-40b6-8574-80005682e593
-# ╠═f191e877-b219-467a-87f8-06798f07391d
-# ╠═994d6967-ab00-4efe-93a2-fd3c14f1fc10
+# ╟─f191e877-b219-467a-87f8-06798f07391d
 # ╟─29500930-27a2-430c-b5eb-463124cc96a9
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
