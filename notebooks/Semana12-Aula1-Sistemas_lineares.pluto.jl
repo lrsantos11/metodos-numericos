@@ -27,7 +27,7 @@ md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 12 - Aula 01
+###### Semana 12 - Aula 01-02
 """
 
 # ╔═╡ a983ec5b-2d81-4210-a1f1-5c478bcbbede
@@ -537,7 +537,28 @@ Abaixo modificamos a implementação anterior do método de Jacobi para o sistem
 
 # ╔═╡ b97ef960-45d6-40b6-8574-80005682e593
 # Método de Gauss-Seidel
+# Implementação
+function plot_GaussSeidel1(xk, yk;k = 10)
+	plt = plot(eq1,-1,2,lab="")
+	plot!(eq2,-1,2,lab="")    
+	scatter!([xk], [yk],leg=false,c=:red)
+	for i in 1:k
+		xk₊ = (1.5 + yk)/2.5
+		yk₊ = (1 + xk₊)/2
+		deltax = [xk₊,xk] 
+		deltay = [yk₊,yk]
+		plot!(deltax, [yk, yk],c=:black,ls=:dash)
+		plot!(deltax, [yk₊, yk₊],c=:black,ls=:dash)
+		plot!([xk, xk], deltay ,c=:black,ls=:dash)
+		plot!([xk₊, xk₊], deltay ,c=:black,ls=:dash)
+		scatter!([xk₊], [yk₊],leg=false,c=:green,ms=3)
+		xk, yk = xk₊, yk₊
+	end
+	return plt
+end
 
+# ╔═╡ 40be8f3c-5450-42fd-a663-747d1bc870f9
+plot_GaussSeidel1(1.6,2,k=4)
 
 # ╔═╡ f191e877-b219-467a-87f8-06798f07391d
 md"""
@@ -1852,6 +1873,7 @@ version = "0.9.1+5"
 # ╠═218a1084-079c-4c16-9c9d-e99f7c2d76c9
 # ╟─4f4103d1-33c9-4eac-8e0d-ed36788852c6
 # ╠═b97ef960-45d6-40b6-8574-80005682e593
+# ╠═40be8f3c-5450-42fd-a663-747d1bc870f9
 # ╟─f191e877-b219-467a-87f8-06798f07391d
 # ╟─29500930-27a2-430c-b5eb-463124cc96a9
 # ╟─00000000-0000-0000-0000-000000000001
