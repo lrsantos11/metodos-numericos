@@ -15,12 +15,12 @@ md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 13 - Aula 02
+###### Semana 14 - Aulas 01-02
 """
 
 # ╔═╡ 3afe1c73-e386-4371-b694-99aaa3e2273b
 md"""
-# Solução Numéricoa de Equações Diferenciais
+# Solução Numérica de Equações Diferenciais
 ## Problemas de Valor Inicial (PVI)
 
 ### Métodos de Runge-Kutta
@@ -34,7 +34,7 @@ md"""
 
 # ╔═╡ fa81e6fc-24fe-48e9-a42d-3727ef021e5e
 """
-Resolver por Euler o PVI y'(x) = f(x,y), y(x₀) = y₀
+Resolver por Euler o PVI y'(x) = f(x,y), y(x₀) = y₀ Vetorial
 """
 function euler(f,a,b,y₀,n)
 	h = (b - a)/n
@@ -50,44 +50,15 @@ function euler(f,a,b,y₀,n)
 	return y	
 end
 
-# ╔═╡ 6583be4e-bcaf-4901-91d7-af5e87277f3b
-begin
-	#  y' = 1 - y/x; y(2) = 2, [2,2.1]
-	f(x,y) = 1 - y/x
-	y₀ = 2
-	a = 2
-	b = 2.1
-	n = 10
-	y = euler(f,a,b,y₀,n)
-end
-
-# ╔═╡ 4a7ce8bb-d6b9-4fb3-a8ea-f6da7f1dc007
-let
-	#  y' = x - y + 2; y(0) = 2, [0,1]
-	f(x,y) = x - y + 2
-	y₀ = 2
-	a = 0
-	b = 1
-	n = 5
-	euler(f,a,b,y₀,n)
-end
-
-# ╔═╡ ac138d68-972c-4ad6-9c1c-e49253665ee0
-#Solução Exata de y' = 1 - y/x; y(2) = 2, [2,2.1]
-ȳ(x) = x/2 + 2/x
-
-# ╔═╡ 0a7f2e7b-6b86-4a14-ac7a-5596d3dd59c7
-begin
-	x = range(a,stop=b,length = n+1) #Malha
- 	plot(x,y,label="Sol Aproximada") 
-	plot!(ȳ,2,2.1,label="Sol Exata",leg=:bottomright)
-end
-
 # ╔═╡ 4d9b6699-22b7-4381-aabd-924ac6a717e4
-
+md"""
+#### Método RK-2
+"""
 
 # ╔═╡ aed612f4-6572-499a-a63f-e86dab69c0c0
-
+md"""
+#### Método RK-4
+"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1215,13 +1186,9 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╠═8fa9fb60-8e58-4ff2-a5a7-c1cef7e5c154
 # ╠═845ee9ea-ac0f-4468-b9e0-b928474912d7
-# ╟─3afe1c73-e386-4371-b694-99aaa3e2273b
-# ╟─6c2a2aaa-de51-4049-8bd7-4a52032d69e4
+# ╠═3afe1c73-e386-4371-b694-99aaa3e2273b
+# ╠═6c2a2aaa-de51-4049-8bd7-4a52032d69e4
 # ╠═fa81e6fc-24fe-48e9-a42d-3727ef021e5e
-# ╠═4a7ce8bb-d6b9-4fb3-a8ea-f6da7f1dc007
-# ╠═6583be4e-bcaf-4901-91d7-af5e87277f3b
-# ╠═ac138d68-972c-4ad6-9c1c-e49253665ee0
-# ╠═0a7f2e7b-6b86-4a14-ac7a-5596d3dd59c7
 # ╠═4d9b6699-22b7-4381-aabd-924ac6a717e4
 # ╠═aed612f4-6572-499a-a63f-e86dab69c0c0
 # ╟─00000000-0000-0000-0000-000000000001
