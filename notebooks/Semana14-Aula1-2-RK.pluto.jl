@@ -40,11 +40,11 @@ function euler(f,a,b,y₀,n)
 	h = (b - a)/n
 # 	Trajetoria da função f
 	yₖ = y₀
-	y = Float64[y₀]
+	y = y₀
 	for k in 0:n-1
 		xₖ = a + k*h
 		yₖ₊₁ = yₖ + h * f(xₖ,yₖ)
-		push!(y,yₖ₊₁)
+		y = hcat(y,yₖ₊₁)
 		yₖ = yₖ₊₁
 	end
 	return y	
@@ -55,10 +55,120 @@ md"""
 #### Método RK-2
 """
 
+# ╔═╡ 6f7176ee-8e01-4f3d-af6f-42695bce162c
+"""
+Resolver por RK-2 o PVI y'(x) = f(x,y), y(x₀) = y₀ Vetorial
+"""
+function rk2(f,a,b,y₀,n)
+	h = (b - a)/n
+# 	Trajetoria da função f
+	yₖ = y₀
+	y = y₀
+	for k in 0:n-1
+		xₖ = a + k*h
+		k₁ = h*f(xₖ,yₖ)
+		k₂ = h*f(xₖ+h,yₖ + k₁)
+		yₖ₊₁ = yₖ + 0.5*(k₁ + k₂)
+		y = hcat(y,yₖ₊₁)
+		yₖ = yₖ₊₁
+	end
+	return y	
+end
+
 # ╔═╡ aed612f4-6572-499a-a63f-e86dab69c0c0
 md"""
 #### Método RK-4
 """
+
+# ╔═╡ 4489982c-5152-4e98-8053-8e405576a45c
+function rk4(f,a,b,y₀,n)
+	h = (b - a)/n
+# 	Trajetoria da função f
+	yₖ = y₀
+	y = y₀
+	for k in 0:n-1
+		xₖ = a + k*h
+		k₁ = h*f(xₖ,yₖ)
+		k₂ = h*f(xₖ+h/2,yₖ + k₁/2)
+		k₃ = h*f(xₖ+h/2,yₖ + k₂/2)
+		k₄ = h*f(xₖ+h,yₖ + k₃)
+		yₖ₊₁ = yₖ + (k₁ + 2*k₂ + 2*k₃ + k₄)/6
+		y = hcat(y,yₖ₊₁)
+		yₖ = yₖ₊₁
+	end
+	return y	
+end
+
+# ╔═╡ 3a18b82e-2abc-4151-8a47-2bca2e544083
+begin
+	#  y' = 1 - y/x; y(2) = 2, [2,2.1]
+	f(x,y) = 1 - y/x
+	y₀ = 2
+	a = 2
+	b = 10
+	n = 5
+end
+
+# ╔═╡ 5f13c1f5-eba3-4989-b07d-250c2834c92f
+euler(f,a,b,y₀,n)
+
+# ╔═╡ b12cdd65-3cc2-41e0-a699-dba56d814062
+rk2(f,a,b,y₀,n)
+
+# ╔═╡ 9b81e13c-3dda-4bdb-ab92-fb2c17ce82cf
+rk4(f,a,b,y₀,n)
+
+# ╔═╡ 4f2c2017-df51-42ec-8d29-ed688fe44515
+#Solução Exata de y' = 1 - y/x; y(2) = 2, [2,2.1]
+ȳ(x) = x/2 + 2/x
+
+# ╔═╡ 78e76cae-1675-4aa3-bcd9-b53b36e88a91
+begin
+	plot(ȳ,a,b)
+	n1 = 10
+	x1 = range(a,b,length=n1+1)
+	scatter!(x1,  rk4(f,a,b,y₀,n1)',leg=false)
+	scatter!(x1,  rk2(f,a,b,y₀,n1)',leg=false)
+	scatter!(x1,  euler(f,a,b,y₀,n1)',leg=false)
+	
+end
+
+# ╔═╡ 86ce5069-e5de-4b19-8d4b-e67a3fe593c7
+md"""
+#### Modelo Presa-Predador
+
+
+$\begin{array}{l}
+y_{1}^{\prime}=.25 y_{1}-.01 y_{1} y_{2}, \quad y_{1}(0)=80 \\
+y_{2}^{\prime}=-y_{2}+.01 y_{1} y_{2}, \quad y_{2}(0)=30
+\end{array}$
+"""
+
+# ╔═╡ 4ee7a663-4409-4cd3-90a5-c415e3397011
+begin
+	F(t,Y) = [0.25*Y[1] - 0.01*Y[1]*Y[2],
+		      -Y[2] + 0.01*Y[1]*Y[2]]
+	Y₀ = [80, 30.]
+	aPP = 0
+	bPP = 100
+	nPP = 2000
+	Ysol = rk4(F, aPP, bPP, Y₀, nPP) 
+end
+
+# ╔═╡ 27a43e13-188c-4096-8c2b-9e2e7cd79a73
+begin
+	tPP = range(aPP,bPP,length = nPP +1)
+	plot(tPP, Ysol[1,:], label = "Presa")
+	plot!(tPP, Ysol[2,:], label = "Predadores")
+end
+
+
+# ╔═╡ bb03e4b2-ccbc-433c-8238-081f684e77fe
+begin
+	plot(Ysol[1,:], Ysol[2,:], label = "Ciclo Presa-Predador")
+
+end
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1184,12 +1294,24 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═8fa9fb60-8e58-4ff2-a5a7-c1cef7e5c154
+# ╟─8fa9fb60-8e58-4ff2-a5a7-c1cef7e5c154
 # ╠═845ee9ea-ac0f-4468-b9e0-b928474912d7
-# ╠═3afe1c73-e386-4371-b694-99aaa3e2273b
-# ╠═6c2a2aaa-de51-4049-8bd7-4a52032d69e4
+# ╟─3afe1c73-e386-4371-b694-99aaa3e2273b
+# ╟─6c2a2aaa-de51-4049-8bd7-4a52032d69e4
 # ╠═fa81e6fc-24fe-48e9-a42d-3727ef021e5e
 # ╠═4d9b6699-22b7-4381-aabd-924ac6a717e4
+# ╠═6f7176ee-8e01-4f3d-af6f-42695bce162c
 # ╠═aed612f4-6572-499a-a63f-e86dab69c0c0
+# ╠═4489982c-5152-4e98-8053-8e405576a45c
+# ╠═3a18b82e-2abc-4151-8a47-2bca2e544083
+# ╠═5f13c1f5-eba3-4989-b07d-250c2834c92f
+# ╠═b12cdd65-3cc2-41e0-a699-dba56d814062
+# ╠═9b81e13c-3dda-4bdb-ab92-fb2c17ce82cf
+# ╠═4f2c2017-df51-42ec-8d29-ed688fe44515
+# ╠═78e76cae-1675-4aa3-bcd9-b53b36e88a91
+# ╟─86ce5069-e5de-4b19-8d4b-e67a3fe593c7
+# ╠═4ee7a663-4409-4cd3-90a5-c415e3397011
+# ╠═27a43e13-188c-4096-8c2b-9e2e7cd79a73
+# ╠═bb03e4b2-ccbc-433c-8238-081f684e77fe
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
