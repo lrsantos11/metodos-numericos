@@ -7,7 +7,7 @@ Vá em [https://julialang.org/downloads](https://julialang.org/downloads) e baix
 
 ## Passo 2: Rode Julia
 
-Depois de instalar, **garanta que você pode rodar o Julia**. Em alguns sistemas pode ser que você tenha que procurar "Julia 1.6.0"; em outros, significa rodar o comando `julia` no terminal. Garanta que você possa executar `1 + 1`:
+Depois de instalar, **garanta que você pode rodar o Julia**. Em alguns sistemas pode ser que você tenha que procurar "Julia 1.6.x"; em outros, significa rodar o comando `julia` no terminal. Garanta que você possa executar `1 + 1`:
 
 ![image](https://user-images.githubusercontent.com/6933510/91439734-c573c780-e86d-11ea-8169-0c97a7013e8d.png)
 

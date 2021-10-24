@@ -1,6 +1,6 @@
 # MAT-1831: Métodos Numéricos
 
-## Semestre 2021-1
+## Semestre 2021-2
 
 Bem-vindos à disciplina MAT-1831 da UFSC/BNU. Este é um curso introdutório em **métodos numéricos**.
 
@@ -13,13 +13,20 @@ Por favor,  siga [as instruções ](https://www.youtube.com/playlist?list=PLIFgJ
 
 ## Informações do curso
 
+- md"""
+
+  # MAT1831 - Métodos Numéricos (2021-2)
+  ## Informações do curso
+
 - Professor Luiz-Rafael Santos ([l.r.santos@ufsc.br](mailto:l.r.santos@ufsc.br))
 
-- Ter e Qua 20:20-22:00 e Sex 18:30-20:10 (em formato remoto)
+- Seg 10:10-12:00, Qua 08:20-10:00$^*$ e Qui 10:10-12:00 (em formato remoto) com maioria das atividades síncronas (todas as atividades síncronas serão gravadas)
 
 - Atendimento: A decidir
 
-- [Disciplina no Moodle](https://moodle.ufsc.br/course/view.php?id=137044)
+- [Disciplina no Moodle](https://moodle.ufsc.br/course/view.php?id=148745)
+
+- [Página do Github da disciplina] (https://github.com/lrsantos11/metodos-numericos)
 
 ## Materiais do curso
 - **Aulas** serão síncronas através do Google MIT para alunos da UFSC matriculados.
