@@ -64,7 +64,7 @@ md"""
 md"
 # Introdução à Linguagem Julia
 
-[Julia](https://www.julialang.org) é uma linguagem dinâmica de *alto nível* e **alto desempenho*.
+[Julia](https://www.julialang.org) é uma linguagem dinâmica de *alto nível* e **alto desempenho**.
 - Ela se assemelha ao MATLAB e ao Python na facilidade de escrita
 de código, mas sua velocidade pode ser comparável ao C e Fortran.
 
@@ -116,19 +116,32 @@ md"
 # ╔═╡ e7b00b38-667e-47eb-9924-69a7f6c6c4e0
 md"""
 ## Introdução ao Julia
+
+$$f(x) = \sin(x)\cos(x)$$
 """
 
 # ╔═╡ 2539b502-4d09-4048-ac10-17c6577a4ea6
 # Numeros
+2+2
+
+# ╔═╡ 1ad53ea8-fd2a-4191-b561-c51c4721679c
+2*2
 
 # ╔═╡ d423d847-e90e-49a4-8016-9939cb6a4021
 # Matrizes
+A = [1 2;
+	 2 1.0]
 
 # ╔═╡ 928e168f-4665-43c4-863a-06580d07db0a
 #Vetores
+x = [1, 3]
 
 # ╔═╡ 39c459e7-9d01-49c9-81da-168085fcea0e
 # Produto Matriz vetor
+A*x
+
+# ╔═╡ 128f6567-24de-4192-bde2-f27f56973bcc
+sin(π)
 
 # ╔═╡ f2683258-3f57-4353-b2c7-e337457bcc01
 # Markdown
@@ -145,9 +158,11 @@ md"""
 # ╟─d0426d69-d528-45d6-b81b-c6d712452073
 # ╟─9e5ca483-5b46-4ca8-bffa-1af3b97cd4f7
 # ╟─96ede339-ba1a-48d6-899e-d2ec9f54b44f
-# ╠═e7b00b38-667e-47eb-9924-69a7f6c6c4e0
+# ╟─e7b00b38-667e-47eb-9924-69a7f6c6c4e0
 # ╠═2539b502-4d09-4048-ac10-17c6577a4ea6
+# ╠═1ad53ea8-fd2a-4191-b561-c51c4721679c
 # ╠═d423d847-e90e-49a4-8016-9939cb6a4021
 # ╠═928e168f-4665-43c4-863a-06580d07db0a
 # ╠═39c459e7-9d01-49c9-81da-168085fcea0e
+# ╠═128f6567-24de-4192-bde2-f27f56973bcc
 # ╠═f2683258-3f57-4353-b2c7-e337457bcc01
