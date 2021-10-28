@@ -21,8 +21,11 @@ md"""
 ###### UFSC/Blumenau
 ###### MAT1831 - Métodos Numéricos
 ###### Prof. Luiz-Rafael Santos
-###### Semana 01 - Aula 02
+###### Semana 01 - Aulas 02 e 03
 """
+
+# ╔═╡ 78cbbc88-f590-49ee-9698-373bde7b23c9
+
 
 # ╔═╡ e45bbc21-b1dd-492e-8550-22b080a5ad9a
 md"""
@@ -186,24 +189,44 @@ true
 # ╔═╡ 897c2ae0-cb64-4799-ba16-a9fae8eb2356
 2.99999999 ≈ 3  # \approx - aproximadamente
 
+# ╔═╡ 81a97a42-b5a8-40f4-9fcc-63d20541f1d1
+md"""
+- Uso de `@bind` do pacote `PlutoUI` em conjunto com a função `Slider`
+"""
+
 # ╔═╡ 6971750b-bd68-4e10-a716-88abb9805872
-@bind K Slider(2:300) #PlutoUI
+@bind K Slider(2:300, show_value = true) #PlutoUI
 
 # ╔═╡ 1dd3dc7b-b977-4c8e-aad8-d99db7c1e9f1
 with_terminal()  do
 	soma = 0
 	@show K
-	for i = 1:K
+	for i ∈ 1:K
 		soma = i^2 + soma
 	end
 	@show soma
 end
 
+# ╔═╡ 01f66458-4d27-42e0-8eae-2abdcda07af4
+@bind n Slider(1:49, show_value = true) #PlutoUI
+
 # ╔═╡ 2dd983c1-288d-48b5-b12f-1ac281b5e6ad
 with_terminal() do
-	n = 16
-	m = 4
-	@show m^2 == n
+	for m ∈ 1:n
+		@show m 
+		if m^2 == n # (true ou false)
+			# Declarar que m é raiz quadrada de n
+			println("$m é raiz quadrada de $n")
+			# Parar o loop for 
+			break 
+		end
+		if m^2 > n
+			# Declarar que n não tem raiz quadrada
+			println("$n não tem raiz quadrada inteira")
+			# Parar o loop for 
+			break 
+		end
+	end
 end
 
 # ╔═╡ 9bfd6085-389b-4f81-897c-2c8591977fd1
@@ -220,17 +243,72 @@ end
 - Facilita debugging
 """
 
-# ╔═╡ 9c90333c-4134-4e86-8d10-d41bff035ab7
-function calcula_raiz(n)
-	
-	
+# ╔═╡ 6583763d-073f-4f94-b45f-00a73eec8d3d
+# Criar funções do mesmo jeito que em matemática
+h(x,y) = cos(x) * sin(y)
+
+# ╔═╡ b0f60c52-abea-4f60-b928-cde1c6ab0ad9
+h(π,2)
+
+# ╔═╡ 9524bacc-c839-43a2-8fa2-3326ce90366e
+h(π/4,ℯ)
+
+# ╔═╡ d44a8a2e-ebb2-4f9d-8aa2-29edd790bedd
+function primeira_func(x,y)
+	@show x
+	@show y
+	h(variavel) = sin(variavel)*log(variavel)
+	z = h(x) + h(y)
+	return 	z
 end
 
-# ╔═╡ 76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
+# ╔═╡ 7e94f239-c97d-4e67-98e6-3ec6c4a57d9f
+z1 = primeira_func(2,3)
 
+# ╔═╡ 825889e5-22f6-4b78-bfdf-d54bffcd07f8
+z2 = primeira_func(5,4)
+
+# ╔═╡ 79b22457-22eb-4424-8781-c74fc76687ed
+
+
+# ╔═╡ 9c90333c-4134-4e86-8d10-d41bff035ab7
+function calcula_raiz(n)
+	for m ∈ 1:n
+		# @show m 
+		if m^2 == n # (true ou false)
+			# Declarar que m é raiz quadrada de n
+			# println("$m é raiz quadrada de $n")
+			# Parar o loop for 
+			return m, m, :RaizExata 
+		end
+		if m^2 > n
+			# Declarar que n não tem raiz quadrada
+			# println("$n não tem raiz quadrada inteira")
+			# Parar o loop for 
+			return  m-1, m, :IntervaloRaiz  
+		end
+	end
+end
+
+# ╔═╡ cc9a7f55-4a05-4e36-a82c-91b25e2a8805
+@bind N Slider(1:30, show_value = true)
+
+# ╔═╡ 74ac99be-59ba-4eef-a541-dad4879103ef
+sqrt(N)
+
+# ╔═╡ b6885993-3460-4c70-b45c-d4fa1680b300
+3.6^2
+
+# ╔═╡ 6bd095fb-a44f-4e6e-ae87-ff066706ee63
+3.7^2
+
+# ╔═╡ 76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
+a1, b1, status1 = calcula_raiz(N)
 
 # ╔═╡ a0e060e5-b2f8-401e-a78c-25d6c15df23d
-
+if status1 == :RaizExata
+	@show "É raiz Exata"
+end
 
 # ╔═╡ f25056db-7961-4ffb-91d3-5a7bdba3b85a
 md"""
@@ -238,10 +316,10 @@ md"""
 """
 
 # ╔═╡ 2c17e973-e8e6-496d-a7fd-c484cf0e4238
-ronaldo = :RaizExata
+qualquer_outra_coisa = :LRS
 
 # ╔═╡ adec5130-12a1-4740-823b-b3bcb2e2f28f
-ronaldo == :IntervalordaRaiz
+qualquer_outra_coisa == :LR
 
 # ╔═╡ a2baf3cc-ac0d-4015-86bd-b8b49d99ba73
 md"""
@@ -256,7 +334,7 @@ md"""
 """
 
 # ╔═╡ 68466a9f-0882-4621-88b8-7865dabadf81
-r = range(a1, b1, length = 11) #Range => Intervalo
+intervalo = range(a1, b1, length = 11) #Range => Intervalo = > lengh := tamanho
 
 # ╔═╡ c1902ac1-b5d3-4d8f-8599-b070dea93d81
 md"""
@@ -264,10 +342,10 @@ md"""
 """
 
 # ╔═╡ 943230db-5f99-464a-b76c-480baee40753
-vet_r = collect(r)
+vet_int = collect(intervalo)
 
 # ╔═╡ 24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
-vet_r[9]
+vet_int[9]
 
 # ╔═╡ dd93b856-008d-498e-be2e-e07fe2a9666b
 md"""
@@ -285,64 +363,23 @@ md"""
 - Você abrir diretamente no Pluto a tarefa usando o seguinte [link](https://github.com/lrsantos11/metodos-numericos/raw/2021-1/tarefas/tarefa_semana1.jl)
 """
 
+# ╔═╡ 4c0f4f08-4ae1-4a7a-8524-fc7e684ff8ba
+function calcula_raiz_decimal1casa(n)
+	a, b, status = calcula_raiz(n)
+	if status == :RaizExata
+		return a
+	end
+	intervalo = range(a, b, length = 11)
+	vet_intervalo = collect(intervalo)
+	for indice ∈ 1:11
+		@show vet_intervalo[indice]
+	end
+end
+
 # ╔═╡ cdcf66f1-4396-417e-b113-3d4f4abb75e2
-π
-
-# ╔═╡ b8b08634-db6e-4f31-a36f-ea5eddcc1d05
 with_terminal() do
-	
+	calcula_raiz_decimal1casa(13)
 end
-
-# ╔═╡ e92d829c-7913-4caa-8cbb-8727fed4a666
-
-		
-end
-
-# ╔═╡ 81a97a42-b5a8-40f4-9fcc-63d20541f1d1
-md"""
-- Uso de `@bind` do pacote `PlutoUI` em conjunto com a função `Slider`
-"""
-
-# ╔═╡ a08fb056-3e5a-4493-9521-743be0cb628f
-@bind n Slider(1:100)
-
-# ╔═╡ f60cdba6-955c-4ef0-8c49-590257893a2e
-@show n
-
-# ╔═╡ 88bd320b-0e81-4692-91c4-a5ac6e84eef7
-@bind t Slider(0:40)
-
-# ╔═╡ ed8893a3-8f1d-444c-ac1f-d7f17a17655c
-@show t
-
-# ╔═╡ a533eaa2-544d-44a9-a1c1-fc002df43bd8
-a,b, status = calcula_raizdecimal(n,t)
-
-# ╔═╡ 5066412b-451e-4a0f-bff6-c793ec4187ea
-a
-
-# ╔═╡ 582ed9b7-ddcc-4f1c-95d7-5c33d4729dc8
-b
-
-# ╔═╡ b0dd81ff-dbba-4fab-b274-9dd7c0be5ef0
-sqrt(n) 
-
-# ╔═╡ eb7aee0e-54cd-4c33-81d0-b9a31164d861
-md"""
-- Erro  de Aproximação
-"""
-
-# ╔═╡ 83ce0c14-4001-4f91-b2cf-6f0168474149
-abs(sqrt(n) - a)
-
-# ╔═╡ e9267e0c-0ae9-4a2c-ac32-571faa02f692
-abs(sqrt(n) - b)
-
-# ╔═╡ 0e3370c9-7178-4c41-abcb-4d1d84387dd1
-calcula_raizdecimal(n)
-
-# ╔═╡ f7707e09-107e-41a9-a42b-3f4233cd5423
-eps()
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -446,6 +483,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
 # ╔═╡ Cell order:
 # ╟─b6f6e191-50a1-4ddb-811e-2bb784ae5031
+# ╠═78cbbc88-f590-49ee-9698-373bde7b23c9
 # ╟─e45bbc21-b1dd-492e-8550-22b080a5ad9a
 # ╟─49d2d518-0895-4013-aa21-08da48721577
 # ╠═319c8f13-e5f6-41b6-8027-9499d9b8ae34
@@ -489,11 +527,24 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 # ╠═c18c227c-ae99-447e-8f87-3b180b2b157a
 # ╠═2de8ac14-da66-4992-92b2-762be4e901c7
 # ╠═897c2ae0-cb64-4799-ba16-a9fae8eb2356
+# ╟─81a97a42-b5a8-40f4-9fcc-63d20541f1d1
 # ╠═6971750b-bd68-4e10-a716-88abb9805872
 # ╠═1dd3dc7b-b977-4c8e-aad8-d99db7c1e9f1
+# ╠═01f66458-4d27-42e0-8eae-2abdcda07af4
 # ╠═2dd983c1-288d-48b5-b12f-1ac281b5e6ad
 # ╟─9bfd6085-389b-4f81-897c-2c8591977fd1
+# ╠═6583763d-073f-4f94-b45f-00a73eec8d3d
+# ╠═b0f60c52-abea-4f60-b928-cde1c6ab0ad9
+# ╠═9524bacc-c839-43a2-8fa2-3326ce90366e
+# ╠═d44a8a2e-ebb2-4f9d-8aa2-29edd790bedd
+# ╠═7e94f239-c97d-4e67-98e6-3ec6c4a57d9f
+# ╠═825889e5-22f6-4b78-bfdf-d54bffcd07f8
+# ╠═79b22457-22eb-4424-8781-c74fc76687ed
 # ╠═9c90333c-4134-4e86-8d10-d41bff035ab7
+# ╠═cc9a7f55-4a05-4e36-a82c-91b25e2a8805
+# ╠═74ac99be-59ba-4eef-a541-dad4879103ef
+# ╠═b6885993-3460-4c70-b45c-d4fa1680b300
+# ╠═6bd095fb-a44f-4e6e-ae87-ff066706ee63
 # ╠═76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
 # ╠═a0e060e5-b2f8-401e-a78c-25d6c15df23d
 # ╟─f25056db-7961-4ffb-91d3-5a7bdba3b85a
@@ -506,22 +557,7 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 # ╠═943230db-5f99-464a-b76c-480baee40753
 # ╠═24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
 # ╟─dd93b856-008d-498e-be2e-e07fe2a9666b
+# ╠═4c0f4f08-4ae1-4a7a-8524-fc7e684ff8ba
 # ╠═cdcf66f1-4396-417e-b113-3d4f4abb75e2
-# ╠═b8b08634-db6e-4f31-a36f-ea5eddcc1d05
-# ╠═e92d829c-7913-4caa-8cbb-8727fed4a666
-# ╟─81a97a42-b5a8-40f4-9fcc-63d20541f1d1
-# ╠═a08fb056-3e5a-4493-9521-743be0cb628f
-# ╟─f60cdba6-955c-4ef0-8c49-590257893a2e
-# ╠═88bd320b-0e81-4692-91c4-a5ac6e84eef7
-# ╟─ed8893a3-8f1d-444c-ac1f-d7f17a17655c
-# ╠═a533eaa2-544d-44a9-a1c1-fc002df43bd8
-# ╠═5066412b-451e-4a0f-bff6-c793ec4187ea
-# ╠═582ed9b7-ddcc-4f1c-95d7-5c33d4729dc8
-# ╠═b0dd81ff-dbba-4fab-b274-9dd7c0be5ef0
-# ╟─eb7aee0e-54cd-4c33-81d0-b9a31164d861
-# ╠═83ce0c14-4001-4f91-b2cf-6f0168474149
-# ╠═e9267e0c-0ae9-4a2c-ac32-571faa02f692
-# ╟─0e3370c9-7178-4c41-abcb-4d1d84387dd1
-# ╠═f7707e09-107e-41a9-a42b-3f4233cd5423
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
