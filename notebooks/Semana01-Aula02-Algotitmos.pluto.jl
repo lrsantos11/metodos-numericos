@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.16.4
+# v0.17.1
 
 using Markdown
 using InteractiveUtils
@@ -7,8 +7,9 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
         el
     end
 end
@@ -290,25 +291,11 @@ function calcula_raiz(n)
 	end
 end
 
-# ╔═╡ cc9a7f55-4a05-4e36-a82c-91b25e2a8805
-@bind N Slider(1:30, show_value = true)
-
-# ╔═╡ 74ac99be-59ba-4eef-a541-dad4879103ef
-sqrt(N)
-
 # ╔═╡ b6885993-3460-4c70-b45c-d4fa1680b300
 3.6^2
 
 # ╔═╡ 6bd095fb-a44f-4e6e-ae87-ff066706ee63
 3.7^2
-
-# ╔═╡ 76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
-a1, b1, status1 = calcula_raiz(N)
-
-# ╔═╡ a0e060e5-b2f8-401e-a78c-25d6c15df23d
-if status1 == :RaizExata
-	@show "É raiz Exata"
-end
 
 # ╔═╡ f25056db-7961-4ffb-91d3-5a7bdba3b85a
 md"""
@@ -333,19 +320,10 @@ md"""
 - Construindo intervalos com `range`
 """
 
-# ╔═╡ 68466a9f-0882-4621-88b8-7865dabadf81
-intervalo = range(a1, b1, length = 11) #Range => Intervalo = > lengh := tamanho
-
 # ╔═╡ c1902ac1-b5d3-4d8f-8599-b070dea93d81
 md"""
  - O comando `collect` transforma um `range` em um vetor (`Array`)
 """
-
-# ╔═╡ 943230db-5f99-464a-b76c-480baee40753
-vet_int = collect(intervalo)
-
-# ╔═╡ 24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
-vet_int[9]
 
 # ╔═╡ dd93b856-008d-498e-be2e-e07fe2a9666b
 md"""
@@ -367,19 +345,80 @@ md"""
 function calcula_raiz_decimal1casa(n)
 	a, b, status = calcula_raiz(n)
 	if status == :RaizExata
-		return a
+		return a, :RaizExata
 	end
 	intervalo = range(a, b, length = 11)
 	vet_intervalo = collect(intervalo)
 	for indice ∈ 1:11
-		@show vet_intervalo[indice]
+		# @show vet_intervalo[indice]
+		if vet_intervalo[indice]^2 == n # (true ou false)
+			# Declarar que vet_intervalo[indice] é raiz quadrada de n
+			return vet_intervalo[indice], :RaizExata 
+		end
+		if  vet_intervalo[indice]^2 > n
+			# Declarar que vet_intervalo[indice-1] é raiz aproximada de n
+			return  vet_intervalo[indice-1], :RaizAproximada  
+		end
 	end
 end
 
-# ╔═╡ cdcf66f1-4396-417e-b113-3d4f4abb75e2
-with_terminal() do
-	calcula_raiz_decimal1casa(13)
+# ╔═╡ cc9a7f55-4a05-4e36-a82c-91b25e2a8805
+@bind N Slider(1:30, show_value = true)
+
+# ╔═╡ 74ac99be-59ba-4eef-a541-dad4879103ef
+sqrt(N)
+
+# ╔═╡ 76fa5da5-fefc-4f56-a14c-cfc645b8b7b7
+a1, b1, status1 = calcula_raiz(N)
+
+# ╔═╡ a0e060e5-b2f8-401e-a78c-25d6c15df23d
+if status1 == :RaizExata
+	@show "É raiz Exata"
 end
+
+# ╔═╡ 68466a9f-0882-4621-88b8-7865dabadf81
+intervalo = range(a1, b1, length = 11) #Range => Intervalo = > lengh := tamanho
+
+# ╔═╡ 943230db-5f99-464a-b76c-480baee40753
+vet_int = collect(intervalo)
+
+# ╔═╡ 24c9fe9e-1e53-4689-8468-c6dbf2de2a5c
+vet_int[9]
+
+# ╔═╡ cdcf66f1-4396-417e-b113-3d4f4abb75e2
+calcula_raiz_decimal1casa(N)
+
+# ╔═╡ 98b55dfb-a8d7-454c-9f7b-4b9fe7be4274
+sqrt(N)
+
+# ╔═╡ aac3b90f-39c1-46b5-9192-d043b4671868
+function calcula_raiz_decimal(n, t = 1)
+	# Calcula raiz inteira exata
+	a, b, status = calcula_raiz(n)
+	if status == :RaizExata
+		return a, :RaizExata
+	end
+	for j ∈ 1:t	
+		intervalo = range(a, b, length = 11)
+		vet_intervalo = collect(intervalo)
+		for indice ∈ 1:11
+			# @show vet_intervalo[indice]
+			if vet_intervalo[indice]^2 == n # (true ou false)
+				# Declarar que vet_intervalo[indice] é raiz quadrada de n
+				return vet_intervalo[indice], :RaizExata 
+			end
+			if  vet_intervalo[indice]^2 > n
+				# Declarar que vet_intervalo[indice-1] é raiz aproximada de n
+				# preencher atualizando o valor de a e b
+				# a, b = 
+			end
+		end
+	end
+	return a, :RaizAproimada
+end
+
+# ╔═╡ b4058a9b-ab22-4bb4-bb43-d74f65a3d4dd
+calcula_raiz_decimal(13,2)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -541,7 +580,6 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 # ╠═825889e5-22f6-4b78-bfdf-d54bffcd07f8
 # ╠═79b22457-22eb-4424-8781-c74fc76687ed
 # ╠═9c90333c-4134-4e86-8d10-d41bff035ab7
-# ╠═cc9a7f55-4a05-4e36-a82c-91b25e2a8805
 # ╠═74ac99be-59ba-4eef-a541-dad4879103ef
 # ╠═b6885993-3460-4c70-b45c-d4fa1680b300
 # ╠═6bd095fb-a44f-4e6e-ae87-ff066706ee63
@@ -559,5 +597,9 @@ uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 # ╟─dd93b856-008d-498e-be2e-e07fe2a9666b
 # ╠═4c0f4f08-4ae1-4a7a-8524-fc7e684ff8ba
 # ╠═cdcf66f1-4396-417e-b113-3d4f4abb75e2
+# ╠═98b55dfb-a8d7-454c-9f7b-4b9fe7be4274
+# ╠═cc9a7f55-4a05-4e36-a82c-91b25e2a8805
+# ╠═aac3b90f-39c1-46b5-9192-d043b4671868
+# ╠═b4058a9b-ab22-4bb4-bb43-d74f65a3d4dd
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
