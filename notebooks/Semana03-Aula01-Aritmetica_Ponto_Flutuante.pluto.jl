@@ -4,235 +4,279 @@
 using Markdown
 using InteractiveUtils
 
-# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
-macro bind(def, element)
-    quote
-        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
-        local el = $(esc(element))
-        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
-        el
-    end
-end
+# ╔═╡ caf6c14d-86fb-4ae6-97c5-9e148810f977
+# Pacotes necessários para a aula
+using Plots
 
-# ╔═╡ b25c1fd4-b6e2-4248-8bb9-41a1f06032dd
-begin
-	using LinearAlgebra
-	using PlutoUI
-	using DataFrames
-	using Plots
-end
-
-# ╔═╡ a2d2d41c-d397-11eb-0f7d-ed2891f49049
+# ╔═╡ 94f24f5a-d5f7-11eb-0c0d-5983bdf1822f
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 02 - Aula 02
+###### Semana 03 - Aula 01
 """
 
-# ╔═╡ 206f3485-ba82-4b9e-948a-97e656f42b8a
+# ╔═╡ b86c5fdf-7b7c-4566-8bcc-59f4be5004fc
 md"""
-# Erros em Algorimos numéricos
-## Erros relativos e absolutos
-Inevitavelmente, encontraremos erros quando implementamos algum algoritmos numéricos. Isto porque tipicamente nosso objetivo é encontrar uma _aproximação $v$_ de alguma _solução exata $u$_. 
+$\renewcommand{\fl}{\operatorname{fl}}$
+# Aritimética de Ponto Flutuante
 
-Há basicamente dois tipos de erros
+## Introdução
 
-- **Erro absoluto** em $v$ dado por
+O computador é uma máquina finita, feita a partir de um número finito de objetos e capaz de armazenar e manipular um número finito de dados. Fica então a dúvida: como ele pode armazenar ou fazer contas com números que não admitem representação finita, como os números irracionais?  Como se pode calcular o $\sin(\pi)$ se o computador não pode armazenar o $\pi$, pelo menos não completamente? Isso não pode ser feito exatamente.
+
+O que se pode fazer então é *armazenar* uma aproximação de $\pi$, uma aproximação muito boa, que será usada no lugar do número verdadeiro. Para a grande maioria das situações isso é bom o suficiente. O objetivo dessa primeira parte do curso é discutir um pouco sobre como o computador guarda os números, que tipo de garantia podemos esperar na qualidade das aproximações feitas e que problemas podem surgir devido a essas aproximações. Isso é especialmente importante quando lembramos que podemos executar milhões, ou até bilhões de operações em sequência, cada uma com um pequeno erro. Esses erros se acumulam? Eles se cancelam?
+
+Primeiros vejamos o que é $\pi$ para o computador:
+"""
+
+# ╔═╡ 00668afc-b4b2-4d70-8ac0-32da4844f686
+Float64(π)
+
+# ╔═╡ 960cec6b-6cf0-44b8-b3b2-76efa5a53080
+md"""
+Como você pode vê o computador armazena uma boa aproximação do número, acima são mostrados os primeiros 16 dígitos significativos e estão todos corretos. Veremos abaixo porque.
+
+
+
+## Origem dos erros
+
+Mas de onde podem vir os erros? Podemos destacar pelo menos 4 fontes naturais de erros que enfrentamos no dia-a-dia:
+
+1. *Erro de aquisição ou medida*: ocorre quando precisamos medir ou estimar algo. Essa é a situação que vocês encontram no laboratório de Física, por exemplo.
+
+1. *Erro de representação*: imagine que você quer usar um número decimal com um grupo finito de dígitos para representar o fração $\frac{1}{3}$. Como ela é uma dízima periódica isso é impossível de ser feito e o erro será grande ou pequeno de acordo com o número de casas armazenadas.
+
+1. *Erro associado a cálculos com precisão finita*: Esse erro aparece quando queremos realizar uma operação sobre números já representados e o resultado não pode ser representando. Por exemplo, queremos dividir 1 por 3. Note que muitas vezes desejamos realizar vários, mesmo milhões ou bilhões de cálculos em sequencia, e cada um deles tem o potencial de gerar erros. Como já disse esse é o principal tipo de erro que iremos estudar.
+
+1. *Erro associado a algoritmos que aproximam soluções (métodos iterativos)*: Infelizmente não há fórmula finita para o cálculo exato das soluções de muitos problemas matemáticos. O caso mais clássico é o cômputo de raízes de polinômio de grau maior ou igual a 5. Nesse caso lançamos mão de métodos iterativos que tentam aproximar a solução desejada através de um processo potencialmente infinito. Veremos exemplos disso no curso. Mas não temos como esperar tempo infinito para que o processo atinja o valor desejado. Nesse caso paramos a execução do programa uma vez que uma aproximação aceitável do valor desejado tenha sido obtida e guardamos essa aproximação.
+
+
+
+"""
+
+# ╔═╡ e12e8462-4280-42d9-a995-b52480e47dd2
+md"""
+# Representação de números no computador
+
+Para armazenar números no computador adotou-se um sistema que busca diminuir espaços vazios entre os números representados de forma relativa. Esse sistema é conhecido como *representação de ponto flutuante*. A ideia é guardar uma quantidade fixa de *dígitos significativos* (ignorando possíveis zeros à esquerda que não dizem nada) e um outro número dizendo onde está a vírgula, ou o ponto em inglês e daí o nome, *ponto flutuante*. Mais precisamente um sistema de ponto flutuante é caracterizado basicamente por três quantidades:
+
+1. Uma *base* $b$. No computador essa base é tipicamente $2$ (base binária). Mas nos nossos exemplos em sala iremos usar a base $10$ que é mais usual para nós, humanos.
+
+1. A quantidade de números (dígitos na base) armazenados. Os dígitos armazenados são conhecidos como *mantissa* e denotada por $m$. Para evitar duplicidade de representação é importante definir exatamente a forma da mantissa. Uma escolha comum é considerar que a mantissa é um número que tem o primeiro dígito nulo, depois a vírgula seguida de pelo menos um dígito não nulo. Ou seja a mantissa deve ser um número cujo módulo pertence a $[0.1, 1)$.
+
+1. A quantidade mínima e máxima de um inteiro, chamado de *expoente*, que é usado para dizer em que posição está a vírgula, denotado por $e$.
+
+$x = \pm(0.d_1d_2d_3\ldots d_{m-1}d_{m})\times b^e$
+em que $d_1\neq 0$.
+
+Para deixar isso mais claro vamos definir um sistema simples em base decimal e ver que tipo de números podem ser representados.
+
+1. Base 10.
+
+1. A mantissa guarda 4 dígitos.
+
+1. O menor expoente é -99 e o maior 99.
+
+Imagine que queremos representar o número 0.034. Seguindo as regras e escolha descritas acima esse número será representado pela mantissa $0.3400$ (note que o número é  estritamente menor que $1$ e maior ou igual a $0.1$) e expoente $$-1$$. Ou seja representamos 
+- $$0.034 = 0.3400\times 10^{-1}.$$
+
+A unicidade da representação evita dúvidas e desperdício com múltiplas representações para o mesmo número.
+
+
+"""
+
+# ╔═╡ 197d9270-7422-4a67-a7a6-7366ede693ca
+md"""
+Temos para $1234$, neste computador, 
+$1234 = 0.1234 \times 10^4$
+"""
+
+# ╔═╡ 99b3ae7a-8096-47d2-9a7b-9f61fdaf42c0
+md"""
+Como seria representado o nosso amigo $\pi$? Vamos relembrar o seu valor.
+
+"""
+
+# ╔═╡ 24c6e582-1e1e-435a-b0e6-4fc9f7d4c3b1
+BigFloat(π) #Mais casas decimais corretas.
+
+# ╔═╡ 3f506b17-8ac5-4fc3-a502-c5eea24f9748
+md"""
+A melhor representação que podemos obter é
 ```math
-E_A := \lvert u - v\rvert
+\pi \approx 0.3141 \cdot 10^1.
 ```
-- **Erro relativo** em $v$ dado por
+
+Note que em particular o menor número representável em módulo no nosso sistema é $0.1000 \cdot 10^{-99}$ e o maior $0.9999 \cdot 10^{99}$.
+"""
+
+# ╔═╡ f2ed6b44-a464-4b5f-acf4-dd8309aaa8e4
+md"""
+Exemplos: 
+- $0.001234 = 0.1234\times 10^{-2};$
+- $0.001\times 10^{-99} = 0.1 \times 10^{-101},$ o que não pode ser representado no nosso computador fictício.
+"""
+
+# ╔═╡ 9a63e356-911c-478a-ab08-34d3a163ce07
+md"""
+##### Padrão IEEE 754
+Agora qual é o sistema de ponto flutuante adotado no computador? Quase todas as máquinas modernas implementam o padrão IEEE 754. Ele define dois tipos básicos de números. Números de precisão simples (o `float` de C), ocupam 32 bits divididos entre 1 bit para o sinal, 8 bits para o expoente e 23 para mantissa. Já a precisão dupla (o `double` de C) usa um bit para o sinal, 11 para o expoente e 52 para a mantissa totalizando 64 bits. 
+
+Em base decimal isso nos dá, em precisão dupla, um número com aproximadamente 15 casas decimais na mantissa e expoente indo de -1022 a 1023. Quem quiser mais informações sobre o padrão IEEE 754 pode consultar esse [texto](http://steve.hollasch.net/cgindex/coding/ieeefloat.html).
+
+Um fato interessante em sistemas de ponto flutuante é que há buracos entre os números representáveis, já que existe um número finito deles. Isto sifingica que que nem todos os números reais tem representação em sistemas de ponto flutuante. Isso vai ocasionar algumas situações interessantes como, por exemplo, o fato de que o elemento neutro da soma não é único.
+
+Em particular depois do número 1 (que é representável usando mantissa 0,1 e expoente 1) há um primeiro próximo número representável. O que ocorre se tentarmos somar ao 1 um número tão pequeno que a soma resultante esteja mais perto do 1 do que desse próximo número? Vamos querer que a resposta seja o próprio 1, já que esse é o número representável mais próximo da resposta correta. Ou seja, se $u$ é pequeno vamos querer que o computador devolva como resultado da operação
 ```math
-E_R := \frac{\lvert u - v\rvert}{\lvert u\rvert},
+1 + u
 ```
-desde que $u\neq 0$. 
-* O erro relativo tem, em geral, mais significado, em especial, para erros de _representação de ponto flutuante_
-"""
-
-# ╔═╡ 4d8839cb-f01e-47b0-9671-3eb4f58e5acf
-md"""
----
-- Vamos incluir os pacotes do Julia usados nesta aula
-  - Pluto já instala os pacotes necessários (pode demorar algum tempo pra isso)
-"""
-
-# ╔═╡ 0d2074aa-f918-4b6e-a7b3-1a2a84be333e
-u = [1, 1, -1.5, 100, 100]
-
-# ╔═╡ 5f980d0a-44e0-4d37-82a4-86c1e0a014e8
-v = [0.99, 1.01, -1.2, 99.99, 99]
-
-# ╔═╡ c1d32147-6e12-4cd6-b949-5e4833476d08
-Eₐ(x,y) = abs(x-y)
-
-# ╔═╡ 0ce7be2b-1c1c-4af7-a471-0540df2bb675
-Eᵣ(u,v) = Eₐ(u,v) / abs(u)
-
-# ╔═╡ 6f24ce45-e776-4553-a7a8-4a65f394d613
-Eₐ.(u,v)
-
-# ╔═╡ bd93cba3-90b9-4ce4-b915-af387b7176a5
-Eᵣ.(u,v)
-
-# ╔═╡ a37753de-9cb6-4d3d-84a7-087c8515886f
-md"""
----
-- Usando `DataFrames` para nossa tabela ficar bonitinha!
-"""
-
-# ╔═╡ 33db5da8-74a8-41df-ba17-8bc0251c824b
-DataFrame(:ValorExato => u, :Aproximação => v, :ErroAbsoluto => Eₐ.(u,v), :ErroRelativo =>  Eᵣ.(u,v) )#Erro absoluto e relativo
-
-# ╔═╡ 9fb230ba-dffc-4603-9c8d-00a1b1073d03
-md"""
-##### Aproximação de Stirling para fatorial de ${n}$
-A fórmula de Stirling diz que podemos utilizar 
-
-$$v = S_n = \sqrt{2\pi n} \left(\frac{n}{e}\right)^n$$
-
-para aproximar $u = n! = 1\cdot 2\cdot  \cdots \cdot n$, o fatorial de ${n}$ para ${n}$ grande.
-Usando a função `factorial(n)` de Julia vamos computar os erros relativos e absolutos de $S_n$, e apresentá-los em um `DataFrame`, para $1\leq n \leq 20$.
-"""
-
-# ╔═╡ 74b0f57c-3758-4a16-9acf-fc9b08ab0740
-@bind n Slider(1:20, show_value=true)
-
-# ╔═╡ d6f40096-694b-4178-9d26-66c4a3b5dce9
-ℯ #\euler
-
-# ╔═╡ ddc90b13-a044-40f6-a7e6-2b7409e7d987
-Sₙ(n) = √(2*π*n)*(n/ℯ)^n
-
-# ╔═╡ f6fb6e86-144e-4ed4-b7ae-b23d2e0d2baa
-factorial(n)
-
-# ╔═╡ 16e07d77-fb1a-41f4-b75b-039df5ef0c0b
-Sₙ(n)
-
-# ╔═╡ 8b515e5b-63b6-445c-a357-bb4737840135
-vet_n = collect(1:15) # collect(range(1,15,step = 1))
-
-# ╔═╡ 8656a832-7630-460c-bc3c-c24ac2451e40
-fat_orig = factorial.(vet_n)
-
-# ╔═╡ c7ba3231-6bd7-410d-8a81-914834262500
-fat_stir = Sₙ.(vet_n)
-
-# ╔═╡ 5f9e1188-6e48-44a2-9232-63c24106f5de
-DataFrame(:Fatorial => fat_orig, :Stirling => fat_stir,  :ErroAbsoluto => Eₐ.(fat_orig,fat_stir), :ErroRelativo =>  Eᵣ.(fat_orig,fat_stir))
-
-# ╔═╡ a6dd9b2d-6479-4d7f-ae7b-5d22c26d5df4
-md"""
-##### Aproximação da derivada
-
-- A derivada de uma função ${f}$ em um ponto ${x_0}$ é dada por
+o próprio 1! Vamos normalmente denotar os resultados calculados pelo computador através do operador $\fl$. Usando essa notação vemos que para $u$ pequeno
 ```math
-f'(x_0) = \lim_{x\to x_0} \frac{f(x) - f(x_0)}{x-x_0} = \lim_{h\to 0} \frac{f(x_0 +h) - f(x_0)}{h}, \text{ fazendo  } x = x_0 + h.
-```
----
-- Assim, usando o Teorema de Taylor de 1ª ordem, para $h$ pequeno, podemos fazer
-```math
-f'(x_0) \approx  \frac{f(x_0 +h) - f(x_0)}{h}.
-```
-> **Teorema de Taylor**
-```math
-\begin{aligned}
-f\left(x_{0}+h\right) &=f\left(x_{0}\right)+h f'\left(x_{0}\right)+\frac{h^{2}}{2} f^{\prime \prime}\left(x_{0}\right)+\cdots+\frac{h^{k}}{k !} f^{(k)}\left(x_{0}\right) \\
-&+\frac{h^{k+1}}{(k+1) !} f^{(k+1)}(\xi)
-\end{aligned}
+\fl(1 + u) = 1.
 ```
 """
 
-# ╔═╡ f24249dc-5ead-4bda-abcd-3fe0a10501e1
-aprox_deriv(f,x₀,h) = (f(x₀ + h) - f(x₀))/h
+# ╔═╡ 292b079c-3adc-4a7a-9966-ff2a368afa96
+1 + eps() #eps() = eps(1)
 
-# ╔═╡ a4276d2f-4e1e-4a78-80c6-a1f4ad514f10
-@bind h Slider(0.01:0.01:0.5,show_value=true,default=.5)
+# ╔═╡ 6bd08fe7-2bcd-4e85-b883-5c8ab4ed44c8
+1 + eps()/2
 
-# ╔═╡ cf5f5921-ccc7-418a-83fb-ab0517dbc601
-let #Escopo com variáveis locais
-	f(x) = -(x-1)^2 + 1
-	x₀ = 0.5
-	m = aprox_deriv(f,x₀,h)
-	plot(f,0.25,1.2,leg=false,xlims = (0.2,1.25),ylims = (0.3,1.1))
-	plot!(x->m*(x-x₀) + f(x₀),0.25,1.2,lw = 1.5)
-	plot!(x->-2(x₀-1)*(x-x₀) + f(x₀),0.25,1.2,lw = 2)
-	scatter!([x₀, x₀+h], [f(x₀),f(x₀+h)])
-end
+# ╔═╡ 59e1416f-bf25-4074-bcdf-7937f5a9bd60
+1 + eps() == 1
 
-# ╔═╡ b099e1bf-7c5d-416e-943b-2565b0412f6d
+# ╔═╡ efaacb5d-0f2b-4bc2-a2e1-9ba4aa70ebf7
+1 + eps()/2 == 1
+
+# ╔═╡ a6324f07-427b-4ffa-ae66-ddd823bb2fc9
 md"""
-###### Exemplo: Derivada de $f(x) = \sin (x)$ em $x_0 = 1.2$.
+Vamos chamar de *unidade de arredondamento*, ou *epsilon da máquina*, denotado por $\epsilon_{mac}$, o menor número para o qual ainda resulta que $\operatorname{fl}(1 + \epsilon_{mac}) > 1$. Isso é, basicamente, a metade da distância entre o 1 e o próximo número representável. Esse número nos dá uma ideia de quantas casas de precisão o nosso sistema tem. Em particular no caso do padrão IEEE 754 temos as unidades de arredondamento:
+
+1. Precisão simples: $\epsilon_{mac} \approx 1.19209 \cdot 10^{-7}$.
+
+1. Precisão dupla: $\epsilon_{mac} \approx 2.22045 \cdot 10^{-16}$.
+
+O padrão IEEE 754 além de definir esses dois sistemas de ponto flutuante obriga ainda que as operações aritméticas básicas sejam realizadas de modo a garantir que o valor obtido ao final é a melhor representação possível do valor exato. Isso é, dados dois números representáveis $x_1$ e $x_2$ o sistema IEEE 754 exige que o computador implemente a sua versão da soma, que vamos representar por $\oplus$, de modo que $x_1 \oplus x_2$ seja o número representável mais próximo de $x_1 + x_2$. Em particular, isso garante que o erro
+
+$| (x_1 \oplus x_2) - (x_1 + x_2) | \leq \epsilon_{mac} |x_1 + x_2|$
+
+Ou seja, o erro relativo ao se fazer a operação de soma como implementada seguindo ao padrão IEEE 754 é no máximo $\epsilon_{mac}$. Isso não vale apenas para a operação de soma, vale para todas as operações aritméticas fundamentais que são soma, subtração, multiplicação, divisão e cálculo da raiz quadrada.
+
 """
 
-# ╔═╡ dc8d88bb-f499-4c66-8206-2734ce832127
-x₀ = 1.2
+# ╔═╡ b9844f13-c267-4eae-b0fd-69a3d2915c71
+md"""
+## Erros de cancelamento
 
-# ╔═╡ 9046d64b-e01a-42e4-ad47-ffabfa674729
-cos(x₀)
+Quando ficamos sabendo da propriedade descrita acima, isto, é que o computador implementando o padrão IEEE 754 é capaz de garantir a execução das operações básicas com erro relativo máximo proporcional ao epsilon da máquina, ficamos com a impressão que essas operações não são capazes de gerar muitas dificuldades numéricas. Afinal de contas, para números de precisão dupla, isso dá impressão que os valores calculados estarão corretos pelo menos até a décima quinta casa. Parece mais do que o suficiente. Porém há um caso, que muitas vezes ignoramos em uma primeira leitura, que pode trazer muitos problemas. O fenômeno é conhecido como *erro de cancelamento*. Vamos ver primeiro um exemplo em que ele ocorre e depois discutir o que ocorreu.
 
-# ╔═╡ 41b53fc1-f620-41e4-9a46-d59cd4bed6e8
-h₀ = [0.1, 0.01, 0.001, 1e-4, 1e-7]
+Considere que queremos calcular $49213 + 31.728 − 49244 = 0.728$ em um computador com sistema decimal e cinco casas na mantissa. Note que, como todos os números da conta original têm cinco casas, parece que não estamos pedindo nada demais. A primeira operação executada obtém
 
-# ╔═╡ 4b5fdf26-1c4d-4269-a2db-be3dadfe3f48
-der_fx₀ = aprox_deriv.(sin,x₀,h₀)
+$\operatorname{fl}(49213 + 31.728) = \operatorname{fl}(49244.728) = 49245 = 0.49245\times 10^{5}.$ 
 
-# ╔═╡ e2fd90ee-c3c1-4c4c-a2ab-ccb2427fc81f
-DataFrame(:h => h₀, :ErroAbsoluto => Eₐ.(cos(x₀), der_fx₀), :ErroRelativo => Eᵣ.(cos(x₀), der_fx₀))
+Note o resultado final armazenado é tão bom como prometido. Ele tem cinco casas corretas. De fato, o erro relativo é
 
-# ╔═╡ 9383bf51-6c77-4ddc-b83e-2c4b0550982d
-	h₁ = [exp10(i) for i in 0:-0.5:-20]
+$\frac{|49245 - 49244.728|}{|49244.728|} \approx 5.523 \cdot 10^{-6},$
 
-# ╔═╡ 9071eafb-f080-4520-a114-aa65e2a54235
-der_fx₁ = aprox_deriv.(sin,x₀,h₁)
+que é próximo ao epsilon da máquina. 
 
-# ╔═╡ 001748e6-c0e9-460d-b6b1-6e0688cce16a
-DataFrame(:h => h₁, :ErroAbsoluto => Eₐ.(cos(x₀), der_fx₁), :ErroRelativo => Eᵣ.(cos(x₀), der_fx₁))
+Agora fazemos a operação final, **usando o resultado já calculado**,
 
-# ╔═╡ 1716126d-cd8e-4cae-98f3-a5636b926a83
-err =  Eₐ.(cos(x₀), der_fx₁)
+$\operatorname{fl}(49245 - 49244) = \operatorname{fl}(1) = 1.$
 
-# ╔═╡ dd24f23e-5a27-45dc-b121-ea816efb97f6
+Veja que esse resultado tem quase nenhuma relação com o valor exato que é 0.728. Ele apenas acerta a ordem de grandeza. Mas **não tem nenhum dígito correto**, muito menos os cinco dígitos significativos esperados.
+"""
+
+# ╔═╡ 2a445201-df9b-4a86-91c0-c6ffa7bf301b
+md"""
+### Exemplos de erros de cancelamento
+
+Considere a seguinte expressão $\sqrt{x^2 + 1} - x$. Quando ela irá gerar erros de cancelamento? Se você pensar um pouco, à medida que $x$ vai para $\infty$ o valor $x^2 + 1$ fica relativamente mais perecido com o $x^2$. O $1$ se torna irrelevante perante o $x^2$ que é muito grande. Assim a raiz quadrada desse valor deve ficar muito próxima de $| x |$. Quando fomos subtrair essa raiz quadrada $x$, que é positivo, teremos erro de cancelamento.
+
+Podemos então prever que $\sqrt{x^2 + 1} - x$ deve gerar erros de cancelamento para $x$ grande. Para ver isso vamos aproximar o erro relativo comparando números calculados com precisão simples com números calculados com precisão dupla.
+"""
+
+# ╔═╡ 09471dc2-1dc1-4106-9b60-7a57e17688de
+expr(x) = sqrt(x^2 + 1) - x # Expressão
+
+# ╔═╡ 51ffe6c7-3b72-4f00-af55-aaafa1542df1
+a, b = 1e+1, 1e+4 # Intervalo [a,b]
+
+# ╔═╡ 30da546a-3e1c-487e-9e79-3e84f62d907c
+Eᵣ(xh,x) = abs(x - xh) / abs(xh)
+
+# ╔═╡ d3dbda41-d1cc-4739-9cbc-c740ec0a7d29
+# x ∈ [a,b]
+x = collect(range(a, b, length = 1000))
+
+# ╔═╡ 6207fb3a-73c8-4534-9390-8f7ddc3d7f10
+exprx_double = expr.(x)
+
+# ╔═╡ c5384b39-4237-4ef0-9645-7f1ff77181bf
+x_single = Float32.(x)
+
+# ╔═╡ 33aa31b3-9871-49af-9c4f-e26dd7913f7a
+exprx_single = expr.(x_single)
+
+# ╔═╡ 93b2317c-45f6-4d04-a166-33e0f1472ba5
+log_erro = log10.(Eᵣ.(exprx_double,exprx_single))
+
+# ╔═╡ 1e743aad-4501-4be2-95ae-6f6ad1fbb58c
 begin
-	plot(h₁,err, xaxis=:log10, yaxis=:log10, st=[:path, :scatter], leg=false)
-	xlabel!("h")
-	ylabel!("Erro Absoluto")
-	title!("Gráfico Bonito")
+	plot(x,-log_erro,xaxis=:log10,leg=false)
+	title!("Dígitos corretos em função de x")
+	ylabel!("Dígitos corretos")
+	xlabel!("x")
 end
 
-# ╔═╡ 64c7d2fd-dcb7-45b4-ada1-828e1434ee90
-h₂ = [exp2(i) for i in 0:-1:-60]
+# ╔═╡ 1589e991-c91e-43e4-9368-bc0c6104893d
+md"""
+#### Como corrigir isto?
 
-# ╔═╡ 7aa3213f-2a75-4fdf-a2f9-023ca04afdc4
-der_fx₂ = aprox_deriv.(sin,x₀,h₂)
+Como você pode ver, a precisão começa razoável. Há mais de 5 casas significativas. O número de casas significativas cai rapidamente chegando a 0 antes de $x = 10^4$. 
 
-# ╔═╡ 1c218d06-af0a-4095-8f6f-6a200db11668
-DataFrame(:h => h₂, :ErroAbsoluto => Eₐ.(cos(x₀), der_fx₂), :ErroRelativo => Eᵣ.(cos(x₀), der_fx₂))
+Será que é possível evitar esse erro? Será que é possível  re-escrever a expressão de modo a evitar o problema para $x$ grande? A resposta é sim, veja:
+
+$(\sqrt{x^2 + 1} - x)(\sqrt{x^2 + 1} + x) = x^2 + 1 - x^2 = 1.$
+
+Ou seja,
+
+$\sqrt{x^2 + 1} - x = \frac{1}{\sqrt{x^2 + 1} + x}.$
+
+Essa última expressão não tem erros de cancelamento quando $x$ é grande, já que não ocorre subtração de valores próximos. Note o que ocorre ao usarmos essa expressão para o cômputo da fórmula.
+"""
+
+# ╔═╡ e6cf7ab8-833f-4477-84c4-28081ecb6136
+# Implementação
+expr_melhorada(x) = 1/(√(x^2 + 1) + x)
+
+# ╔═╡ a1bfe989-45e6-4d9b-8eb2-eb2f33947bb6
+exprx_me_single = expr_melhorada.(x_single)
+
+# ╔═╡ fb7dcb96-d70b-4df5-bb51-89af50a8eb30
+log_erro_me = log10.(Eᵣ.(exprx_double,exprx_me_single))
+
+# ╔═╡ 6892c590-2150-486d-812b-1390eb47fbdb
+begin
+	plot(x,-log_erro_me,xaxis=:log10, label="Função")
+	title!("Dígitos corretos em função de x - expressão melhorada")
+	ylabel!("Dígitos corretos")
+	xlabel!("x")
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
-DataFrames = "~1.2.2"
 Plots = "~1.23.4"
-PlutoUI = "~0.7.18"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
-
-[[AbstractPlutoDingetjes]]
-deps = ["Pkg"]
-git-tree-sha1 = "0ec322186e078db08ea3e7da5b8b2885c099b393"
-uuid = "6e696c72-6542-2067-7265-42206c756150"
-version = "1.1.0"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -301,21 +345,10 @@ git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.5.7"
 
-[[Crayons]]
-git-tree-sha1 = "3f71217b538d7aaee0b69ab47d9b7724ca8afa0d"
-uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
-version = "4.0.4"
-
 [[DataAPI]]
 git-tree-sha1 = "cc70b17275652eb47bc9e5f81635981f13cea5c8"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.9.0"
-
-[[DataFrames]]
-deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
-git-tree-sha1 = "d785f42445b63fc86caa08bb9a9351008be9b765"
-uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-version = "1.2.2"
 
 [[DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -404,10 +437,6 @@ git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
 
-[[Future]]
-deps = ["Random"]
-uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
-
 [[GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
 git-tree-sha1 = "0c603255764a1fa0b61752d2bec14cfbd18f7fe8"
@@ -467,23 +496,6 @@ git-tree-sha1 = "8a954fed8ac097d5be04921d595f741115c1b2ad"
 uuid = "2e76f6c2-a576-52d4-95c1-20adfe4de566"
 version = "2.8.1+0"
 
-[[Hyperscript]]
-deps = ["Test"]
-git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
-uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
-version = "0.0.4"
-
-[[HypertextLiteral]]
-git-tree-sha1 = "5efcf53d798efede8fee5b2c8b09284be359bf24"
-uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
-version = "0.9.2"
-
-[[IOCapture]]
-deps = ["Logging", "Random"]
-git-tree-sha1 = "f7be53659ab06ddc986428d3a9dcc95f6fa6705a"
-uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
-version = "0.2.2"
-
 [[IniFile]]
 deps = ["Test"]
 git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
@@ -499,11 +511,6 @@ deps = ["Test"]
 git-tree-sha1 = "f0c6489b12d28fb4c2103073ec7452f3423bd308"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
 version = "0.1.1"
-
-[[InvertedIndices]]
-git-tree-sha1 = "bee5f1ef5bf65df56bdd2e40447590b272a5471f"
-uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
-version = "1.1.0"
 
 [[IrrationalConstants]]
 git-tree-sha1 = "7fd44fd4ff43fc60815f8e764c0f352b83c49151"
@@ -749,29 +756,11 @@ git-tree-sha1 = "c1148c16a54e6861e379809130b78120c6184a27"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 version = "1.23.4"
 
-[[PlutoUI]]
-deps = ["AbstractPlutoDingetjes", "Base64", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "57312c7ecad39566319ccf5aa717a20788eb8c1f"
-uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.18"
-
-[[PooledArrays]]
-deps = ["DataAPI", "Future"]
-git-tree-sha1 = "a193d6ad9c45ada72c14b731a318bedd3c2f00cf"
-uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
-version = "1.3.0"
-
 [[Preferences]]
 deps = ["TOML"]
 git-tree-sha1 = "00cfd92944ca9c760982747e9a1d0d5d86ab1e5a"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
 version = "1.2.2"
-
-[[PrettyTables]]
-deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
-git-tree-sha1 = "d940010be611ee9d67064fe559edbb305f8cc0eb"
-uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
-version = "1.2.3"
 
 [[Printf]]
 deps = ["Unicode"]
@@ -1129,45 +1118,38 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─a2d2d41c-d397-11eb-0f7d-ed2891f49049
-# ╟─206f3485-ba82-4b9e-948a-97e656f42b8a
-# ╟─4d8839cb-f01e-47b0-9671-3eb4f58e5acf
-# ╠═b25c1fd4-b6e2-4248-8bb9-41a1f06032dd
-# ╠═0d2074aa-f918-4b6e-a7b3-1a2a84be333e
-# ╠═5f980d0a-44e0-4d37-82a4-86c1e0a014e8
-# ╠═c1d32147-6e12-4cd6-b949-5e4833476d08
-# ╠═0ce7be2b-1c1c-4af7-a471-0540df2bb675
-# ╠═6f24ce45-e776-4553-a7a8-4a65f394d613
-# ╠═bd93cba3-90b9-4ce4-b915-af387b7176a5
-# ╟─a37753de-9cb6-4d3d-84a7-087c8515886f
-# ╠═33db5da8-74a8-41df-ba17-8bc0251c824b
-# ╟─9fb230ba-dffc-4603-9c8d-00a1b1073d03
-# ╠═74b0f57c-3758-4a16-9acf-fc9b08ab0740
-# ╠═d6f40096-694b-4178-9d26-66c4a3b5dce9
-# ╠═ddc90b13-a044-40f6-a7e6-2b7409e7d987
-# ╠═f6fb6e86-144e-4ed4-b7ae-b23d2e0d2baa
-# ╠═16e07d77-fb1a-41f4-b75b-039df5ef0c0b
-# ╠═8b515e5b-63b6-445c-a357-bb4737840135
-# ╠═8656a832-7630-460c-bc3c-c24ac2451e40
-# ╠═c7ba3231-6bd7-410d-8a81-914834262500
-# ╠═5f9e1188-6e48-44a2-9232-63c24106f5de
-# ╟─a6dd9b2d-6479-4d7f-ae7b-5d22c26d5df4
-# ╠═f24249dc-5ead-4bda-abcd-3fe0a10501e1
-# ╠═cf5f5921-ccc7-418a-83fb-ab0517dbc601
-# ╟─a4276d2f-4e1e-4a78-80c6-a1f4ad514f10
-# ╟─b099e1bf-7c5d-416e-943b-2565b0412f6d
-# ╠═dc8d88bb-f499-4c66-8206-2734ce832127
-# ╠═9046d64b-e01a-42e4-ad47-ffabfa674729
-# ╠═41b53fc1-f620-41e4-9a46-d59cd4bed6e8
-# ╠═4b5fdf26-1c4d-4269-a2db-be3dadfe3f48
-# ╠═e2fd90ee-c3c1-4c4c-a2ab-ccb2427fc81f
-# ╠═9383bf51-6c77-4ddc-b83e-2c4b0550982d
-# ╠═9071eafb-f080-4520-a114-aa65e2a54235
-# ╠═001748e6-c0e9-460d-b6b1-6e0688cce16a
-# ╠═1716126d-cd8e-4cae-98f3-a5636b926a83
-# ╠═dd24f23e-5a27-45dc-b121-ea816efb97f6
-# ╠═64c7d2fd-dcb7-45b4-ada1-828e1434ee90
-# ╠═7aa3213f-2a75-4fdf-a2f9-023ca04afdc4
-# ╠═1c218d06-af0a-4095-8f6f-6a200db11668
+# ╟─94f24f5a-d5f7-11eb-0c0d-5983bdf1822f
+# ╠═caf6c14d-86fb-4ae6-97c5-9e148810f977
+# ╟─b86c5fdf-7b7c-4566-8bcc-59f4be5004fc
+# ╠═00668afc-b4b2-4d70-8ac0-32da4844f686
+# ╟─960cec6b-6cf0-44b8-b3b2-76efa5a53080
+# ╟─e12e8462-4280-42d9-a995-b52480e47dd2
+# ╟─197d9270-7422-4a67-a7a6-7366ede693ca
+# ╟─99b3ae7a-8096-47d2-9a7b-9f61fdaf42c0
+# ╠═24c6e582-1e1e-435a-b0e6-4fc9f7d4c3b1
+# ╟─3f506b17-8ac5-4fc3-a502-c5eea24f9748
+# ╟─f2ed6b44-a464-4b5f-acf4-dd8309aaa8e4
+# ╟─9a63e356-911c-478a-ab08-34d3a163ce07
+# ╠═292b079c-3adc-4a7a-9966-ff2a368afa96
+# ╠═6bd08fe7-2bcd-4e85-b883-5c8ab4ed44c8
+# ╠═59e1416f-bf25-4074-bcdf-7937f5a9bd60
+# ╠═efaacb5d-0f2b-4bc2-a2e1-9ba4aa70ebf7
+# ╟─a6324f07-427b-4ffa-ae66-ddd823bb2fc9
+# ╟─b9844f13-c267-4eae-b0fd-69a3d2915c71
+# ╟─2a445201-df9b-4a86-91c0-c6ffa7bf301b
+# ╠═09471dc2-1dc1-4106-9b60-7a57e17688de
+# ╠═51ffe6c7-3b72-4f00-af55-aaafa1542df1
+# ╠═30da546a-3e1c-487e-9e79-3e84f62d907c
+# ╠═d3dbda41-d1cc-4739-9cbc-c740ec0a7d29
+# ╠═6207fb3a-73c8-4534-9390-8f7ddc3d7f10
+# ╠═c5384b39-4237-4ef0-9645-7f1ff77181bf
+# ╠═33aa31b3-9871-49af-9c4f-e26dd7913f7a
+# ╠═93b2317c-45f6-4d04-a166-33e0f1472ba5
+# ╠═1e743aad-4501-4be2-95ae-6f6ad1fbb58c
+# ╟─1589e991-c91e-43e4-9368-bc0c6104893d
+# ╠═e6cf7ab8-833f-4477-84c4-28081ecb6136
+# ╠═a1bfe989-45e6-4d9b-8eb2-eb2f33947bb6
+# ╠═fb7dcb96-d70b-4df5-bb51-89af50a8eb30
+# ╠═6892c590-2150-486d-812b-1390eb47fbdb
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
