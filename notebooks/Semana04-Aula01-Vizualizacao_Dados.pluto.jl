@@ -4,139 +4,34 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 4284c20f-05ed-4707-ad8d-a43ddefbd621
-begin
-	using DataFrames, CSV, HTTP, RollingFunctions, Dates
-end
-
-# ╔═╡ 2906bfca-784f-4a7c-9fe1-4a34b5fa6d6c
-### Pacotes de Estatística e dados básicos e de vizualização
-using StatsBase, StatsPlots
+# ╔═╡ 728e3eb8-4098-4393-b105-2c56b6831826
+using StatsPlots
 
 # ╔═╡ 21595edc-d9bf-11eb-233f-abb831d37641
-# Ferramentas úteis para a aula!
+# Pacotes usados na aula!
 begin
-	using Plots, PlutoUI
-	plotly() # Um backend para Gráficos mais iterativos
+	using Plots
+	plotly() #Um backend para Gráficos mais iterativos
+	using DataFrames, CSV, HTTP, RollingFunctions, Dates, StatsBase
 end
+
+# ╔═╡ 8bf5d656-ed40-4742-9f9b-acdbce34c917
+	using RDatasets
+
+# ╔═╡ e3ec43c6-e36a-4153-a572-ef7685ee9470
+using PlutoUI
 
 # ╔═╡ f903bc7e-5ead-4e30-a8ec-ba7523e21f98
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 03 - Aula 03
+###### Semana 04 - Aula 01-02
 """
-
-# ╔═╡ aa519336-d5bc-4665-a067-cab6e525639d
-md"""
-- Exemplo de uso do `plotly`.
-"""
-
-# ╔═╡ c5da2535-e468-4f1a-bbf5-bda497f60994
-scatter(rand(10,3))
 
 # ╔═╡ 85ebfc47-80dd-45ce-9427-007593a2fc61
 md"""
 # Vizualização de Dados
-"""
-
-# ╔═╡ e5822f92-cc42-4968-a8d7-c7447777c980
-md"""
-- Atualmente a geração de dados e a disponibilidade destes dados está em voga
-- Termos como _Ciência de Dados_, _Big Data_, etc., são bastante comuns nas áreas de tecnologia
-- No Brasil, a lei de acesso a informações (LAI - Lei [12.527/2011](http://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12527.htm) regula o acesso a informações e exige transparência e acessibilidade aos dados em geral do serviço público, de forma atualizada 
-- Tomada de decisão baseada em dados é uma necessidade tanto no ambiente público quanto privado
-"""
-
-# ╔═╡ d0038966-d245-4659-8407-36561b6e57fd
-md"""
-## Uso de `DataFrames`
-
-- `DataFrame` é um pacote de _tratamento de dados tabulados_ do Julia que permite análises de maneira robusta.
-- Documentação do  [`DataFrames`](https://dataframes.juliadata.org/stable/)
-- [Cheat Sheet](https://www.ahsmart.com/pub/data-wrangling-with-data-frames-jl-cheat-sheet/) (Codiguin da Trapaça by AK)
-- [Tutorial completo](https://github.com/bkamins/Julia-DataFrames-Tutorial/) de `DataFrames` usando Jupyter
-- Correspondente ao `pandas` do Python e ao `r-dataframe` do R.
-- Um `DataFrame` é uma estrutura de dados com colunas que tem nomes (_labels_) e que podem ter diferentes tipos de dados. 
-- Tem sempre duas dimensões e funciona parecido com uma tabela do SQL ou uma planilha (do Excel).
-
-"""
-
-# ╔═╡ 5e6c2def-5512-40ab-9d9d-2d9b83b8ff1e
-a = [1,2,3,4,5.]
-
-# ╔═╡ 7eb8f7db-6fc7-44c5-9cd1-4c8ae28222b7
-# Implementação
-
-# ╔═╡ b7f2d576-f730-4f7c-bb68-9c643c2d14b2
-df_a =  DataFrame( X =  a)
-
-# ╔═╡ 01a33976-beb3-40fd-af82-7cff433bee3c
-df_b = DataFrame( :ColunaA => a)
-
-# ╔═╡ c6d28eb8-7819-448b-94de-42ca87d0c3d6
-df = DataFrame(:A => 1:2:1000, :B => repeat(1:10, inner = 50), :C => 1:500)
-
-# ╔═╡ 5360d3b5-191a-4ab1-ae4f-4bbd1206c04b
-# Quantidade de linhas e colunas
-size(df)
-
-# ╔═╡ 6121d36a-2593-4df9-ac68-9c8b62aeeeca
-# Primeiras 5 linhas
-first(df, 5)
-
-# ╔═╡ c831b543-a31a-45b9-b32a-369ccac49f1f
-# Últimas 10 linhas
-last(df,10)
-
-# ╔═╡ 21add671-cab3-4292-bc31-0bca5d4b7ab8
-#  Subconjuntos
-df[[10, 20, 50],[:A, :B]]
-
-# ╔═╡ 83432568-03a7-4969-b141-6847a8e6b630
-df[:,[:C, :A]]
-
-# ╔═╡ e28cfe3f-5f51-482b-80df-51b2f322d937
-# coluna de df como vetor
-df[:,:C]
-
-# ╔═╡ 0a046f08-7cf5-4582-86af-bc7b07bea716
-# Coluna de df como dataframe
-df[:,[:C]]
-
-# ╔═╡ 3e6528b2-aa68-452c-851f-b0b39525b468
-# Outra maneira de tomar coluna como vetor
-df.C
-
-# ╔═╡ 1c3e8777-d822-4df4-996b-1eb1077b97c8
-# Seleção de linhas
-df[ df.A .> 500, : ]
-
-# ╔═╡ d2c70304-c8d8-43c6-8b3f-5f2deec59d67
-df[(df.A .> 500) .& (250 .<=  df.C .<= 350), :]
-
-# ╔═╡ b57ee3ee-a922-413d-bee9-e10715b182f3
-df[:,Not(:A)]
-
-# ╔═╡ 3bb506e0-73b2-4d55-893b-168dbbe8022a
-# Resumo (descrição) dos dados
-describe(df, :all)
-
-# ╔═╡ d8d89a2d-931e-41ac-a3c9-673d68b12898
-describe(df,:mean, :std)
-
-# ╔═╡ 0b7af787-794e-474b-bd88-ebb3911b6291
-# Média
-mean(df.B)
-
-# ╔═╡ f34e38c9-35e0-4c10-b210-990796a8d8d5
-md"""
-# Dados disponibilizados
-- Dados em geral em formato `csv` (_comma separared values_ - valores separados por vírgula)
-  - Pacote `CSV.jl`
-- Dados na internet
-  - Pacote  `HTTP.jl`
 """
 
 # ╔═╡ 7ceaa98c-b3d2-4ce7-8ccc-33c187087208
@@ -150,102 +45,167 @@ md"""
 url = "https://raw.githubusercontent.com/wcota/covid19br/master/cases-brazil-states.csv"
 
 # ╔═╡ d23da46b-da4b-4290-abdf-3937cdc53f96
-# Baixando dados do tipo CSV via url
-df_geral = CSV.read(HTTP.get(url).body, DataFrame) 
-
-# ╔═╡ 625f5ddc-333f-468a-9074-d39a5a591eba
-size(df_geral) 
+# Baixando dados via url
+begin
+  df_geral = Missings.replace(CSV.read(HTTP.get(url).body, DataFrame),0)
+  df_geral = df_geral.x
+end
 
 # ╔═╡ 40594163-2cd0-4543-b872-5e4e3e79a1ad
 # Nomes das colunas
 names(df_geral)
 
-# ╔═╡ 7a36b091-282c-47f9-914c-7f1ae6ec1b9d
-last(df_geral,1)
-
-# ╔═╡ 47c48fcc-0c32-4897-865a-326b94ed0701
-df_sc = filter(linha -> linha.state == "SC" && linha.date >= Date("2021-01-01"),df_geral)
-
-# ╔═╡ d1cfebb6-bd70-4bfb-9260-ee1b0dc7355d
-# f(linha) = linha.state == "SC" && linha.date >= Date("2021-01-01")
-
-# ╔═╡ edad7f70-72e7-4dc5-ba03-831770064b09
-# df_sc2 = filter(f,df_geral)
-
-# ╔═╡ a5cd3b79-17b1-4502-9f20-841ed7d457a9
-#  df_sc1 = df_geral[df_geral.state .== "SC",:]
-
-# ╔═╡ ef6d2d71-eb4d-45a7-9bb3-4d383eca1ad5
-# Detalhes sobre os campos
-combine(df_sc, :newDeaths .=> [sum,  mean] .=> [:TotalMortesSC, :MediaMortesSC], :newCases .=> [sum, mean] .=> [:TotalNovosCasosSC, :MediaNovosCasosSC])
-
-# ╔═╡ 5564bb12-ba34-4116-b2b9-d4ea2d578c92
-casos = df_sc.newCases
-
-# ╔═╡ 5a08dd82-1b97-4713-b176-c7fc4ea425f9
-bar(df_sc.date, df_sc.newCases, label = "Novos Casos Diários", title = "Santa Catarina", c=:skyblue2, alpha = 0.2)
-
-# ╔═╡ 6574a150-2c6c-4a5f-ad1d-8e68f85e2e33
-bar(df_sc.date, df_sc.newDeaths, label = "Novos Mortes Diárias", title = "Santa Catarina", c=:skyblue2, alpha = 0.2)
-
-# ╔═╡ 6ab3d2c3-0c6d-4f99-b68b-6d93e86705b8
-md"""
-### Média móvel
-"""
-
-# ╔═╡ 2d273cb6-bc47-4621-86f2-2f6ede327ad2
-begin
-	janela = 14
-	media_movel = rollmean(casos,janela)
-	bar(df_sc.date,casos,label = "Novos Casos Diários", title = "Santa Catarina - Jan/21 - Nov/21",c=:skyblue2, alpha = 0.2)
-	plot!(df_sc.date[janela:end],  media_movel, label = "Média móvel de $janela dias", lw = 3,c=:skyblue2)
-end
-
-# ╔═╡ efbe9514-71fe-492f-a50a-e8eaaeac21a8
-begin
-	janela_de = 14
-	mortes = df_sc.newDeaths
-	media_movel_de = rollmean(mortes,janela_de)
-	bar(df_sc.date,mortes,label = "Novas mortes Diários", title = "Santa Catarina - Jan/21 - Nov/21",c=:skyblue2, alpha = 0.2)
-	plot!(df_sc.date[janela_de:end],  media_movel_de, label = "Média móvel de $janela_de dias", lw = 3,c=:skyblue2)
-end
-
-# ╔═╡ 90e35fba-58e3-4d3e-a12b-0ded94ba49a7
-md"""
-### Dados IBAMA
- - Fonte [IBAMA](https://dados.gov.br/dataset/autos-de-infracao)
- - Apresentação no CidamoWeek de [Lucas Barros](https://youtu.be/YSPcql_bpG8?t=5718)
-   - [Jupyter notebook](https://colab.research.google.com/drive/1PUqOqMQtOY3nZmzYZnErquO64bUKi3y1) da apresentação
-"""
-
-# ╔═╡ 4859e1a8-ea34-498c-9f52-933be8475827
-url_ibama = "http://dadosabertos.ibama.gov.br/dados/SIFISC/auto_infracao/auto_infracao/auto_infracao.csv"
-
-# ╔═╡ 376c6be2-b1d2-427e-8243-d48934e756e3
-# df_ibama = CSV.read(HTTP.get(url_ibama).body, DataFrame)
-
-# ╔═╡ ab114725-f7d8-47b4-bb58-a601d095e2c6
-md"""
-### Our world in data
-
-- Fonte para dados COVID no mundo em [https://ourworldindata.org/coronavirus-source-data](https://ourworldindata.org/coronavirus-source-data)
-"""
-
 # ╔═╡ f2a7995f-638e-4811-84f8-b74079499ebf
-url_paises= "https://covid.ourworldindata.org/data/owid-covid-data.csv"
+# Ordenando por coluna  (Sort)
+sort(df_geral, :state)
+
+# ╔═╡ 608c9d45-a181-4b5c-a7b5-a5311284b0bb
+# Ordenando por coluna ordem reversa  (Sort)
+sort(df_geral, :state, rev = true)
+
+# ╔═╡ 703618cc-d1cc-44c4-ad7a-4b6aa1f92c3a
+#Filtrando
+df_sc = filter(row -> row.state ==  "SC" && row.date >= Date("2021-01-01") &&  !ismissing(row.vaccinated), df_geral)
+
+# ╔═╡ a901b28d-7742-4686-8557-609e4855d383
+Sul = ["SC", "PR", "RS"]
+
+# ╔═╡ d38691e8-6ce2-475c-8a31-d93f1365c6e4
+df_sul = sort(filter(row -> row.state ∈ Sul && row.date >= Date("2021-01-01"), df_geral),:state)
+
+# ╔═╡ a61ddbdf-763e-495d-ad0d-17e64413f8aa
+md"""
+- Como calcular o número de vacinados por dia, em SC?
+  - Coluna `:newVaccinated`
+"""
+
+# ╔═╡ f6caeac6-0ded-46b7-afce-301248731d93
+#  vcat (vertical concatenation)
+newVaccinated = [ 0; df_sc.vaccinated[2:end] - df_sc.vaccinated[1:end-1]]
+
+# ╔═╡ 733c6000-ac10-402a-a395-d55c93d96a19
+length(newVaccinated)
+
+# ╔═╡ 7d4b4e60-74be-47a9-82de-121318b668a6
+df_sc.newVaccinated = newVaccinated
+
+# ╔═╡ 0cf60f4a-05fe-437a-9a40-ed10b4576446
+
+
+# ╔═╡ 56ce8318-9c46-416f-a649-280a76532925
+df_sc
+
+# ╔═╡ 0cd02c71-d87a-48b6-9d7e-22f4968b0811
+bar(df_sc.date, df_sc.newVaccinated)
+
+# ╔═╡ 39197362-dc29-4349-82c7-db907fb0086e
+#StatsPlots
+# @df df_sc bar(:date, [:newCases :newVaccinated], c=[:red :lightblue])
+
+# ╔═╡ 4e72aea5-ef93-4f8b-b320-dab26b7114f5
+# Apensando dfs
+
+# ╔═╡ d469c45a-7705-49ab-95d4-de2c22f6ea93
+df_pr = filter(row -> row.state == "PR" && row.date >= Date("2021-01-01") && !ismissing(row.vaccinated), df_geral)
+
+# ╔═╡ cff2cf15-ac1e-4f04-862e-198c9e53a252
+df_rs = filter(row -> row.state == "RS" && row.date >= Date("2021-01-01") && !ismissing(row.vaccinated), df_geral)
+
+# ╔═╡ d91059e6-2c32-41de-a4d8-b1c77d1850fd
+
+
+# ╔═╡ 6157ba8c-ee6d-465b-bb63-aa079cbe0e6e
+append!(df_sc,df_rs, cols=:union)
+
+# ╔═╡ 335353f9-3201-4b1e-92cb-5ed1b3f768d1
+append!(df_sc,df_pr, cols = :union)
+
+# ╔═╡ cb76e3df-6dfd-456d-8082-75423e053cbe
+md"""
+#### Grouping
+"""
+
+# ╔═╡ a9f406e1-98de-4278-a5bc-a2256be311de
+# Agrupamento
+gdf = groupby(df_geral,:state) 
+
+# ╔═╡ 990a22ac-d30d-4f02-9e81-9d13a879faba
+sort(combine(gdf, :newCases => mean),:state)
+
+# ╔═╡ bfddc6ca-2d24-4aa5-bef7-e2493323d72e
+sort(combine(gdf, :deaths => last => :NumeroMortos, :deaths_per_100k_inhabitants => last => :Mortos100k_hab), :Mortos100k_hab, rev=true)
+
+# ╔═╡ c003ad5e-3be9-477a-9b5c-866b02580da9
+for df in gdf
+	plt = @df df bar(:date, :deaths)
+	estado = "grafico"*df.state[1]
+end
+
+# ╔═╡ ab133a9e-89f4-4c12-b8c2-7db5ca649f81
+
+
+# ╔═╡ 1bfd2c5f-294a-4685-95e1-479aed323da1
+names(df_geral)
 
 # ╔═╡ a96e9951-e919-4d4f-9652-1336674366bf
-df_paises = CSV.read(HTTP.get(url_paises).body, DataFrame)
+md"""
+- Pacote `RDatasets.jl`
+  - Banco de dados para exercícios da linguagem `R` convertida para o uso em `DataFrame`
+"""
 
-# ╔═╡ 8bf5d656-ed40-4742-9f9b-acdbce34c917
+# ╔═╡ 6d3613ee-d453-41db-9e12-60e3225ef425
+#  700+ conjunto de dados de R
+RDatasets.datasets()
 
+# ╔═╡ 71a5217e-801f-4894-ae61-1071d64b119c
+# Tabela com os pacotes do R disponíveis
+RDatasets.packages()
 
-# ╔═╡ 8af1738c-ff53-4e37-92ea-64cfbc593242
-combine(df_sc, :vaccinated => maximum∘skipmissing => :VacinadosSC)
+# ╔═╡ 87465641-3d13-4ba7-98aa-230155b80798
+iris = dataset("datasets", "iris")
 
-# ╔═╡ f960ed85-6c60-4faf-932e-41a7c48f1a96
-vacinados_dia = df_sc.vaccinated[2:end] -
-df_sc.vaccinated[1:end-1]
+# ╔═╡ ced0e6b8-c2d3-4027-8278-3bfe5973945d
+names(iris)
+
+# ╔═╡ 299b909f-bd1b-46d3-9db5-34b3ca3a24a3
+gdf_iris = groupby(iris,:Species)
+
+# ╔═╡ 3efab108-7951-4afc-834d-bc79c1a39869
+combine(gdf_iris, nrow, :SepalLength => (x -> [extrema(x)]) => [:min, :max])
+
+# ╔═╡ 224cc1ad-1f4f-4133-a33e-f3272ea4b63b
+with_terminal() do
+	for df in gdf_iris
+		println(size(df,1))
+	end
+end
+
+# ╔═╡ d0d3d873-facb-47ee-bec2-881626e55cad
+Movies = dataset("ggplot2", "movies")
+
+# ╔═╡ cae15489-7f91-4585-8caf-abb2e79a248a
+describe(Movies)
+
+# ╔═╡ 1040e938-c796-4323-ae93-ef5026ae4d11
+# Joins (Juntando dados)
+
+# ╔═╡ f1dfc141-2bb4-48c5-a03c-ebed327d47f7
+pessoas = DataFrame(NM = [20, 30, 40], Nome = ["Enzo", "Vitoria", "Valentina"])
+
+# ╔═╡ d7207a7f-4cc8-48f2-b14d-033dc3e983f3
+curso = DataFrame(NM = [20, 30, 40], Curso = ["Matemática", "Automação", "Materiais"])
+
+# ╔═╡ 5b769466-1726-4add-ba6b-e1b86131bda4
+nome_curso = innerjoin(pessoas, curso, on = :NM)
+
+# ╔═╡ e7c913b0-3f1d-4f54-a067-481659fd0b6b
+a = DataFrame(Cidade = ["Gaspar", "Brusque", "Brusque", "Blumenau", "Telêmaco Borba"], Nomes = ["Voão", "Jainá", "Ledro", "LR", "Tudri"], Categoria = [1,2,3,4,5])
+
+# ╔═╡ e2a3e935-5a53-4b07-9eab-086ee2255c84
+b = DataFrame(Localidade = ["Blumenau", "Blumenau", "Brusque"], Info = ["Tentenaro", "Leto", "Libis"],  Dados = [6, 7 , 3])
+
+# ╔═╡ 2c425fac-d769-4fd9-89ce-58da77ccaac5
+innerjoin(a,b, on = [:Cidade => :Localidade, :Categoria => :Dados ])
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -256,16 +216,18 @@ Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+RDatasets = "ce6b1742-4840-55fa-b093-852dadbb1d8b"
 RollingFunctions = "b0e4dd01-7b14-53d8-9b45-175a3e362653"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
-CSV = "~0.9.10"
+CSV = "~0.9.11"
 DataFrames = "~1.2.2"
 HTTP = "~0.9.16"
 Plots = "~1.23.6"
 PlutoUI = "~0.7.19"
+RDatasets = "~0.7.6"
 RollingFunctions = "~0.6.2"
 StatsBase = "~0.33.12"
 StatsPlots = "~0.14.28"
@@ -328,15 +290,21 @@ version = "1.0.8+0"
 
 [[CSV]]
 deps = ["CodecZlib", "Dates", "FilePathsBase", "InlineStrings", "Mmap", "Parsers", "PooledArrays", "SentinelArrays", "Tables", "Unicode", "WeakRefStrings"]
-git-tree-sha1 = "74147e877531d7c172f70b492995bc2b5ca3a843"
+git-tree-sha1 = "49f14b6c56a2da47608fe30aed711b5882264d7a"
 uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-version = "0.9.10"
+version = "0.9.11"
 
 [[Cairo_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll", "JLLWrappers", "LZO_jll", "Libdl", "Pixman_jll", "Pkg", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Zlib_jll", "libpng_jll"]
 git-tree-sha1 = "f2202b55d816427cd385a9a4f3ffb226bee80f99"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.1+0"
+
+[[CategoricalArrays]]
+deps = ["DataAPI", "Future", "Missings", "Printf", "Requires", "Statistics", "Unicode"]
+git-tree-sha1 = "c308f209870fdbd84cb20332b6dfaf14bf3387f8"
+uuid = "324d7699-5711-5eae-9e2f-1d82baa6b597"
+version = "0.10.2"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
@@ -439,9 +407,9 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[DensityInterface]]
 deps = ["InverseFunctions", "Test"]
-git-tree-sha1 = "794daf62dce7df839b8ed446fc59c68db4b5182f"
+git-tree-sha1 = "80c3e8639e3353e5d2912fb3a1916b8455e2494b"
 uuid = "b429d917-457f-4dbc-8f4c-0cc954292b1d"
-version = "0.3.3"
+version = "0.4.0"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
@@ -455,9 +423,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["ChainRulesCore", "DensityInterface", "FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "Test"]
-git-tree-sha1 = "2ea02796c118368c3eda414fc11f5a39259fa3d9"
+git-tree-sha1 = "dc6f530de935bb3c3cd73e99db5b4698e58b2fcf"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.25.27"
+version = "0.25.31"
 
 [[DocStringExtensions]]
 deps = ["LibGit2"]
@@ -480,6 +448,11 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "b3bfd02e98aedfa5cf885665493c5598c350cd2f"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
 version = "2.2.10+0"
+
+[[ExprTools]]
+git-tree-sha1 = "b7e3d17636b348f005f11040025ae8c6f645fe92"
+uuid = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
+version = "0.1.6"
 
 [[FFMPEG]]
 deps = ["FFMPEG_jll"]
@@ -504,6 +477,12 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "c6033cc3892d0ef5bb9cd29b7f2f0331ea5184ea"
 uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.10+0"
+
+[[FileIO]]
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "2db648b6712831ecb333eae76dbfd1c156ca13bb"
+uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+version = "1.11.2"
 
 [[FilePathsBase]]
 deps = ["Dates", "Mmap", "Printf", "Test", "UUIDs"]
@@ -852,6 +831,12 @@ version = "1.0.2"
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
+[[Mocking]]
+deps = ["Compat", "ExprTools"]
+git-tree-sha1 = "29714d0a7a8083bba8427a4fbfb00a540c681ce7"
+uuid = "78c3b35d-d492-501b-9361-3d52fe80e533"
+version = "0.7.3"
+
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
@@ -931,9 +916,9 @@ version = "8.44.0+0"
 
 [[PDMats]]
 deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
-git-tree-sha1 = "c8b8775b2f242c80ea85c83714c64ecfa3c53355"
+git-tree-sha1 = "86a37fba91f9fb5bbc5207e9458a5b831dfebb6b"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
-version = "0.11.3"
+version = "0.11.4"
 
 [[Parsers]]
 deps = ["Dates"]
@@ -1008,6 +993,18 @@ deps = ["DataStructures", "LinearAlgebra"]
 git-tree-sha1 = "78aadffb3efd2155af139781b8a8df1ef279ea39"
 uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 version = "2.4.2"
+
+[[RData]]
+deps = ["CategoricalArrays", "CodecZlib", "DataFrames", "Dates", "FileIO", "Requires", "TimeZones", "Unicode"]
+git-tree-sha1 = "19e47a495dfb7240eb44dc6971d660f7e4244a72"
+uuid = "df47a6cb-8c03-5eed-afd8-b6050d6c41da"
+version = "0.8.3"
+
+[[RDatasets]]
+deps = ["CSV", "CodecZlib", "DataFrames", "FileIO", "Printf", "RData", "Reexport"]
+git-tree-sha1 = "d3780d4626d6104068c151e22965d9209ea41938"
+uuid = "ce6b1742-4840-55fa-b093-852dadbb1d8b"
+version = "0.7.6"
 
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
@@ -1182,6 +1179,12 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 [[Test]]
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[[TimeZones]]
+deps = ["Dates", "Downloads", "InlineStrings", "LazyArtifacts", "Mocking", "Pkg", "Printf", "RecipesBase", "Serialization", "Unicode"]
+git-tree-sha1 = "8de32288505b7db196f36d27d7236464ef50dba1"
+uuid = "f269a46b-ccf7-5d73-abea-4c690281aa53"
+version = "1.6.2"
 
 [[TranscodingStreams]]
 deps = ["Random", "Test"]
@@ -1439,58 +1442,56 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╟─f903bc7e-5ead-4e30-a8ec-ba7523e21f98
 # ╠═21595edc-d9bf-11eb-233f-abb831d37641
-# ╟─aa519336-d5bc-4665-a067-cab6e525639d
-# ╠═c5da2535-e468-4f1a-bbf5-bda497f60994
 # ╟─85ebfc47-80dd-45ce-9427-007593a2fc61
-# ╟─e5822f92-cc42-4968-a8d7-c7447777c980
-# ╟─d0038966-d245-4659-8407-36561b6e57fd
-# ╠═4284c20f-05ed-4707-ad8d-a43ddefbd621
-# ╠═5e6c2def-5512-40ab-9d9d-2d9b83b8ff1e
-# ╠═7eb8f7db-6fc7-44c5-9cd1-4c8ae28222b7
-# ╠═b7f2d576-f730-4f7c-bb68-9c643c2d14b2
-# ╠═01a33976-beb3-40fd-af82-7cff433bee3c
-# ╠═c6d28eb8-7819-448b-94de-42ca87d0c3d6
-# ╠═5360d3b5-191a-4ab1-ae4f-4bbd1206c04b
-# ╠═6121d36a-2593-4df9-ac68-9c8b62aeeeca
-# ╠═c831b543-a31a-45b9-b32a-369ccac49f1f
-# ╠═21add671-cab3-4292-bc31-0bca5d4b7ab8
-# ╠═83432568-03a7-4969-b141-6847a8e6b630
-# ╠═e28cfe3f-5f51-482b-80df-51b2f322d937
-# ╠═0a046f08-7cf5-4582-86af-bc7b07bea716
-# ╠═3e6528b2-aa68-452c-851f-b0b39525b468
-# ╠═1c3e8777-d822-4df4-996b-1eb1077b97c8
-# ╠═d2c70304-c8d8-43c6-8b3f-5f2deec59d67
-# ╠═b57ee3ee-a922-413d-bee9-e10715b182f3
-# ╠═2906bfca-784f-4a7c-9fe1-4a34b5fa6d6c
-# ╠═3bb506e0-73b2-4d55-893b-168dbbe8022a
-# ╠═d8d89a2d-931e-41ac-a3c9-673d68b12898
-# ╠═0b7af787-794e-474b-bd88-ebb3911b6291
-# ╟─f34e38c9-35e0-4c10-b210-990796a8d8d5
 # ╟─7ceaa98c-b3d2-4ce7-8ccc-33c187087208
 # ╠═92ead4ba-1a27-498f-af01-f26ac2c77cfe
 # ╠═d23da46b-da4b-4290-abdf-3937cdc53f96
-# ╠═625f5ddc-333f-468a-9074-d39a5a591eba
 # ╠═40594163-2cd0-4543-b872-5e4e3e79a1ad
-# ╠═7a36b091-282c-47f9-914c-7f1ae6ec1b9d
-# ╠═47c48fcc-0c32-4897-865a-326b94ed0701
-# ╠═d1cfebb6-bd70-4bfb-9260-ee1b0dc7355d
-# ╠═edad7f70-72e7-4dc5-ba03-831770064b09
-# ╠═a5cd3b79-17b1-4502-9f20-841ed7d457a9
-# ╟─ef6d2d71-eb4d-45a7-9bb3-4d383eca1ad5
-# ╠═5564bb12-ba34-4116-b2b9-d4ea2d578c92
-# ╠═5a08dd82-1b97-4713-b176-c7fc4ea425f9
-# ╠═6574a150-2c6c-4a5f-ad1d-8e68f85e2e33
-# ╟─6ab3d2c3-0c6d-4f99-b68b-6d93e86705b8
-# ╠═2d273cb6-bc47-4621-86f2-2f6ede327ad2
-# ╠═efbe9514-71fe-492f-a50a-e8eaaeac21a8
-# ╟─90e35fba-58e3-4d3e-a12b-0ded94ba49a7
-# ╠═4859e1a8-ea34-498c-9f52-933be8475827
-# ╠═376c6be2-b1d2-427e-8243-d48934e756e3
-# ╟─ab114725-f7d8-47b4-bb58-a601d095e2c6
 # ╠═f2a7995f-638e-4811-84f8-b74079499ebf
-# ╠═a96e9951-e919-4d4f-9652-1336674366bf
+# ╠═608c9d45-a181-4b5c-a7b5-a5311284b0bb
+# ╠═703618cc-d1cc-44c4-ad7a-4b6aa1f92c3a
+# ╠═a901b28d-7742-4686-8557-609e4855d383
+# ╠═d38691e8-6ce2-475c-8a31-d93f1365c6e4
+# ╟─a61ddbdf-763e-495d-ad0d-17e64413f8aa
+# ╠═f6caeac6-0ded-46b7-afce-301248731d93
+# ╠═733c6000-ac10-402a-a395-d55c93d96a19
+# ╠═7d4b4e60-74be-47a9-82de-121318b668a6
+# ╠═0cf60f4a-05fe-437a-9a40-ed10b4576446
+# ╠═56ce8318-9c46-416f-a649-280a76532925
+# ╠═0cd02c71-d87a-48b6-9d7e-22f4968b0811
+# ╠═39197362-dc29-4349-82c7-db907fb0086e
+# ╠═4e72aea5-ef93-4f8b-b320-dab26b7114f5
+# ╠═d469c45a-7705-49ab-95d4-de2c22f6ea93
+# ╠═cff2cf15-ac1e-4f04-862e-198c9e53a252
+# ╠═d91059e6-2c32-41de-a4d8-b1c77d1850fd
+# ╠═6157ba8c-ee6d-465b-bb63-aa079cbe0e6e
+# ╠═335353f9-3201-4b1e-92cb-5ed1b3f768d1
+# ╟─cb76e3df-6dfd-456d-8082-75423e053cbe
+# ╠═a9f406e1-98de-4278-a5bc-a2256be311de
+# ╠═990a22ac-d30d-4f02-9e81-9d13a879faba
+# ╠═bfddc6ca-2d24-4aa5-bef7-e2493323d72e
+# ╠═728e3eb8-4098-4393-b105-2c56b6831826
+# ╠═c003ad5e-3be9-477a-9b5c-866b02580da9
+# ╠═ab133a9e-89f4-4c12-b8c2-7db5ca649f81
+# ╠═1bfd2c5f-294a-4685-95e1-479aed323da1
+# ╟─a96e9951-e919-4d4f-9652-1336674366bf
 # ╠═8bf5d656-ed40-4742-9f9b-acdbce34c917
-# ╠═8af1738c-ff53-4e37-92ea-64cfbc593242
-# ╠═f960ed85-6c60-4faf-932e-41a7c48f1a96
+# ╠═6d3613ee-d453-41db-9e12-60e3225ef425
+# ╠═71a5217e-801f-4894-ae61-1071d64b119c
+# ╠═87465641-3d13-4ba7-98aa-230155b80798
+# ╠═ced0e6b8-c2d3-4027-8278-3bfe5973945d
+# ╠═299b909f-bd1b-46d3-9db5-34b3ca3a24a3
+# ╠═3efab108-7951-4afc-834d-bc79c1a39869
+# ╠═e3ec43c6-e36a-4153-a572-ef7685ee9470
+# ╠═224cc1ad-1f4f-4133-a33e-f3272ea4b63b
+# ╠═d0d3d873-facb-47ee-bec2-881626e55cad
+# ╠═cae15489-7f91-4585-8caf-abb2e79a248a
+# ╠═1040e938-c796-4323-ae93-ef5026ae4d11
+# ╠═f1dfc141-2bb4-48c5-a03c-ebed327d47f7
+# ╠═d7207a7f-4cc8-48f2-b14d-033dc3e983f3
+# ╠═5b769466-1726-4add-ba6b-e1b86131bda4
+# ╠═e7c913b0-3f1d-4f54-a067-481659fd0b6b
+# ╠═e2a3e935-5a53-4b07-9eab-086ee2255c84
+# ╠═2c425fac-d769-4fd9-89ce-58da77ccaac5
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
