@@ -23,6 +23,9 @@ md"""
 ###### Semana 04 - Aula 02
 """
 
+# ╔═╡ 37eabf52-fc40-41a9-81f9-315e8f89d221
+TableOfContents(aside=false, title="Sumário", depth=3)
+
 # ╔═╡ ad2160bd-8561-4087-a682-fc13722aea15
 md"""
 $\newcommand{\NN}{\mathbb{N}}$
@@ -120,17 +123,20 @@ f(-2)
 f(2)
 
 # ╔═╡ 929c13b8-e931-4c11-85e1-e33143957ec2
-f(-3)*f(3) < 0
+f(-2)*f(2) < 0
+
+# ╔═╡ 991602ea-73d4-4dc7-badb-fbd2cfbbcb9f
+md"""
+##
+"""
 
 # ╔═╡ 46b773e1-6c10-44c5-9b51-513fe64d97ba
 let # Escopo limitado
-	# Define o intervalo
-	x = range(-2,stop=2,length=100)
-	# Desenha o gráfico e o eixo x.
-	plot(x, f, label="y = f(x)", framestyle = :box)
+	 # Desenha o gráfico e o eixo x.
+	plot(f, -2,2, label="y = f(x)", framestyle = :box)
 	xlims!(-2,2)
-	hline!([0.],  color=:black,label="", lw=2)
-	scatter!([1.8509635925292969, 0.4054832458496094, -1.9194421768188477],zeros(3),label="")
+	hline!([0.],  color=:black, label = "", lw = 2)
+	scatter!([1.8509635925292969, 0.4054832458496094, -1.9194421768188477], zeros(3), label="")
 end
 
 # ╔═╡ 4e798009-e680-407a-b26b-28efbb0aacb9
@@ -148,7 +154,7 @@ Aqui note que temos que considerar os valores da derivada em todo o intervalo e 
 
 # ╔═╡ 83bcc891-9eb5-4b86-b1b8-528a5ef1bc9a
 md"""
-
+## 
 ### Método da Bissecção
 
 O teorema de Bolzano serve de ponto de partida para um primeiro método iterativo para resolução de equações não-lineares conhecido como bissecção. A ideia dele é simples. Imagine que $f$ é contínua e temos na mão um intervalo $[a, b]$ como no teorema. Isso quer dizer que temos certeza que existe uma raiz nesse intervalo. Uma aproximação razoável para essa raiz usando apenas essa informação é o ponto médio do intervalo. Aparentemente isso é tudo o que se pode fazer com essa informação.
@@ -160,6 +166,11 @@ Porém podemos também calcular a função nesse ponto médio $m = \frac{a + b}{
 2. Sinal de $f(m)$ é o mesmo sinal de $f(a)$. Nesse caso podemos concluir, usando o teorema de Bolzano, que há uma raiz no intervalo $[m, b]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
 
 3. Sinal de $f(m)$ é o mesmo sinal de $f(b)$. Nesse caso podemos concluir, usando o teorema de Bolzano, que há uma raiz no intervalo $[a, m]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
+"""
+
+# ╔═╡ f4db1728-e5f8-4493-8f2d-e7359050c399
+md"""
+##
 """
 
 # ╔═╡ 40086dd8-1808-4d35-92a4-9d7e7bf4d2fa
@@ -178,20 +189,66 @@ end
 # ╔═╡ 19d5ac06-bebf-4052-9031-2c013f51d1f9
 md"""
 Ou seja, ao avaliarmos  $f(x)$  conseguimos no mínimo melhorar a aproximação obtida, obtendo a cada passo um intervalo cada vez menor, dividindo o seu tamanho por 2. Note que o ponto médio do intervalo está à distância máxima de $\dfrac{b - a}{2}$ de uma raiz real do problema, já que existe raiz no intervalo. Dessa forma é natural parar o método quando a largura do intervalo for pequena o suficiente para aceitar o ponto médio como uma boa aproximação da raiz.
-
+##
 Isso sugere o seguinte método:
 """
 
+# ╔═╡ 4f92ef85-a147-416c-8edb-5adc8bed3839
+# if a >= b 
+# 	error("a não é menor que b")
+# end
+
 # ╔═╡ b5f3881f-c886-4365-bd91-7da8d983c940
 # Método da bissecção
-function bissec(f, a, b; ε :: Float64 = 1.0e-5, itmax :: Int = 1_000)
-
-	
-	return xₖ, k, Inf, :MaxIter	
+# ε := Tolerância do algoritmo
+# itmax := Numero máximo de iterações permitidas
+# x_{k+1} = F(x_{k})
+function bissec(f, a, b; ε :: Real = 1.0e-5, itmax :: Int = 1_000)
+	a < b ? nothing : error("a não é menor que b")
+	f(a)*f(b) < 0 ? nothing : error("Não é possível aplicar bissecção pois f(a)*f(b) > 0")
+	k = 0
+	aₖ = a
+	bₖ = b
+	xₖ = (aₖ + bₖ)/2 # ponto médio
+	Erro = Inf
+	while k <= itmax
+		Erro = abs(f(xₖ))
+		if Erro < ε
+			return xₖ, k, Erro, :Convergiu
+		end
+		if f(aₖ) * f(xₖ) < 0
+			bₖ = xₖ
+		elseif f(xₖ) * f(bₖ) < 0
+			aₖ = xₖ
+		end
+		xₖ = (aₖ + bₖ)/2
+		k += 1
+	end
+	return xₖ, k, Erro, :MaxIter	
 end
 
 # ╔═╡ cbda75f8-1fd2-41c8-bfc7-4a10642be15a
-bissec(x->x^2-1, -1.7,.5)
+# f(x) = x^2 -1
+#a = -1.7; b = 0.5
+bissec(x->x^2-1, -0.5,1.2)
+
+# ╔═╡ 85abe74d-cdca-47c1-bb00-324154a2a701
+bissec(x->x^2-1, -0.5,1.2, itmax = 10)
+
+# ╔═╡ 2b2d2cad-eb1c-4aef-8bf0-bdcd4ef7dc4a
+x̄, k̄, erro, status = bissec(x->x^2-1, -1.7,.5, ε = 1e-12)
+
+# ╔═╡ 1b823ad1-5c83-4b82-bb74-bef3ac21ab06
+abs(-1 - x̄)
+
+# ╔═╡ 0029e246-0585-4148-87ae-f5b9e5ff6cad
+big(x̄)
+
+# ╔═╡ 5f6eea84-fe0b-4ef4-acc1-4886bf594af4
+begin
+	plot(x->x^2-1, -1.5, 1.5, framestyle=:origin)
+end
+	
 
 # ╔═╡ 26c5e4e6-6ce7-433f-a3bf-5216d1e90814
 md"""
@@ -203,17 +260,29 @@ entre $[-1,1]$.
 
 # ╔═╡ 628d6924-df50-4ceb-b196-499c0d217281
 # Testando função do início
-sol1, k1, normsol, status1 = bissec(f,-1, 1, ε = 1e-8)
+sol1, k1, normsol1s, status1 = bissec(f,-1, 1, ε = 1e-8)
+
+# ╔═╡ f3bf0942-4bc9-4f18-a81a-215c497f1b06
+sol2, k2, normsol2, status2 = bissec(f,-2, -1, ε = 1e-8)
+
+# ╔═╡ 52120e0c-2645-43d4-b833-6f2b03e73de7
+sol3, k3, normsol3, status3 = bissec(f, big(-2), big(-1), ε = 1e-32)
+
+# ╔═╡ 06b971c5-c9b7-415f-a812-6f11b48b98d7
+sol3
 
 # ╔═╡ ec277fd2-9f5e-4783-b096-7ae5f9431625
 # Método da bissecção
 function bissec_df(f, a, b; ε :: Float64 = 1.0e-5, itmax :: Int = 1_000)
-
+	
 	
 end
 
 # ╔═╡ 94a9125c-3061-4504-ba5f-67536b6f5d39
 bissec_df(f,-1, 1, ε = 1e-5)
+
+# ╔═╡ 18809751-394b-415c-b0d8-62662a00b8f8
+bissec_df(f,-2, 1, ε = 1e-5)
 
 # ╔═╡ bcd4d09d-2ef0-4074-b0d3-07fcbae43581
 md"""
@@ -1130,9 +1199,10 @@ version = "0.9.1+5"
 
 # ╔═╡ Cell order:
 # ╟─0c9011c7-6df7-4951-bf6a-cb374cb90ac1
-# ╟─8076c3d8-6652-483c-87f8-4a446375b849
+# ╠═8076c3d8-6652-483c-87f8-4a446375b849
 # ╠═9bf79d09-0ea8-4370-9289-d2287dcef3a7
-# ╟─ad2160bd-8561-4087-a682-fc13722aea15
+# ╠═37eabf52-fc40-41a9-81f9-315e8f89d221
+# ╠═ad2160bd-8561-4087-a682-fc13722aea15
 # ╟─63dd5ac0-2c4a-4ecc-8806-ea2717998739
 # ╟─b094d90d-ae3a-410d-b428-7dbf6e513209
 # ╟─9f0f8a7d-5891-4384-98ed-56f8a3c6f1cd
@@ -1141,17 +1211,29 @@ version = "0.9.1+5"
 # ╠═ff168e88-a44a-460a-8715-9a1d69c15953
 # ╠═f8e3a4a1-f787-4aad-9d0b-01ea740c0554
 # ╠═929c13b8-e931-4c11-85e1-e33143957ec2
+# ╟─991602ea-73d4-4dc7-badb-fbd2cfbbcb9f
 # ╠═46b773e1-6c10-44c5-9b51-513fe64d97ba
 # ╟─4e798009-e680-407a-b26b-28efbb0aacb9
 # ╟─83bcc891-9eb5-4b86-b1b8-528a5ef1bc9a
+# ╟─f4db1728-e5f8-4493-8f2d-e7359050c399
 # ╟─40086dd8-1808-4d35-92a4-9d7e7bf4d2fa
 # ╟─19d5ac06-bebf-4052-9031-2c013f51d1f9
+# ╠═4f92ef85-a147-416c-8edb-5adc8bed3839
 # ╠═b5f3881f-c886-4365-bd91-7da8d983c940
 # ╠═cbda75f8-1fd2-41c8-bfc7-4a10642be15a
+# ╠═85abe74d-cdca-47c1-bb00-324154a2a701
+# ╠═2b2d2cad-eb1c-4aef-8bf0-bdcd4ef7dc4a
+# ╠═1b823ad1-5c83-4b82-bb74-bef3ac21ab06
+# ╠═0029e246-0585-4148-87ae-f5b9e5ff6cad
+# ╠═5f6eea84-fe0b-4ef4-acc1-4886bf594af4
 # ╟─26c5e4e6-6ce7-433f-a3bf-5216d1e90814
 # ╠═628d6924-df50-4ceb-b196-499c0d217281
+# ╠═f3bf0942-4bc9-4f18-a81a-215c497f1b06
+# ╠═52120e0c-2645-43d4-b833-6f2b03e73de7
+# ╠═06b971c5-c9b7-415f-a812-6f11b48b98d7
 # ╠═ec277fd2-9f5e-4783-b096-7ae5f9431625
 # ╠═94a9125c-3061-4504-ba5f-67536b6f5d39
+# ╠═18809751-394b-415c-b0d8-62662a00b8f8
 # ╟─bcd4d09d-2ef0-4074-b0d3-07fcbae43581
 # ╠═9e9b0019-6f59-460a-a5c7-7b865d18adf4
 # ╠═e5044213-6991-4f37-89f4-f62b860631f7
