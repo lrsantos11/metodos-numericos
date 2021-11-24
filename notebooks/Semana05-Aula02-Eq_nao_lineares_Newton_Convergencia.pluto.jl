@@ -4,355 +4,261 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 9bf79d09-0ea8-4370-9289-d2287dcef3a7
-# Pacotes usados na aula!
-begin
-	using Plots, PlutoUI, PlotlyBase
-	plotlyjs() #Um backend para Gráficos mais iterativos
-	using DataFrames
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
 end
 
-# ╔═╡ 0c9011c7-6df7-4951-bf6a-cb374cb90ac1
-html"<button onclick='present()'>present</button>"
+# ╔═╡ b6c36e8e-7f77-4274-b8e6-3e733d554298
+begin
+	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots
+end
 
-# ╔═╡ 8076c3d8-6652-483c-87f8-4a446375b849
+# ╔═╡ 597462d0-e4e6-11eb-1879-3522061d2d39
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 04 - Aula 02
+###### Semana 05 - Aula 02
 """
 
-# ╔═╡ 37eabf52-fc40-41a9-81f9-315e8f89d221
-TableOfContents(aside=false, title="Sumário", depth=3)
-
-# ╔═╡ ad2160bd-8561-4087-a682-fc13722aea15
+# ╔═╡ 387530b2-d156-488a-9f37-4a249da454c2
 md"""
-$\newcommand{\NN}{\mathbb{N}}$
+## Método de Newton-Raphson
 
-# Equações não lineares
-
-A resolução de equações não lineares surge naturalmente em diversas aplicações. Vamos começar com um exemplo simples. Considere que temos um canhão que dispara seus projéteis a uma velocidade inicial $v_0$. O objetivo é definir o ângulo $\theta$ de disparo para atingir um alvo que está a distância $d$ do canhão.
-
-Nesse caso precisamos calibrar $\theta$ de forma a garantir que o projétil caia exatamente à distância dada. Dois fatores devem ser considerados. Logo após o disparo o projétil irá subir um pouco até a ação da gravidade inverter sua velocidade vertical ele começar a cair. O tempo total de voo é o tempo de subida mais o tempo de queda. Vamos considerar que apenas a força da gravidade age sobre o projétil, desconsiderando o efeito do atrito com o ar. Nesse caso temos que a aceleração vertical é constante igual $-g$, ou seja temos:
-
+> **Algoritmo: Método de Newton.** 
+>
+> Dado uma função escalar de uma variavel diferenciável $f$:
+> 1. Comece com um ponto inicial $x_0$.
+> 2. Para $k=0,1,2, \ldots$, faça
+> $$x_{k+1}=x_{k}-\frac{f\left(x_{k}\right)}{f^{\prime}\left(x_{k}\right)}$$ até que  $x_{k+1}$ satisfaça algum critério de parada.
 
 """
 
-# ╔═╡ 63dd5ac0-2c4a-4ecc-8806-ea2717998739
+# ╔═╡ 887a28b1-50ce-4993-9032-218f5f45d0f8
 md"""
-##
-$\begin{align*}
-y(0) = 0,\quad y'(t) = v_0 \sin(\theta), \quad y''(t) &= -g \Rightarrow \\
-y(t) = 0 + v_0 \sin(\theta)t - \frac{g}{2} t^2.
-\end{align*}$
-O tempo total até o impacto será $T > 0$ é obtido resolvedo $y(t) = 0,\ t > 0$, que é dado por
+###### Observação: Calculando derivadas
 
-$T = \frac{2v_0 \sin(\theta)}{g}.$
-
-Já a distância horizontal pecorrida é dada por
-
-$x(t) = v_0 \cos(\theta) t.$
-De novo estamos desprezando o atrito com o ar.
-
-O objetivo final é encontrar $\theta$ tal que $x(T) = d$. Ou seja queremos resolver a equação
-
-$\frac{2 v_0^2 \sin(\theta) \cos(\theta)}{g} = d$
-em função de $\theta$.
-##
-Em outras palavras, se definirmos
-
-$f(\theta) = 2 v_0^2 \sin(\theta) \cos(\theta) - gd,$
-desejamos encontrar $\theta$ tal que a equação não-linear
-
-$f(\theta) = 0$
-seja válida.
-
-Apesar de essa equação admitir solução usando-se identidades trigonométricas, vamos encará-la como uma equação que não admite solução fechada. Nesse caso precisamos de um método que nos permita resolver equações gerais, além daquelas que conseguimos resolver manualmente usando manipulações algébricas. Esse é o objetivo das próximas aulas.
-"""
-
-# ╔═╡ b094d90d-ae3a-410d-b428-7dbf6e513209
-md"""
-
-# Estudo de equação lineares de uma variável
-
-Como vimos anteriormente podemos ter interesse de resolver uma equação do tipo
-
-$f(x) = 0,$
-em que $f: \mathbb{R} \rightarrow \mathbb{R}$. Um $x$ que obedece à equação acima será chamado de uma zero ou raiz de $f$.
-
-Vamos ver a seguir que isso pode ser resolvido por alguns métodos iterativos que irão encontrar soluções aproximadas dessa equação com precisão cada vez mais alta.
-
-Inicialmente note que há algumas questões fundamentais que devem ser tratadas. Primeiro é preciso se perguntar se a equação tem solução. Se tal solução existir, ela é única? Vamos apresentar abaixo algumas condições matemáticas para isso. A situação mais confortável ocorre quando há solução e ela é única. Nesse caso não há dúvidas de qual o papel do método numérico: encontrar essa única raiz. Quando há mais de um zero a situação já não é tão clara. Será que todas as raízes têm sentido Físico? O método teria que encontrar todas as possíveis soluções? Isso é possível? Se o método for capaz de encontrar apenas uma solução, será que é possível escolher, ou guiar o algoritmo, para uma das raízes em particular? Quanto tempo o método demora para encontrar uma boa aproximação da, ou de uma, solução?
+Uma desvantagem do método de Newton é que requer-se o computo de derivadas das funções. Isto pode ser dispendioso ou até impossível.
+   - O uso de técnicas de [**diferenciação automática**](https://pt.wikipedia.org/wiki/Diferencia%C3%A7%C3%A3o_autom%C3%A1tica) tem se mostrado de grande valia.
+   - Vamos usar o pacote `ForwardDiff.jl` para computar derivadas de maneira direta.
 
 """
 
-# ╔═╡ 9f0f8a7d-5891-4384-98ed-56f8a3c6f1cd
-md"""
+# ╔═╡ c868424d-3c38-4b76-8109-1b0ac5d23266
+function newton_eq(f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
+	df = DataFrame(k = [], xₖ = Float64[], fxₖ = Float64[], ∇fxₖ = Float64[], erro = Float64[])
 
-## Existência e unicidade de soluções
-
-Um resultado de cáculo fundamental para tratar da existência de soluções de uma equação não linear é o teorema de Bolzano, que é um corolário do
-
-**Teorema de Valor Intermediário (TVI).** Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função contínua em um intervalo $[a, b] \subset \mathbb{R}$. Para todo $d$ entre $f(a)$ e $f(b)$, existe $c\in (a,b)$, tal que $f(c) = d$. 
-
-
-**Teorema de Bolzano.** Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função contínua em um intervalo $[a, b] \subset \mathbb{R}$. Se $f(a)f(b) < 0$ então existe $c \in (a, b)$, tal que $f(c) = 0$.
-
-Ou seja, se uma função contínua troca de sinal em um intervalo, então ela possui pelo menos um zero (nesse intervalo).
-##
-Por exemplo, seja a função
-
-$f(x) = x^5 - 3x^3 - 2x + 1.$
-Seu gráfico entre $[-2,2]$ mostra existência de três raízes.
-"""
-
-# ╔═╡ c95d2c7b-9b52-492a-ad7e-80aeffeafbeb
-md"""
-##
-"""
-
-# ╔═╡ 8058826b-cebb-485f-88fa-55abda71743d
-# Define a função
-f(x) = x.^5 - 3.0*x.^3 - 2.0*x + 1.0
-
-# ╔═╡ ff168e88-a44a-460a-8715-9a1d69c15953
-f(-2)
-
-# ╔═╡ f8e3a4a1-f787-4aad-9d0b-01ea740c0554
-f(2)
-
-# ╔═╡ 929c13b8-e931-4c11-85e1-e33143957ec2
-f(-2)*f(2) < 0
-
-# ╔═╡ 991602ea-73d4-4dc7-badb-fbd2cfbbcb9f
-md"""
-##
-"""
-
-# ╔═╡ 46b773e1-6c10-44c5-9b51-513fe64d97ba
-let # Escopo limitado
-	 # Desenha o gráfico e o eixo x.
-	plot(f, -2,2, label="y = f(x)", framestyle = :box)
-	xlims!(-2,2)
-	hline!([0.],  color=:black, label = "", lw = 2)
-	scatter!([1.8509635925292969, 0.4054832458496094, -1.9194421768188477], zeros(3), label="")
-end
-
-# ╔═╡ 4e798009-e680-407a-b26b-28efbb0aacb9
-md"""
-##
- Note que entre $[1,2]$, temos $f(1)f(2)<0$, o que implica a existência de uma raiz neste intervalo. No entanto, essa condição é apenas uma *condição necessária* para a existência de zero. É claro que uma função pode ter o mesmo sinal nos extremos de um intervalo e mesmo assim ter zeros dentro dele. Considere o caso acima no intervalo $[-2, 1.5]$.
-
-Já para garantir a unicidade é preciso exigir mais da função $f$. Uma hipótese razoável é que ela seja constantemente crescente ou decrescente dentro do intervalo. Para isso basta exigir que a derivada da função não troque de sinal.
-
-**Teorema** Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ diferenciável em um intervalo $[a, b] \subset \mathbb{R}$. Se $f(a)f(b) < 0$ e a derivada de $f$ tem sinal constante $(a, b)$, então existe um único $x \in (a, b)$, tal que $f(x) = 0$.
-
-Aqui note que temos que considerar os valores da derivada em todo o intervalo e não apenas nos extremos.
-
-"""
-
-# ╔═╡ 83bcc891-9eb5-4b86-b1b8-528a5ef1bc9a
-md"""
-## 
-### Método da Bissecção
-
-O teorema de Bolzano serve de ponto de partida para um primeiro método iterativo para resolução de equações não-lineares conhecido como bissecção. A ideia dele é simples. Imagine que $f$ é contínua e temos na mão um intervalo $[a, b]$ como no teorema. Isso quer dizer que temos certeza que existe uma raiz nesse intervalo. Uma aproximação razoável para essa raiz usando apenas essa informação é o ponto médio do intervalo. Aparentemente isso é tudo o que se pode fazer com essa informação.
-
-Porém podemos também calcular a função nesse ponto médio $m = \frac{a + b}{2}$ e há três possibilidades:
-
-1. Caso $f(m) = 0$, demos sorte. De fato o ponto médio é uma raiz que foi encontrada.
-
-2. Sinal de $f(m)$ é o mesmo sinal de $f(a)$. Nesse caso podemos concluir, usando o teorema de Bolzano, que há uma raiz no intervalo $[m, b]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
-
-3. Sinal de $f(m)$ é o mesmo sinal de $f(b)$. Nesse caso podemos concluir, usando o teorema de Bolzano, que há uma raiz no intervalo $[a, m]$. Note que esse intervalo é bem menor que o original, tendo metade do seu comprimento.
-"""
-
-# ╔═╡ f4db1728-e5f8-4493-8f2d-e7359050c399
-md"""
-##
-"""
-
-# ╔═╡ 40086dd8-1808-4d35-92a4-9d7e7bf4d2fa
-let
-	x = range(1.5, 2.0, length = 100)
-	p1 = plot(x, f, title="Caso 2", framestyle=:origin)
-	p1 = hline!([0], color="black")
-	p1 = ylims!(-4,4)
-	y = range(0.01,0.75, length = 100)
-	p2 = plot(y, f, framestyle=:origin,title="Caso 3")
-	p2 = hline!([0], color="black")
-	p2 = ylims!(-4,4)
-	plot(p1,p2,layout = (1,2),legend=false)
-end
-
-# ╔═╡ 19d5ac06-bebf-4052-9031-2c013f51d1f9
-md"""
-Ou seja, ao avaliarmos  $f(x)$  conseguimos no mínimo melhorar a aproximação obtida, obtendo a cada passo um intervalo cada vez menor, dividindo o seu tamanho por 2. Note que o ponto médio do intervalo está à distância máxima de $\dfrac{b - a}{2}$ de uma raiz real do problema, já que existe raiz no intervalo. Dessa forma é natural parar o método quando a largura do intervalo for pequena o suficiente para aceitar o ponto médio como uma boa aproximação da raiz.
-##
-Isso sugere o seguinte método:
-"""
-
-# ╔═╡ 4f92ef85-a147-416c-8edb-5adc8bed3839
-# if a >= b 
-# 	error("a não é menor que b")
-# end
-
-# ╔═╡ b5f3881f-c886-4365-bd91-7da8d983c940
-# Método da bissecção
-# ε := Tolerância do algoritmo
-# itmax := Numero máximo de iterações permitidas
-# x_{k+1} = F(x_{k})
-function bissec(f, a, b; ε :: Real = 1.0e-5, itmax :: Int = 1_000)
-	a < b ? nothing : error("a não é menor que b")
-	f(a)*f(b) < 0 ? nothing : error("Não é possível aplicar bissecção pois f(a)*f(b) > 0")
-	k = 0
-	aₖ = a
-	bₖ = b
-	xₖ = (aₖ + bₖ)/2 # ponto médio
-	Erro = Inf
-	while k <= itmax
-		Erro = abs(f(xₖ))
-		if Erro < ε
-			return xₖ, k, Erro, :Convergiu
-		end
-		if f(aₖ) * f(xₖ) < 0
-			bₖ = xₖ
-		elseif f(xₖ) * f(bₖ) < 0
-			aₖ = xₖ
-		end
-		xₖ = (aₖ + bₖ)/2
-		k += 1
-	end
-	return xₖ, k, Erro, :MaxIter	
-end
-
-# ╔═╡ cbda75f8-1fd2-41c8-bfc7-4a10642be15a
-# f(x) = x^2 -1
-#a = -1.7; b = 0.5
-bissec(x->x^2-1, -0.5,1.2)
-
-# ╔═╡ 85abe74d-cdca-47c1-bb00-324154a2a701
-bissec(x->x^2-1, -0.5,1.2, itmax = 10)
-
-# ╔═╡ 2b2d2cad-eb1c-4aef-8bf0-bdcd4ef7dc4a
-x̄, k̄, erro, status = bissec(x->x^2-1, -1.7,.5, ε = 1e-12)
-
-# ╔═╡ 1b823ad1-5c83-4b82-bb74-bef3ac21ab06
-abs(-1 - x̄)
-
-# ╔═╡ 0029e246-0585-4148-87ae-f5b9e5ff6cad
-big(x̄)
-
-# ╔═╡ 5f6eea84-fe0b-4ef4-acc1-4886bf594af4
-begin
-	plot(x->x^2-1, -1.5, 1.5, framestyle=:origin)
-end
-	
-
-# ╔═╡ 26c5e4e6-6ce7-433f-a3bf-5216d1e90814
-md"""
-- Resolvendo pelo método da bissecção para a função
-
-$f(x) = x^5 - 3x^3 - 2x + 1.$
-entre $[-1,1]$.
-"""
-
-# ╔═╡ 628d6924-df50-4ceb-b196-499c0d217281
-# Testando função do início
-sol1, k1, normsol1s, status1 = bissec(f,-1, 1, ε = 1e-8)
-
-# ╔═╡ f3bf0942-4bc9-4f18-a81a-215c497f1b06
-sol2, k2, normsol2, status2 = bissec(f,-2, -1, ε = 1e-8)
-
-# ╔═╡ 52120e0c-2645-43d4-b833-6f2b03e73de7
-sol3, k3, normsol3, status3 = bissec(f, big(-1), big(1), ε = 1e-32)
-
-# ╔═╡ 06b971c5-c9b7-415f-a812-6f11b48b98d7
-sol3
-
-# ╔═╡ ec277fd2-9f5e-4783-b096-7ae5f9431625
-# Método da bissecção
-function bissec_df(f, a, b; ε :: Float64 = 1.0e-5, itmax :: Int = 1_000)
-	a < b ? nothing : error("a não é menor que b")
-	f(a)*f(b) < 0 ? nothing : error("Não é possível aplicar bissecção pois f(a)*f(b) > 0")
-	df = DataFrame(:k => Int[], :aₖ => Float64[], :xₖ => Float64[], :bₖ => Float64[], :Erro_fₖ => Float64[] )
-	k = 0
-	aₖ = a
-	bₖ = b
-	xₖ = (aₖ + bₖ)/2 # ponto médio
-	Erro = Inf
-	while k <= itmax
-		fₖ = f(xₖ)
-		Erro = abs(fₖ)
-		push!(df,[k, aₖ, xₖ, bₖ, Erro])
-		if Erro < ε
-			return df, :Convergiu
-		end
-		if f(aₖ) * fₖ < 0
-			bₖ = xₖ
-		elseif fₖ * f(bₖ) < 0
-			aₖ = xₖ
-		end
-		xₖ = (aₖ + bₖ)/2
-		k += 1
-	end
 	return df, :MaxIter	
 end
 
-# ╔═╡ 94a9125c-3061-4504-ba5f-67536b6f5d39
-bissec_df(f,-1, 1, ε = 1e-5)
 
-# ╔═╡ 18809751-394b-415c-b0d8-62662a00b8f8
-bissec_df(f,big(-2), big(-1), ε = 1e-32)
+# ╔═╡ ac53147d-192c-4d9b-9d4b-95fc22e6b6cd
+# Teste para raiz quadrada
+raiz(x) = x^2 - 10
 
-# ╔═╡ 829127ee-5d00-45ed-b56a-94a35dc00d41
+# ╔═╡ f50c7b2f-dc3d-4ba9-895b-04693853cb8e
+df_newton_raiz, = newton_eq(raiz, 1.0)
 
+# ╔═╡ 6414ec1c-aab5-430d-9a32-4eceba6b78ee
+df_newton_raiz.xₖ[end]
 
-# ╔═╡ c917101d-1cf8-4f33-990a-d75c75dc4f48
+# ╔═╡ 75fe0ad7-a9ce-479d-9dd0-a571f22efe7b
+raiz(df_newton_raiz.xₖ[end])
 
+# ╔═╡ c8400ff1-2fd3-48f4-b015-b20fc2391f7c
+df_newton_raiz.xₖ[end]
 
-# ╔═╡ bcd4d09d-2ef0-4074-b0d3-07fcbae43581
+# ╔═╡ 4690b25d-0d53-4964-bc33-e385d7d01c7c
+sqrt(10)
+
+# ╔═╡ 5dbc2255-87d0-41e0-8daf-d58b96e79ad0
+md"x₀ $(@bind x₀ Slider(2:2:10,show_value=true))"
+
+# ╔═╡ 22492dd1-54d7-4ee8-a064-943091f42c56
+begin 
+	f(x) = 2cosh(x/4) - x
+	newton_eq(f,x₀,ε = 1e-8)
+end
+
+# ╔═╡ b2a11e5b-b38a-4465-8509-b3f4522407b0
+plot(f,0,10,framestyle=:origin)
+
+# ╔═╡ 2cdabaa4-be73-4c2b-b884-9e9e773e96fe
 md"""
-#### Tarefa
-- Resolva o problema do início do texto, isto é, encontrar zero de $f(\theta) = 2 v_0^2 \sin(\theta) \cos(\theta) - gd$.
+Note que a convergência ocorre de forma extremamente rápida. Na iteração 2, o número já foi calculado com 1 casa correta, na próxima iteração o número de casa corretas já duplicou passando para 2, depois para 4, depois para 8 casas e por fim 15. Ou seja, o número de casas corretas dobrou aproximadamente por iteração.
+
+Para entender porque isso ocorre vamos lembrar o que nos diz o teorema de Taylor se $f$ for $n$ vezes diferenciável.
+
+> **Teorema de Taylor**. Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ diferenciável $n$ vezes em um intervalo que contenha os valores $x$ e $y$. Então existe $\xi$ no intervalo aberto que une $x$ e $y$ tal que
+>
+>$$f(y) = f(x) + f'(x)(y - x) + \frac{f''(x)}{2}(y - x)^2 + \ldots + \frac{f^{(n)}(\xi)}{n!}(y - x)^n.$$
+"""
+
+# ╔═╡ ccf68c58-5bb5-4e8f-9616-598799433f11
+md"""
+De posse desse resultado podemos provar que
+
+>**Teorema (da Convergência Quadrática de Newton)**. Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função duas vezes continuamente diferenciável. Suponha $x_0$ inicia perto de uma raiz $x^*$ em que a derivada de $f$ é não nula. Então,
+>
+>1. O método de Newton está bem definido e gera uma sequência convergindo para $x^*$. 
+>2. Além disso, existe $M > 0$ tal que
+>$$| x_{k+1} - x^* | \leq M | x_k - x^* |^2.$$
+"""
+
+# ╔═╡ 37dfab59-ba4d-4583-ba24-66e501735fa6
+md"""
+*Demonstração.* Usando o teorema de Taylor com $x = x_k$ e $y = x^*$  temos
+
+$\begin{aligned}
+| x_{k+1} - x^* | &= | x_k - f(x_k)/f'(x_k) - x^* | \\
+                  &= \left| x_k + \left(x^* - x_k + \frac{f''(\xi_k)}{2 f'(x_k)}(x^* - x_k)^2 \right)- x^* \right| \\
+                  &= \left| \frac{f''(\xi_k)}{2 f'(x_k)} \right| | x_k - x^* |^2,
+\end{aligned}$
+em que $\xi_k$ está no intervalo que une $x_k$ e $x_*$.
+
+Por outro lado podemos deduzir alguns limitantes interessantes se fizermos hipóteses sobre a distância de $x_k$ até $x^*$.
+
+1. Sabemos que $|f''(x)|$ atinge máximo no intervalo $[x^* - 1, x^* + 1]$. Chamemos o valor de máximo de $m$. Temos então que se $| x_k - x_* | \leq 1$ teremos $|f''(\xi_k)| \leq m$ para todo $\xi_k$ no intervalo que une $x_k$ e $x_*$.
+
+1. Como $f'(x^*) \neq 0$, sabemos que para pontos suficientemente próximos de $x_*$, $|f'(x)| \geq |f'(x^*)|/2 > 0$. Isto é, existe $\delta_1 > 0$ tal que se $| x - x^* | \leq \delta_1$ então $|f'(x)| \geq |f'(x^*)|/2$.
+
+Assim, se $| x_k - x_* | < \min(1, \delta_1)$, teremos
+
+$$|x_{k+1} - x^*| \leq \frac{2m}{f'(x^*)} |x_k - x^*| |x_k - x^*|.$$
+Portanto, se chamarmos de $\delta = \min(1, \delta_1, f'(x^*)/(4m))$ e $| x_k - x_* | < \delta$, teremos
+
+$$|x_{k+1} - x^*| \leq \frac{1}{2} |x_k - x^*|.$$
+Concluímos então que nesse caso a sequência converge a $x^*$ e todas as propriedades obtidas continuam valendo. Portando se $| x _0 - x^* | \leq \delta$ podemos concluir que:
+
+1. Toda a sequência se mantem a essa distância máxima de $x^*$.
+
+1. Em toda a sequência a derivada $f'(x_k)$ tem módulo maior ou igual a $|f'(x^*)|/2$, consequentemente é sempre não-nula e o método está bem definido.
+
+1. Por fim, chamando de $M = \frac{2m}{f'(x^*)}$, teremos
+$| x_{k+1} - x^* | \leq M | x_k - x^* |^2,$ o que finaliza a prova. $\blacksquare$
+"""
+
+# ╔═╡ 9013876c-4acd-4094-8a03-8eae69168fc9
+md"""
+**Observações:**
+
+- O fato da distância à solução, uma vez que cai abaixo de $1$, diminuir elevando o valor anterior ao quadrado explica o comportamento observado no exemplo, com o número de casas decimais corretas duplicando a cada iteração.
+
+- Um fato importante é que o teorema acima só garante a convergência quando o ponto inicial $x_0$ estiver perto de uma raiz com derivada não nula. Caso contrário não há garantias para a convergência, em particular se o ponto inicial estiver longe das raízes. De fato, a convergência pode falhar.
+"""
+
+# ╔═╡ 027b5a78-449b-4701-96c0-1bb1a0cd1317
+md"""
+- Exemplo de newton falhando.
+
+$f(x) = |x|^a, 0< a < \frac{1}{2}$
+"""
+
+# ╔═╡ ebc8990f-3c7d-41f0-b888-e9a626dbee86
+plot(x->abs(x)^(1/3),-2,2,framstyle=:origin)
+
+# ╔═╡ 35214862-2ae1-433d-87b3-0398ba0d846f
+# Exemplo de newton falhando.
+let
+	a = 1/3
+	f(x) = abs(x)^a
+	newton_eq(f,0.1)
+end
+
+# ╔═╡ 472598dc-3f73-45b3-ab25-4014bf256e6c
+md"""
+### Taxas de convergência
+
+É interessante observar a velocidade de convergência estimada para o método de Newton e compará-la para o caso de bissecção.
+
+No caso da bissecção o método é construido para garantir que de uma iteração para outra o erro caia pelo menos pela metade. Ou seja, temos que $E_k = | x_k - x_* |$ é tal que 
+
+$$E_{k + 1} \leq \frac{1}{2} E_k.$$
+Isso garante que o erro de aproximação cai à taxa constante a cada iteração. Quando o erro cai dessa forma dizemos que a convergência é **linear** (com constante $\frac{1}{2}$). Isso garante que $E_k \rightarrow 0$. Note que o mesmo ocorreria se a constante fosse qualquer número $\alpha < 1$ no lugar de $\frac{1}{2}$. Nesse caso dizemos que o método converge de forma linear com constante $\alpha$.
+
+No caso do método de Newton a fórmula obtida foi
+
+$$E_{k + 1} \leq M E_k^2 = (M E_k) E_k.$$
+Como também provamos que o método é convergente, ou seja que $E_k \rightarrow 0$, vemos que a partir de uma certa iteração $M E_k < \frac{1}{2}$. Portanto, a partir de um certo ponto, o método de Newton passa a ficar mais rápido do que a bissecção. Mais do que isso, já na próxima iteração a diferença de velocidade é maior, e depois maior ainda e assim por diante. Ou seja, com as iterações o método de Newton vai ficando "infinitamente" mais rápido do que a bissecção. O caso do método de Newton é chamado a **convergência de quadrática**, por motivos óbvios. Métodos com convergência cúbica ou superior são definidos de forma similar.
+
+
+Além disso, quando temos
+
+$$\lim_{k \rightarrow \infty} \frac{E_{k+1}}{E_k} = 0,$$ isso singifica que  que a medida que as iterações  passam,  o método fica melhor do que a convergência linear com qualquer constante $\alpha$ fixada. Dizemos que um método que cujos erros obedecem à equação acima tem convergência **superlinear**. Tal limite é equivalente à existir uma sequencia $(\rho_k)$, com $\rho_k\to 0$ tal que 
+
+$$E_{k + 1} \leq \rho_k E_k.$$
+
+Curiosamente, existem métodos superlineares que são mais lentos que um método com velocidade quadrática (ou superior).
 
 """
 
-# ╔═╡ 9e9b0019-6f59-460a-a5c7-7b865d18adf4
-# Dados para Tarefa
-let
-	v0 = 12
-	d = 10
-	g = 9.80665
-	f(θ) = 2v0^2 * sin(θ)*cos(θ) - g*d
-	bissec_df(f,pi/4, pi/2, ε = 1e-5)
+# ╔═╡ 0bf5ee6b-9ce1-46e9-8c52-c87c2147360d
+# Método da bissecção
+function bissec(f, a, b; ε :: Float64 = 1.0e-5, itmax :: Int = 1_000)
+	f(a)*f(b) < 0. ? nothing : error("Não temos certeza  de existência de raiz da função no intevalo [$a, $b]")
+	a < b ? nothing : error("Não aceitamos a >= b")
+	ε > 0 ? nothing : error("Não aceitamos ε <=  0")
+	k = 0
+	aₖ = a
+	bₖ = b
+	df = DataFrame(aₖ = Float64[], bₖ = Float64[], xₖ = Float64[], k = Int64[], absfₖ = Float64[])
+	while k ≤ itmax
+		xₖ = (aₖ + bₖ)/2
+		fₖ = f(xₖ)
+		absfₖ = abs(fₖ)
+		push!(df, [aₖ, bₖ, xₖ, k, absfₖ]) 
+		if absfₖ < ε
+			return df, :Conv
+		end
+		if f(aₖ) * fₖ < 0
+			bₖ = xₖ
+		else
+			aₖ = xₖ
+		end
+		k += 1	
+	end
+	return df, :MaxIter	
+	
 end
 
-# ╔═╡ e5044213-6991-4f37-89f4-f62b860631f7
+# ╔═╡ 56b25216-79c3-4d98-be52-347048945f39
+df_bissec_raiz, = bissec(raiz,1,5)
 
-
-# ╔═╡ 8ba1c568-81af-499b-9ceb-fcc2997e3bac
-bissec_df(x->x^2-1, 0.5,1.25, ε = 1e-3)
+# ╔═╡ 99ffc569-ee85-499c-a2bb-838a1e2d1465
+df_bissec_raiz.xₖ[end]
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-PlotlyBase = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
 DataFrames = "~1.2.0"
-PlotlyBase = "~0.6.4"
-Plots = "~1.18.2"
+ForwardDiff = "~0.10.18"
+Plots = "~1.19.0"
 PlutoUI = "~0.7.9"
+StatsPlots = "~0.14.25"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
+
+[[AbstractFFTs]]
+deps = ["LinearAlgebra"]
+git-tree-sha1 = "485ee0867925449198280d4af84bdb46a2a404d0"
+uuid = "621f4979-c628-5d54-868e-fcf4e3e8185c"
+version = "1.0.1"
 
 [[Adapt]]
 deps = ["LinearAlgebra"]
@@ -363,8 +269,26 @@ version = "3.3.1"
 [[ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
 
+[[Arpack]]
+deps = ["Arpack_jll", "Libdl", "LinearAlgebra"]
+git-tree-sha1 = "2ff92b71ba1747c5fdd541f8fc87736d82f40ec9"
+uuid = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
+version = "0.4.0"
+
+[[Arpack_jll]]
+deps = ["Libdl", "OpenBLAS_jll", "Pkg"]
+git-tree-sha1 = "e214a9b9bd1b4e1b4f15b22c0994862b66af7ff7"
+uuid = "68821587-b530-5797-8361-c406ea357684"
+version = "3.5.0+3"
+
 [[Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
+
+[[AxisAlgorithms]]
+deps = ["LinearAlgebra", "Random", "SparseArrays", "WoodburyMatrices"]
+git-tree-sha1 = "a4d07a1c313392a77042855df46c5f534076fab9"
+uuid = "13072b0f-2c55-5437-9ae7-d433b7a33950"
+version = "1.0.0"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -380,6 +304,18 @@ deps = ["Artifacts", "Bzip2_jll", "Fontconfig_jll", "FreeType2_jll", "Glib_jll",
 git-tree-sha1 = "e2f47f6d8337369411569fd45ae5753ca10394c6"
 uuid = "83423d85-b0ee-5818-9007-b63ccbeb887a"
 version = "1.16.0+6"
+
+[[ChainRulesCore]]
+deps = ["Compat", "LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "dcc25ff085cf548bc8befad5ce048391a7c07d40"
+uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+version = "0.10.11"
+
+[[Clustering]]
+deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "75479b7df4167267d75294d14b58244695beb2ac"
+uuid = "aaaa29a8-35af-508c-8bc3-b662a17a0fe5"
+version = "0.14.2"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random", "StaticArrays"]
@@ -398,6 +334,12 @@ deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "417b0ed7b8b838aa6ca0a87aadf1bb9eb111ce40"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.12.8"
+
+[[CommonSubexpressions]]
+deps = ["MacroTools", "Test"]
+git-tree-sha1 = "7b8a93dba8af7e3b42fecabf646260105ac373f7"
+uuid = "bbf7d656-a473-5ed7-a52c-81e309532950"
+version = "0.3.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
@@ -442,6 +384,12 @@ git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
 uuid = "e2d170a0-9d28-54be-80f0-106bbe20a464"
 version = "1.0.0"
 
+[[DataValues]]
+deps = ["DataValueInterfaces", "Dates"]
+git-tree-sha1 = "d88a19299eba280a6d062e135a43f00323ae70bf"
+uuid = "e7dc6d0d-1eca-5fa6-8ad6-5aecde8b7ea5"
+version = "0.4.13"
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -450,9 +398,33 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 deps = ["Mmap"]
 uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
+[[DiffResults]]
+deps = ["StaticArrays"]
+git-tree-sha1 = "c18e98cba888c6c25d1c3b048e4b3380ca956805"
+uuid = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
+version = "1.0.3"
+
+[[DiffRules]]
+deps = ["NaNMath", "Random", "SpecialFunctions"]
+git-tree-sha1 = "214c3fcac57755cfda163d91c58893a8723f93e9"
+uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
+version = "1.0.2"
+
+[[Distances]]
+deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
+git-tree-sha1 = "abe4ad222b26af3337262b8afb28fab8d215e9f8"
+uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+version = "0.10.3"
+
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
+
+[[Distributions]]
+deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SparseArrays", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
+git-tree-sha1 = "3889f646423ce91dd1055a76317e9a1d3a23fff1"
+uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
+version = "0.25.11"
 
 [[DocStringExtensions]]
 deps = ["LibGit2"]
@@ -488,6 +460,24 @@ git-tree-sha1 = "3cc57ad0a213808473eafef4845a74766242e05f"
 uuid = "b22a6f82-2f65-5046-a5b2-351ab43fb4e5"
 version = "4.3.1+4"
 
+[[FFTW]]
+deps = ["AbstractFFTs", "FFTW_jll", "LinearAlgebra", "MKL_jll", "Preferences", "Reexport"]
+git-tree-sha1 = "f985af3b9f4e278b1d24434cbb546d6092fca661"
+uuid = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+version = "1.4.3"
+
+[[FFTW_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "3676abafff7e4ff07bbd2c42b3d8201f31653dcc"
+uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
+version = "3.3.9+8"
+
+[[FillArrays]]
+deps = ["LinearAlgebra", "Random", "SparseArrays"]
+git-tree-sha1 = "25b9cc23ba3303de0ad2eac03f840de9104c9253"
+uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
+version = "0.12.0"
+
 [[FixedPointNumbers]]
 deps = ["Statistics"]
 git-tree-sha1 = "335bfdceacc84c5cdf16aadc768aa5ddfc5383cc"
@@ -505,6 +495,12 @@ deps = ["Printf"]
 git-tree-sha1 = "8339d61043228fdd3eb658d86c926cb282ae72a8"
 uuid = "59287772-0a20-5a39-b81b-1366585eb4c0"
 version = "0.4.2"
+
+[[ForwardDiff]]
+deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "LinearAlgebra", "NaNMath", "Printf", "Random", "SpecialFunctions", "StaticArrays"]
+git-tree-sha1 = "e2af66012e08966366a43251e1fd421522908be6"
+uuid = "f6369f11-7733-5829-9624-2563aa707210"
+version = "0.10.18"
 
 [[FreeType2_jll]]
 deps = ["Artifacts", "Bzip2_jll", "JLLWrappers", "Libdl", "Pkg", "Zlib_jll"]
@@ -575,9 +571,21 @@ git-tree-sha1 = "098e4d2c533924c921f9f9847274f2ad89e018b8"
 uuid = "83e8ac13-25f8-5344-8a64-a9f2b223428f"
 version = "0.5.0"
 
+[[IntelOpenMP_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "d979e54b71da82f3a65b62553da4fc3d18c9004c"
+uuid = "1d5cc7b8-4909-519e-a0f8-d0f5ad9712d0"
+version = "2018.0.3+2"
+
 [[InteractiveUtils]]
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
+
+[[Interpolations]]
+deps = ["AxisAlgorithms", "ChainRulesCore", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "Requires", "SharedArrays", "SparseArrays", "StaticArrays", "WoodburyMatrices"]
+git-tree-sha1 = "1470c80592cf1f0a35566ee5e93c5f8221ebc33a"
+uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+version = "0.13.3"
 
 [[InvertedIndices]]
 deps = ["Test"]
@@ -613,11 +621,11 @@ git-tree-sha1 = "d735490ac75c5cb9f1b00d8b5509c11984dc6943"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.1.0+0"
 
-[[Kaleido_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
-git-tree-sha1 = "2ef87eeaa28713cb010f9fb0be288b6c1a4ecd53"
-uuid = "f7e6163d-2fa5-5f23-b69c-1db539e41963"
-version = "0.1.0+0"
+[[KernelDensity]]
+deps = ["Distributions", "DocStringExtensions", "FFTW", "Interpolations", "StatsBase"]
+git-tree-sha1 = "591e8dc09ad18386189610acafb970032c519707"
+uuid = "5ab0869b-81aa-558d-bb23-cbf5423bbe9b"
+version = "0.6.3"
 
 [[LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -641,6 +649,10 @@ deps = ["Formatting", "InteractiveUtils", "LaTeXStrings", "MacroTools", "Markdow
 git-tree-sha1 = "a4b12a1bd2ebade87891ab7e36fdbce582301a92"
 uuid = "23fbe1c1-3f47-55db-b15f-69d7ec21a316"
 version = "0.15.6"
+
+[[LazyArtifacts]]
+deps = ["Artifacts", "Pkg"]
+uuid = "4af54fe1-eca0-43a8-85a7-787d91b784e3"
 
 [[LibCURL]]
 deps = ["LibCURL_jll", "MozillaCACerts_jll"]
@@ -719,8 +731,20 @@ version = "2.36.0+0"
 deps = ["Libdl"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
+[[LogExpFunctions]]
+deps = ["DocStringExtensions", "LinearAlgebra"]
+git-tree-sha1 = "7bd5f6565d80b6bf753738d2bc40a5dfea072070"
+uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
+version = "0.2.5"
+
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[MKL_jll]]
+deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
+git-tree-sha1 = "5455aef09b40e5020e1520f551fa3135040d4ed0"
+uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
+version = "2021.1.1+2"
 
 [[MacroTools]]
 deps = ["Markdown", "Random"]
@@ -759,13 +783,36 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 
+[[MultivariateStats]]
+deps = ["Arpack", "LinearAlgebra", "SparseArrays", "Statistics", "StatsBase"]
+git-tree-sha1 = "8d958ff1854b166003238fe191ec34b9d592860a"
+uuid = "6f286f6a-111f-5878-ab1e-185364afe411"
+version = "0.8.0"
+
 [[NaNMath]]
 git-tree-sha1 = "bfe47e760d60b82b66b61d2d44128b62e3a369fb"
 uuid = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 version = "0.3.5"
 
+[[NearestNeighbors]]
+deps = ["Distances", "StaticArrays"]
+git-tree-sha1 = "16baacfdc8758bc374882566c9187e785e85c2f0"
+uuid = "b8a86587-4115-5ab1-83bc-aa920d37bbce"
+version = "0.4.9"
+
 [[NetworkOptions]]
 uuid = "ca575930-c2e3-43a9-ace4-1e988b2c1908"
+
+[[Observables]]
+git-tree-sha1 = "fe29afdef3d0c4a8286128d4e45cc50621b1e43d"
+uuid = "510215fc-4207-5dde-b226-833fc4488ee2"
+version = "0.4.0"
+
+[[OffsetArrays]]
+deps = ["Adapt"]
+git-tree-sha1 = "4f825c6da64aebaa22cc058ecfceed1ab9af1c7e"
+uuid = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+version = "1.10.3"
 
 [[Ogg_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -773,11 +820,21 @@ git-tree-sha1 = "7937eda4681660b4d6aeeecc2f7e1c81c8ee4e2f"
 uuid = "e7412a2a-1a6e-54c0-be00-318e2571c051"
 version = "1.3.5+0"
 
+[[OpenBLAS_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
+uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
+
 [[OpenSSL_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "15003dcb7d8db3c6c857fda14891a539a8f2705a"
 uuid = "458c3c95-2e84-50aa-8efc-19380b2a3a95"
 version = "1.1.10+0"
+
+[[OpenSpecFun_jll]]
+deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
+uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
+version = "0.5.5+0"
 
 [[Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -796,11 +853,11 @@ git-tree-sha1 = "b2a7af664e098055a7529ad1a900ded962bca488"
 uuid = "2f80f16e-611a-54ab-bc61-aa92de5b98fc"
 version = "8.44.0+0"
 
-[[Parameters]]
-deps = ["OrderedCollections", "UnPack"]
-git-tree-sha1 = "2276ac65f1e236e0a6ea70baff3f62ad4c625345"
-uuid = "d96e819e-fc66-5662-9728-84c9c7592b0a"
-version = "0.12.2"
+[[PDMats]]
+deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
+git-tree-sha1 = "4dd403333bcf0909341cfe57ec115152f937d7d8"
+uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
+version = "0.11.1"
 
 [[Parsers]]
 deps = ["Dates"]
@@ -830,17 +887,11 @@ git-tree-sha1 = "501c20a63a34ac1d015d5304da0e645f42d91c9f"
 uuid = "995b91a9-d308-5afd-9ec6-746e21dbc043"
 version = "1.0.11"
 
-[[PlotlyBase]]
-deps = ["Base64", "Dates", "DelimitedFiles", "DocStringExtensions", "JSON", "Kaleido_jll", "LaTeXStrings", "Logging", "Parameters", "Pkg", "REPL", "Requires", "Statistics", "UUIDs"]
-git-tree-sha1 = "b29c63ad0b1fb313bf42f6bb1260959cbaf57b8b"
-uuid = "a03496cd-edff-5a9b-9e67-9cda94a718b5"
-version = "0.6.4"
-
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
-git-tree-sha1 = "f32cd6fcd2909c2d1cdd47ce55e1394b04a66fe2"
+git-tree-sha1 = "83c762ddea05f5554e1b04f4a5ecae61990ccc8e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.18.2"
+version = "1.19.0"
 
 [[PlutoUI]]
 deps = ["Base64", "Dates", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "Suppressor"]
@@ -876,6 +927,12 @@ git-tree-sha1 = "ad368663a5e20dbb8d6dc2fddeefe4dae0781ae8"
 uuid = "ea2cea3b-5b76-57ae-a6ef-0a8af62496e1"
 version = "5.15.3+0"
 
+[[QuadGK]]
+deps = ["DataStructures", "LinearAlgebra"]
+git-tree-sha1 = "12fbe86da16df6679be7521dfb39fbc861e1dc7b"
+uuid = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+version = "2.4.1"
+
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -883,6 +940,11 @@ uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
 [[Random]]
 deps = ["Serialization"]
 uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+
+[[Ratios]]
+git-tree-sha1 = "37d210f612d70f3f7d57d488cb3b6eff56ad4e41"
+uuid = "c84ed2f1-dad5-54f0-aa8e-dbefe2724439"
+version = "0.4.0"
 
 [[RecipesBase]]
 git-tree-sha1 = "b3fb709f3c97bfc6e948be68beeecb55a0b340ae"
@@ -906,6 +968,18 @@ git-tree-sha1 = "4036a3bd08ac7e968e27c203d45f5fff15020621"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.1.3"
 
+[[Rmath]]
+deps = ["Random", "Rmath_jll"]
+git-tree-sha1 = "bf3188feca147ce108c76ad82c2792c57abe7b1f"
+uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
+version = "0.7.0"
+
+[[Rmath_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "68db32dff12bb6127bac73c209881191bf0efbb7"
+uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
+version = "0.3.0+0"
+
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 
@@ -914,6 +988,12 @@ deps = ["Dates"]
 git-tree-sha1 = "0b4b7f1393cff97c33891da2a0bf69c6ed241fda"
 uuid = "6c6a2e73-6563-6170-7368-637461726353"
 version = "1.1.0"
+
+[[SentinelArrays]]
+deps = ["Dates", "Random"]
+git-tree-sha1 = "ffae887d0f0222a19c406a11c3831776d1383e3d"
+uuid = "91c51154-3ec4-41a3-a24f-3f23e20d615c"
+version = "1.3.3"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -941,6 +1021,12 @@ version = "1.0.1"
 deps = ["LinearAlgebra", "Random"]
 uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
+[[SpecialFunctions]]
+deps = ["ChainRulesCore", "LogExpFunctions", "OpenSpecFun_jll"]
+git-tree-sha1 = "a50550fa3164a8c46747e62063b4d774ac1bcf49"
+uuid = "276daf66-3868-5448-9aa4-cd146d93841b"
+version = "1.5.1"
+
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
 git-tree-sha1 = "a43a7b58a6e7dc933b2fa2e0ca653ccf8bb8fd0e"
@@ -962,11 +1048,27 @@ git-tree-sha1 = "2f6792d523d7448bbe2fec99eca9218f06cc746d"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.33.8"
 
+[[StatsFuns]]
+deps = ["LogExpFunctions", "Rmath", "SpecialFunctions"]
+git-tree-sha1 = "30cd8c360c54081f806b1ee14d2eecbef3c04c49"
+uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
+version = "0.9.8"
+
+[[StatsPlots]]
+deps = ["Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
+git-tree-sha1 = "990daa9c943e7ee108a36ad17769bf3a51622875"
+uuid = "f3b207a7-027a-5e70-b257-86293d7955fd"
+version = "0.14.25"
+
 [[StructArrays]]
 deps = ["Adapt", "DataAPI", "StaticArrays", "Tables"]
 git-tree-sha1 = "000e168f5cc9aded17b6999a560b7c11dda69095"
 uuid = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 version = "0.6.0"
+
+[[SuiteSparse]]
+deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
+uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
 [[Suppressor]]
 git-tree-sha1 = "a819d77f31f83e5792a76081eee1ea6342ab8787"
@@ -976,6 +1078,12 @@ version = "0.2.0"
 [[TOML]]
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[[TableOperations]]
+deps = ["SentinelArrays", "Tables", "Test"]
+git-tree-sha1 = "a7cf690d0ac3f5b53dd09b5d613540b230233647"
+uuid = "ab02a1b2-a7df-11e8-156e-fb1833f50b87"
+version = "1.0.0"
 
 [[TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
@@ -1006,11 +1114,6 @@ version = "1.3.0"
 deps = ["Random", "SHA"]
 uuid = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 
-[[UnPack]]
-git-tree-sha1 = "387c1f73762231e86e0c9c5443ce3b4a0a9a0c2b"
-uuid = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
-version = "1.0.2"
-
 [[Unicode]]
 uuid = "4ec0a83e-493e-50e2-b9ac-8f72acf5a8f5"
 
@@ -1025,6 +1128,18 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg", "Wayland_jll"]
 git-tree-sha1 = "2839f1c1296940218e35df0bbb220f2a79686670"
 uuid = "2381bf8a-dfd0-557d-9999-79630e7b1b91"
 version = "1.18.0+4"
+
+[[Widgets]]
+deps = ["Colors", "Dates", "Observables", "OrderedCollections"]
+git-tree-sha1 = "eae2fbbc34a79ffd57fb4c972b08ce50b8f6a00d"
+uuid = "cc8bc4a8-27d6-5769-a93b-9d913e69aa62"
+version = "0.6.3"
+
+[[WoodburyMatrices]]
+deps = ["LinearAlgebra", "SparseArrays"]
+git-tree-sha1 = "59e2ad8fd1591ea019a5259bd012d7aee15f995c"
+uuid = "efce3f68-66dc-5838-9240-27a6d6f5f9b6"
+version = "0.5.3"
 
 [[XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
@@ -1226,47 +1341,30 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─0c9011c7-6df7-4951-bf6a-cb374cb90ac1
-# ╠═8076c3d8-6652-483c-87f8-4a446375b849
-# ╠═9bf79d09-0ea8-4370-9289-d2287dcef3a7
-# ╟─37eabf52-fc40-41a9-81f9-315e8f89d221
-# ╟─ad2160bd-8561-4087-a682-fc13722aea15
-# ╟─63dd5ac0-2c4a-4ecc-8806-ea2717998739
-# ╟─b094d90d-ae3a-410d-b428-7dbf6e513209
-# ╟─9f0f8a7d-5891-4384-98ed-56f8a3c6f1cd
-# ╟─c95d2c7b-9b52-492a-ad7e-80aeffeafbeb
-# ╠═8058826b-cebb-485f-88fa-55abda71743d
-# ╠═ff168e88-a44a-460a-8715-9a1d69c15953
-# ╠═f8e3a4a1-f787-4aad-9d0b-01ea740c0554
-# ╠═929c13b8-e931-4c11-85e1-e33143957ec2
-# ╟─991602ea-73d4-4dc7-badb-fbd2cfbbcb9f
-# ╠═46b773e1-6c10-44c5-9b51-513fe64d97ba
-# ╟─4e798009-e680-407a-b26b-28efbb0aacb9
-# ╟─83bcc891-9eb5-4b86-b1b8-528a5ef1bc9a
-# ╟─f4db1728-e5f8-4493-8f2d-e7359050c399
-# ╟─40086dd8-1808-4d35-92a4-9d7e7bf4d2fa
-# ╟─19d5ac06-bebf-4052-9031-2c013f51d1f9
-# ╠═4f92ef85-a147-416c-8edb-5adc8bed3839
-# ╠═b5f3881f-c886-4365-bd91-7da8d983c940
-# ╠═cbda75f8-1fd2-41c8-bfc7-4a10642be15a
-# ╠═85abe74d-cdca-47c1-bb00-324154a2a701
-# ╠═2b2d2cad-eb1c-4aef-8bf0-bdcd4ef7dc4a
-# ╠═1b823ad1-5c83-4b82-bb74-bef3ac21ab06
-# ╠═0029e246-0585-4148-87ae-f5b9e5ff6cad
-# ╠═5f6eea84-fe0b-4ef4-acc1-4886bf594af4
-# ╟─26c5e4e6-6ce7-433f-a3bf-5216d1e90814
-# ╠═628d6924-df50-4ceb-b196-499c0d217281
-# ╠═f3bf0942-4bc9-4f18-a81a-215c497f1b06
-# ╠═52120e0c-2645-43d4-b833-6f2b03e73de7
-# ╠═06b971c5-c9b7-415f-a812-6f11b48b98d7
-# ╠═ec277fd2-9f5e-4783-b096-7ae5f9431625
-# ╠═94a9125c-3061-4504-ba5f-67536b6f5d39
-# ╠═18809751-394b-415c-b0d8-62662a00b8f8
-# ╠═829127ee-5d00-45ed-b56a-94a35dc00d41
-# ╠═c917101d-1cf8-4f33-990a-d75c75dc4f48
-# ╟─bcd4d09d-2ef0-4074-b0d3-07fcbae43581
-# ╠═9e9b0019-6f59-460a-a5c7-7b865d18adf4
-# ╠═e5044213-6991-4f37-89f4-f62b860631f7
-# ╠═8ba1c568-81af-499b-9ceb-fcc2997e3bac
+# ╟─597462d0-e4e6-11eb-1879-3522061d2d39
+# ╠═b6c36e8e-7f77-4274-b8e6-3e733d554298
+# ╟─387530b2-d156-488a-9f37-4a249da454c2
+# ╟─887a28b1-50ce-4993-9032-218f5f45d0f8
+# ╠═c868424d-3c38-4b76-8109-1b0ac5d23266
+# ╠═ac53147d-192c-4d9b-9d4b-95fc22e6b6cd
+# ╠═f50c7b2f-dc3d-4ba9-895b-04693853cb8e
+# ╠═6414ec1c-aab5-430d-9a32-4eceba6b78ee
+# ╠═75fe0ad7-a9ce-479d-9dd0-a571f22efe7b
+# ╠═56b25216-79c3-4d98-be52-347048945f39
+# ╠═99ffc569-ee85-499c-a2bb-838a1e2d1465
+# ╠═c8400ff1-2fd3-48f4-b015-b20fc2391f7c
+# ╠═4690b25d-0d53-4964-bc33-e385d7d01c7c
+# ╠═5dbc2255-87d0-41e0-8daf-d58b96e79ad0
+# ╠═22492dd1-54d7-4ee8-a064-943091f42c56
+# ╠═b2a11e5b-b38a-4465-8509-b3f4522407b0
+# ╟─2cdabaa4-be73-4c2b-b884-9e9e773e96fe
+# ╟─ccf68c58-5bb5-4e8f-9616-598799433f11
+# ╟─37dfab59-ba4d-4583-ba24-66e501735fa6
+# ╟─9013876c-4acd-4094-8a03-8eae69168fc9
+# ╟─027b5a78-449b-4701-96c0-1bb1a0cd1317
+# ╠═ebc8990f-3c7d-41f0-b888-e9a626dbee86
+# ╠═35214862-2ae1-433d-87b3-0398ba0d846f
+# ╟─472598dc-3f73-45b3-ab25-4014bf256e6c
+# ╟─0bf5ee6b-9ce1-46e9-8c52-c87c2147360d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
