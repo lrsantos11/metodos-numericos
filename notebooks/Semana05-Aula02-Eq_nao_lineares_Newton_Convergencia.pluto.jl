@@ -50,20 +50,52 @@ Uma desvantagem do método de Newton é que requer-se o computo de derivadas das
 
 """
 
+# ╔═╡ ac53147d-192c-4d9b-9d4b-95fc22e6b6cd
+# Teste para raiz quadrada de 10
+raiz(x) = x^2 - 10
+
+# ╔═╡ 6b15a8f1-2787-4a87-91cf-906a378f2545
+# Derivada no ponto
+ForwardDiff.derivative(raiz,2)
+
+# ╔═╡ b62c7569-b792-4b64-bd72-0c669326820f
+# Função derivada
+dif_raiz(x) = ForwardDiff.derivative(raiz,x)
+
+# ╔═╡ 9d0c754e-e284-4066-816a-324156a20dd8
+dif_raiz(1.5)
+
 # ╔═╡ c868424d-3c38-4b76-8109-1b0ac5d23266
 function newton_eq(f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
 	df = DataFrame(k = [], xₖ = Float64[], fxₖ = Float64[], ∇fxₖ = Float64[], erro = Float64[])
-
+	k = 0
+	xₖ = x₀
+	fₖ = f(xₖ)
+	∇f(x) = ForwardDiff.derivative(f,x) #Função derivada
+	∇fₖ = ∇f(xₖ) 
+	erro = Inf
+	push!(df, [k, xₖ, fₖ, ∇fₖ, erro])
+	while k ≤ itmax
+		xₖ₊ = xₖ - fₖ/∇fₖ
+		erro  = abs(xₖ₊ - xₖ)
+		xₖ = xₖ₊ #Atualizando xk
+		fₖ = f(xₖ)
+		∇fₖ = ∇f(xₖ)
+		k += 1
+		push!(df, [k, xₖ, fₖ, ∇fₖ, erro])
+		if erro < ε
+			return df, :Conv
+		end
+	end
 	return df, :MaxIter	
 end
 
 
-# ╔═╡ ac53147d-192c-4d9b-9d4b-95fc22e6b6cd
-# Teste para raiz quadrada
-raiz(x) = x^2 - 10
-
 # ╔═╡ f50c7b2f-dc3d-4ba9-895b-04693853cb8e
-df_newton_raiz, = newton_eq(raiz, 1.0)
+df_newton_raiz, = newton_eq(raiz, big(1.0), ε = 1e-32)
+
+# ╔═╡ 62f7a705-8acd-40db-840a-d53cf6bb5e71
+√10
 
 # ╔═╡ 6414ec1c-aab5-430d-9a32-4eceba6b78ee
 df_newton_raiz.xₖ[end]
@@ -83,14 +115,19 @@ md"x₀ $(@bind x₀ Slider(2:2:10,show_value=true))"
 # ╔═╡ 22492dd1-54d7-4ee8-a064-943091f42c56
 begin 
 	f(x) = 2cosh(x/4) - x
-	newton_eq(f,x₀,ε = 1e-8)
+	df_cosh, = newton_eq(f,x₀,ε = 1e-8)
 end
 
 # ╔═╡ b2a11e5b-b38a-4465-8509-b3f4522407b0
-plot(f,0,10,framestyle=:origin)
+begin
+	plot(f,0,10,framestyle=:origin)
+	scatter!([x₀],[f(x₀)],leg=false,c=:orange)
+	scatter!(df_cosh.xₖ[2:end],df_cosh.fxₖ[2:end],leg=false,c=:black,m=:diamond)
+end
 
 # ╔═╡ 2cdabaa4-be73-4c2b-b884-9e9e773e96fe
 md"""
+### Velocidade de convergência do Método de Newton
 Note que a convergência ocorre de forma extremamente rápida. Na iteração 2, o número já foi calculado com 1 casa correta, na próxima iteração o número de casa corretas já duplicou passando para 2, depois para 4, depois para 8 casas e por fim 15. Ou seja, o número de casas corretas dobrou aproximadamente por iteração.
 
 Para entender porque isso ocorre vamos lembrar o que nos diz o teorema de Taylor se $f$ for $n$ vezes diferenciável.
@@ -113,18 +150,18 @@ De posse desse resultado podemos provar que
 
 # ╔═╡ 37dfab59-ba4d-4583-ba24-66e501735fa6
 md"""
-*Demonstração.* Usando o teorema de Taylor com $x = x_k$ e $y = x^*$  temos
+*Demonstração.* Usando a iteração de Newton  temos
 
 $\begin{aligned}
 | x_{k+1} - x^* | &= | x_k - f(x_k)/f'(x_k) - x^* | \\
                   &= \left| x_k + \left(x^* - x_k + \frac{f''(\xi_k)}{2 f'(x_k)}(x^* - x_k)^2 \right)- x^* \right| \\
                   &= \left| \frac{f''(\xi_k)}{2 f'(x_k)} \right| | x_k - x^* |^2,
 \end{aligned}$
-em que $\xi_k$ está no intervalo que une $x_k$ e $x_*$.
+em que $\xi_k$ está no intervalo que une $x_k$ e $x_*$ (na segunda igualdade utilizamos o teorema de Taylor com $n=2$, $x = x_k$ e $y = x^*$).
 
 Por outro lado podemos deduzir alguns limitantes interessantes se fizermos hipóteses sobre a distância de $x_k$ até $x^*$.
 
-1. Sabemos que $|f''(x)|$ atinge máximo no intervalo $[x^* - 1, x^* + 1]$. Chamemos o valor de máximo de $m$. Temos então que se $| x_k - x_* | \leq 1$ teremos $|f''(\xi_k)| \leq m$ para todo $\xi_k$ no intervalo que une $x_k$ e $x_*$.
+1. Sabemos que $|f''(x)|$ atinge máximo no intervalo $[x^* - 1, x^* + 1]$, pois $f''$ é contínua neste intervalo o qual é também compacto. Chamemos o valor de máximo de $m$. Temos então que se $| x_k - x_* | \leq 1$ obtemos $|f''(\xi_k)| \leq m$ para todo $\xi_k$ no intervalo que une $x_k$ e $x_*$.
 
 1. Como $f'(x^*) \neq 0$, sabemos que para pontos suficientemente próximos de $x_*$, $|f'(x)| \geq |f'(x^*)|/2 > 0$. Isto é, existe $\delta_1 > 0$ tal que se $| x - x^* | \leq \delta_1$ então $|f'(x)| \geq |f'(x^*)|/2$.
 
@@ -161,7 +198,7 @@ $f(x) = |x|^a, 0< a < \frac{1}{2}$
 """
 
 # ╔═╡ ebc8990f-3c7d-41f0-b888-e9a626dbee86
-plot(x->abs(x)^(1/3),-2,2,framstyle=:origin)
+plot(x->abs(x)^(1/3),-1,1,framstyle=:origin)
 
 # ╔═╡ 35214862-2ae1-433d-87b3-0398ba0d846f
 # Exemplo de newton falhando.
@@ -180,7 +217,10 @@ md"""
 No caso da bissecção o método é construido para garantir que de uma iteração para outra o erro caia pelo menos pela metade. Ou seja, temos que $E_k = | x_k - x_* |$ é tal que 
 
 $$E_{k + 1} \leq \frac{1}{2} E_k.$$
-Isso garante que o erro de aproximação cai à taxa constante a cada iteração. Quando o erro cai dessa forma dizemos que a convergência é **linear** (com constante $\frac{1}{2}$). Isso garante que $E_k \rightarrow 0$. Note que o mesmo ocorreria se a constante fosse qualquer número $\alpha < 1$ no lugar de $\frac{1}{2}$. Nesse caso dizemos que o método converge de forma linear com constante $\alpha$.
+Isso garante que o erro de aproximação cai à taxa constante a cada iteração. Quando o erro cai dessa forma dizemos que a convergência é **linear** (com constante $\frac{1}{2}$). Isso garante que $E_k \rightarrow 0$. Note que o mesmo ocorreria se a constante fosse qualquer número $\alpha < 1$ no lugar de $\frac{1}{2}$. Nesse caso dizemos que o método converge de forma linear com constante $\alpha$. De fato, temos convergência linar quando 
+```math
+0 < \lim_{k\to\infty} \frac{\lvert x^* - x^{k+1}\rvert}{\lvert x^* - x^{k}\rvert} = \alpha < 1
+```
 
 No caso do método de Newton a fórmula obtida foi
 
@@ -228,10 +268,22 @@ function bissec(f, a, b; ε :: Float64 = 1.0e-5, itmax :: Int = 1_000)
 end
 
 # ╔═╡ 56b25216-79c3-4d98-be52-347048945f39
-df_bissec_raiz, = bissec(raiz,1,5)
+df_bissec_raiz, = bissec(raiz,1,5,ε = 1e-8)
 
 # ╔═╡ 99ffc569-ee85-499c-a2bb-838a1e2d1465
 df_bissec_raiz.xₖ[end]
+
+# ╔═╡ 9cc59f87-f0da-4563-8f4b-022434b26a4b
+# Exemplo de newton sem convergência quadrática.
+begin
+	fx2(x) = x^10
+	df_x2, = newton_eq(fx2,1.5)
+	plot(fx2,0,1.5,framestyle=:origin)
+	scatter!(df_x2.xₖ[2:end],df_x2.fxₖ[2:end],leg=false,c=:black,m=:diamond)
+end
+
+# ╔═╡ 7f5cf3fa-d280-4eb8-949c-bc6f94a4122e
+df_x2
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1345,16 +1397,20 @@ version = "0.9.1+5"
 # ╠═b6c36e8e-7f77-4274-b8e6-3e733d554298
 # ╟─387530b2-d156-488a-9f37-4a249da454c2
 # ╟─887a28b1-50ce-4993-9032-218f5f45d0f8
-# ╠═c868424d-3c38-4b76-8109-1b0ac5d23266
 # ╠═ac53147d-192c-4d9b-9d4b-95fc22e6b6cd
+# ╠═6b15a8f1-2787-4a87-91cf-906a378f2545
+# ╠═b62c7569-b792-4b64-bd72-0c669326820f
+# ╠═9d0c754e-e284-4066-816a-324156a20dd8
+# ╠═c868424d-3c38-4b76-8109-1b0ac5d23266
 # ╠═f50c7b2f-dc3d-4ba9-895b-04693853cb8e
+# ╠═62f7a705-8acd-40db-840a-d53cf6bb5e71
 # ╠═6414ec1c-aab5-430d-9a32-4eceba6b78ee
 # ╠═75fe0ad7-a9ce-479d-9dd0-a571f22efe7b
 # ╠═56b25216-79c3-4d98-be52-347048945f39
 # ╠═99ffc569-ee85-499c-a2bb-838a1e2d1465
 # ╠═c8400ff1-2fd3-48f4-b015-b20fc2391f7c
 # ╠═4690b25d-0d53-4964-bc33-e385d7d01c7c
-# ╠═5dbc2255-87d0-41e0-8daf-d58b96e79ad0
+# ╟─5dbc2255-87d0-41e0-8daf-d58b96e79ad0
 # ╠═22492dd1-54d7-4ee8-a064-943091f42c56
 # ╠═b2a11e5b-b38a-4465-8509-b3f4522407b0
 # ╟─2cdabaa4-be73-4c2b-b884-9e9e773e96fe
@@ -1366,5 +1422,7 @@ version = "0.9.1+5"
 # ╠═35214862-2ae1-433d-87b3-0398ba0d846f
 # ╟─472598dc-3f73-45b3-ab25-4014bf256e6c
 # ╟─0bf5ee6b-9ce1-46e9-8c52-c87c2147360d
+# ╠═9cc59f87-f0da-4563-8f4b-022434b26a4b
+# ╠═7f5cf3fa-d280-4eb8-949c-bc6f94a4122e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
