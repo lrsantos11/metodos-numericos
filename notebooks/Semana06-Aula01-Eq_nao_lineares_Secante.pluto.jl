@@ -14,75 +14,110 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ b6c36e8e-7f77-4274-b8e6-3e733d554298
+# ╔═╡ 451dc584-5f76-42f3-a05d-b517261a95c3
 begin
 	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots
 end
 
-# ╔═╡ 597462d0-e4e6-11eb-1879-3522061d2d39
+# ╔═╡ 5a87ba10-7519-4355-9646-863a2bdd5dc5
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 05 - Aula 02
+###### Semana 06 - Aula 01.1
 """
 
-# ╔═╡ 387530b2-d156-488a-9f37-4a249da454c2
+# ╔═╡ 98f67429-35e0-4f6b-9610-2237a72757a7
+begin 
+	function newton_eq(f, ∇f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
+		df = DataFrame(k = [], xₖ = Float64[], fxₖ = Float64[], ∇fxₖ = Float64[], erro = Float64[])
+		k = 0
+		xₖ = x₀
+		push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), Inf ])
+		while k ≤ itmax
+			xₖ₊₁ = xₖ - f(xₖ) / ∇f(xₖ)
+			erro = abs(xₖ₊₁ - xₖ)
+			k += 1
+			xₖ = xₖ₊₁
+			push!(df,[k, xₖ, f(xₖ), ∇f(xₖ), erro ])
+			if erro < ε
+				return df, :Conv
+			end
+		end
+		return df, :MaxIter	
+	end
+	newton_eq(f, x₀; kwargs...) =  newton_eq(f, x -> ForwardDiff.derivative(f,x), x₀ ; kwargs...)
+end
+
+# ╔═╡ 6bca82fd-e143-4af3-8534-cbd7b067b810
 md"""
-## Método de Newton-Raphson
+## Método secante
 
-> **Algoritmo: Método de Newton.** 
->
-> Dado uma função escalar de uma variavel diferenciável $f$:
-> 1. Comece com um ponto inicial $x_0$.
-> 2. Para $k=0,1,2, \ldots$, faça
-> $$x_{k+1}=x_{k}-\frac{f\left(x_{k}\right)}{f^{\prime}\left(x_{k}\right)}$$ até que  $x_{k+1}$ satisfaça algum critério de parada.
+Vimos que o método de Newton para resolução de equações não-lineares é uma ótima alternativa. De fato ele atinge alta precisão rapidamente, superando o método da bissecção na maioria dos casos. Porém, para utilizá-lo é necessário saber calcular não somente a função $f$ mas também sua derivada $f'$ e há situações em que o calculo da derivada pode ser difícil, mesmo quando a função é diferenciável. Um exemplo disso é quando a função é calculada por uma simulação numérica, ou quando apenas temos acesso a ela através de um programa de computador que é visto como uma caixa preta. Além disso o esforço computacional necessário pelo método de Newton, que exige um cômputo de $f$ e sua derivada a cada passo é maior do que o esforço exigido pela bissecção que calcula apenas a função.
 
+Uma alternativa nessa situação é recordar a definição de derivada
+
+$$f'(x) = \lim_{h \rightarrow 0} \frac{f(x + h) - f(x)}{h}.$$
+
+Essa definição nos dá uma informação interessante, se temos dois pontos próximos $x$ e $y$, podemos aproximar a derivada de $f$ em $x$ por
+
+$$f'(x) \approx \frac{f(y) - f(x)}{y - x}.$$
+
+Será que podemos usar isso para gerar um algoritmo iterativo que aproxime o comportamento do método de Newton sem que haja a necessidade de se calcular derivadas explicitamente? Vejamos. Um método iterativo que gera uma sequência $x_k$ que converge para uma raiz $x_*$ teremos que os iterados consecutivos $x_{k - 1}$ e $x_{k}$ tem que ficar cada vez mais próximos. Isso ocorre porque eles estão se aproximando do mesmo ponto $x_*$ a medida que $k$ aumenta. Assim, a discussão acima sugere que
+
+$$f'(x_k) \approx \frac{f(x_{k-1}) - f(x_k)}{x_{k -1} - x_k}.$$
+Lembrando a dedução do método de Newton temos
+
+$$f(x) \approx f(x_k) + f'(x_k)(x - x_k) \approx f(x_k) + \frac{f(x_{k-1}) - f(x_k)}{x_{k -1} - x_k} (x - x_k).$$
+
+A expressão mais da direita é também uma aproximação afim de $f$ próximo a $x_k$. Assim, da mesma forma que vimos em Newton, podemos definir um método iterativo definindo como novo ponto $x_{k + 1}$ a raiz dessa equação afim. Isso nos leva a fórmula do *método Secante*.
+
+$$x_{k+1} = x_k - \frac{f(x_k)(x_{k - 1} - x_k)}{f(x_{k - 1}) - f(x_k)}.$$
+A sua implementação é muito semelhante a do método de Newton, vamos fazê-la a seguir a executar um teste para ver o quão rápido é esse método.
 """
 
-# ╔═╡ 887a28b1-50ce-4993-9032-218f5f45d0f8
+# ╔═╡ 8122e92c-1200-4ae0-9a55-a659bccf8035
 md"""
-###### Observação: Calculando derivadas
-
-Uma desvantagem do método de Newton é que requer-se o computo de derivadas das funções. Isto pode ser dispendioso ou até impossível.
-   - O uso de técnicas de [**diferenciação automática**](https://pt.wikipedia.org/wiki/Diferencia%C3%A7%C3%A3o_autom%C3%A1tica) tem se mostrado de grande valia.
-   - Vamos usar o pacote `ForwardDiff.jl` para computar derivadas de maneira direta.
-
+x₀ = $(@bind x0_ex1 Slider(-0.9:0.1:0.2, show_value=true, default=-0.5))
 """
 
-# ╔═╡ ac53147d-192c-4d9b-9d4b-95fc22e6b6cd
-# Teste para raiz quadrada de 10
-raiz(x) = x^2 - 10
+# ╔═╡ d67f64a2-f72d-46da-9075-0209f3d77818
+let 
+	f(x) = sin(x+1)*cos(x)
+	df(x) = ForwardDiff.derivative(f,x)
+	sec(x,y) = (f(y) - f(x))/(y-x)
+	aprox_linear(x) = f(x0_ex1) + df(x0_ex1)*(x-x0_ex1)
+	aprox_secante(x) =  f(x0_ex1) + sec(x0_ex1, x0_ex1 - 1/2)*(x-x0_ex1)
+	newton = x0_ex1 - f(x0_ex1)/ df(x0_ex1)
+	secante = x0_ex1 - f(x0_ex1)/ sec(x0_ex1, x0_ex1 - 1/2)
+	plot(f,-2,2,label="", framestyle=:origin,lw=2)
+	plot!(aprox_linear,-2,2,label="Aproximação linear",ls=:dot,lw=2)
+	plot!(aprox_secante,-2,2,label="Aproximação secante",ls=:dot,lw=2)
+	scatter!([x0_ex1 ],[ f(x0_ex1) ], label="x₀",marker = (3,:circ))
+	scatter!([(x0_ex1 -1/2 )],[ f(x0_ex1 -1/2) ], label="x₋₁",marker = (3,:circ))
+	scatter!([newton ],[ 0 ], label="x₁",marker = (3,:circ))
+	scatter!([secante ],[ 0 ], label="x̄₁",marker = (3,:circ))
 
-# ╔═╡ 6b15a8f1-2787-4a87-91cf-906a378f2545
-# Derivada no ponto
-ForwardDiff.derivative(raiz,2)
+	xlims!(-2,2)
+	ylims!(-1,2)
+end
 
-# ╔═╡ b62c7569-b792-4b64-bd72-0c669326820f
-# Função derivada
-dif_raiz(x) = ForwardDiff.derivative(raiz,x)
-
-# ╔═╡ 9d0c754e-e284-4066-816a-324156a20dd8
-dif_raiz(1.5)
-
-# ╔═╡ c868424d-3c38-4b76-8109-1b0ac5d23266
-function newton_eq(f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
-	df = DataFrame(k = [], xₖ = Float64[], fxₖ = Float64[], ∇fxₖ = Float64[], erro = Float64[])
+# ╔═╡ 3d3f4084-aad3-4a95-85dd-76686fa79045
+# Implementação
+function secante_eq(f, x₀, x₁; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
+	df = DataFrame(k = [], xₖ₋₁ = Float64[], xₖ = Float64[], fxₖ = Float64[], erro = Float64[])
+	sec(x,y) = (f(y) - f(x))/(y-x)
 	k = 0
-	xₖ = x₀
-	fₖ = f(xₖ)
-	∇f(x) = ForwardDiff.derivative(f,x) #Função derivada
-	∇fₖ = ∇f(xₖ) 
-	erro = Inf
-	push!(df, [k, xₖ, fₖ, ∇fₖ, erro])
+	xₖ₋₁ = x₀
+	xₖ = x₁
+	push!(df,[k, xₖ₋₁, xₖ, f(xₖ), Inf ])
 	while k ≤ itmax
-		xₖ₊ = xₖ - fₖ/∇fₖ
-		erro  = abs(xₖ₊ - xₖ)
-		xₖ = xₖ₊ #Atualizando xk
-		fₖ = f(xₖ)
-		∇fₖ = ∇f(xₖ)
+		xₖ₊₁ = xₖ - f(xₖ) / sec(xₖ,xₖ₋₁)
+		erro = abs(xₖ₊₁ - xₖ)
 		k += 1
-		push!(df, [k, xₖ, fₖ, ∇fₖ, erro])
+		xₖ₋₁ = xₖ
+		xₖ = xₖ₊₁
+		push!(df,[k, xₖ₋₁, xₖ, f(xₖ), erro ])
 		if erro < ε
 			return df, :Conv
 		end
@@ -91,209 +126,48 @@ function newton_eq(f, x₀; ε :: Float64 = 1.0e-5, itmax :: Int = 100)
 end
 
 
-# ╔═╡ f50c7b2f-dc3d-4ba9-895b-04693853cb8e
-df_newton_raiz, = newton_eq(raiz, big(1.0), ε = 1e-32)
-
-# ╔═╡ 62f7a705-8acd-40db-840a-d53cf6bb5e71
-√10
-
-# ╔═╡ 6414ec1c-aab5-430d-9a32-4eceba6b78ee
-df_newton_raiz.xₖ[end]
-
-# ╔═╡ 75fe0ad7-a9ce-479d-9dd0-a571f22efe7b
-raiz(df_newton_raiz.xₖ[end])
-
-# ╔═╡ c8400ff1-2fd3-48f4-b015-b20fc2391f7c
-df_newton_raiz.xₖ[end]
-
-# ╔═╡ 4690b25d-0d53-4964-bc33-e385d7d01c7c
-sqrt(10)
-
-# ╔═╡ 5dbc2255-87d0-41e0-8daf-d58b96e79ad0
+# ╔═╡ ef4d662b-dd64-42b6-8984-11b8dbad7ed3
 md"x₀ $(@bind x₀ Slider(2:2:10,show_value=true))"
 
-# ╔═╡ 22492dd1-54d7-4ee8-a064-943091f42c56
+# ╔═╡ dfdf9a50-5b18-4098-8b53-bef9a95d3efc
+md"x₁ $(@bind x₁ Slider(2:2:10,show_value=true))"
+
+# ╔═╡ 5e614364-90bd-49d9-a6cd-ffcc44e2e4a9
 begin 
 	f(x) = 2cosh(x/4) - x
-	df_cosh, = newton_eq(f,x₀,ε = 1e-8)
+	tol = 1e-8
+	df_ex1, = newton_eq(f,x₀,ε = tol)
 end
 
-# ╔═╡ b2a11e5b-b38a-4465-8509-b3f4522407b0
+# ╔═╡ b12d3911-009d-4efb-8956-d4552aa1b0b1
+df_ex1_sec, = secante_eq(f, x₀, x₁, ε = tol)
+
+# ╔═╡ e5aae328-09ec-4212-aebe-dccf5d83c0e2
 begin
 	plot(f,0,10,framestyle=:origin)
-	scatter!([x₀],[f(x₀)],leg=false,c=:orange)
-	scatter!(df_cosh.xₖ[2:end],df_cosh.fxₖ[2:end],leg=false,c=:black,m=:diamond)
+	@df df_ex1 scatter!(:xₖ,:fxₖ,label="Newton") # Usando Stasplot
+	@df df_ex1_sec scatter!(:xₖ,:fxₖ,label = "Secante") # Usando Stasplot
+
 end
 
-# ╔═╡ 2cdabaa4-be73-4c2b-b884-9e9e773e96fe
+# ╔═╡ 46a53d9f-b2f9-4215-b25d-de28a4bbd98b
+df_ex1[:,:xₖ]
+
+# ╔═╡ 69719111-2140-4bbe-950f-90b5ef0d7df9
 md"""
-### Velocidade de convergência do Método de Newton
-Note que a convergência ocorre de forma extremamente rápida. Na iteração 2, o número já foi calculado com 1 casa correta, na próxima iteração o número de casa corretas já duplicou passando para 2, depois para 4, depois para 8 casas e por fim 15. Ou seja, o número de casas corretas dobrou aproximadamente por iteração.
+Vemos nesse exemplo que o método secante também pode convergir rapidamente, realizando apenas algumas itera a mais do que o método de Newton. De fato pode-se provar os seguinte resultado de convergência.
 
-Para entender porque isso ocorre vamos lembrar o que nos diz o teorema de Taylor se $f$ for $n$ vezes diferenciável.
-
-> **Teorema de Taylor**. Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ diferenciável $n$ vezes em um intervalo que contenha os valores $x$ e $y$. Então existe $\xi$ no intervalo aberto que une $x$ e $y$ tal que
+>**Teorema (da Convergência Superlinear do método secante)**. Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função duas vezes continuamente diferenciável. Se $x_0$ inicia perto de uma raiz $x^*$ em que a derivada de $f$ é não nula, então o método secante está bem definido e gera uma sequência convergindo para $x^*$. 
 >
->$$f(y) = f(x) + f'(x)(y - x) + \frac{f''(x)}{2}(y - x)^2 + \ldots + \frac{f^{(n)}(\xi)}{n!}(y - x)^n.$$
-"""
-
-# ╔═╡ ccf68c58-5bb5-4e8f-9616-598799433f11
-md"""
-De posse desse resultado podemos provar que
-
->**Teorema (da Convergência Quadrática de Newton)**. Seja $f: \mathbb{R} \rightarrow \mathbb{R}$ uma função duas vezes continuamente diferenciável. Suponha $x_0$ inicia perto de uma raiz $x^*$ em que a derivada de $f$ é não nula. Então,
+>Além disso,
 >
->1. O método de Newton está bem definido e gera uma sequência convergindo para $x^*$. 
->2. Além disso, existe $M > 0$ tal que
->$$| x_{k+1} - x^* | \leq M | x_k - x^* |^2.$$
+>$$\lim_{k \rightarrow \infty} \frac{| x_{k+1} - x^* |}{| x_k - x^* |} = 0,$$
+> ou seja, o método das secantes converge superlinearmente. 
+
+Uma análise atenta do limite acima mostra que o método secante vai também ficando cada vez mais rápido, ganhando de qualquer método com convergência linear, daí chamarmos esse tipo de convergência de _superlinear_.
 """
 
-# ╔═╡ 37dfab59-ba4d-4583-ba24-66e501735fa6
-md"""
-*Demonstração.* Usando a iteração de Newton  temos
-
-$\begin{aligned}
-| x_{k+1} - x^* | &= | x_k - f(x_k)/f'(x_k) - x^* | \\
-                  &= \left| x_k + \left(x^* - x_k + \frac{f''(\xi_k)}{2 f'(x_k)}(x^* - x_k)^2 \right)- x^* \right| \\
-                  &= \left| \frac{f''(\xi_k)}{2 f'(x_k)} \right| | x_k - x^* |^2,
-\end{aligned}$
-em que $\xi_k$ está no intervalo que une $x_k$ e $x_*$ (na segunda igualdade utilizamos o teorema de Taylor com $n=2$, $x = x_k$ e $y = x^*$).
-
-Por outro lado podemos deduzir alguns limitantes interessantes se fizermos hipóteses sobre a distância de $x_k$ até $x^*$.
-
-1. Sabemos que $|f''(x)|$ atinge máximo no intervalo $[x^* - 1, x^* + 1]$, pois $f''$ é contínua neste intervalo o qual é também compacto. Chamemos o valor de máximo de $m$. Temos então que se $| x_k - x_* | \leq 1$ obtemos $|f''(\xi_k)| \leq m$ para todo $\xi_k$ no intervalo que une $x_k$ e $x_*$.
-
-1. Como $f'(x^*) \neq 0$, sabemos que para pontos suficientemente próximos de $x_*$, $|f'(x)| \geq |f'(x^*)|/2 > 0$. Isto é, existe $\delta_1 > 0$ tal que se $| x - x^* | \leq \delta_1$ então $|f'(x)| \geq |f'(x^*)|/2$.
-
-Assim, se $| x_k - x_* | < \min(1, \delta_1)$, teremos
-
-$$|x_{k+1} - x^*| \leq \frac{2m}{f'(x^*)} |x_k - x^*| |x_k - x^*|.$$
-Portanto, se chamarmos de $\delta = \min(1, \delta_1, f'(x^*)/(4m))$ e $| x_k - x_* | < \delta$, teremos
-
-$$|x_{k+1} - x^*| \leq \frac{1}{2} |x_k - x^*|.$$
-Concluímos então que nesse caso a sequência converge a $x^*$ e todas as propriedades obtidas continuam valendo. Portando se $| x _0 - x^* | \leq \delta$ podemos concluir que:
-
-1. Toda a sequência se mantem a essa distância máxima de $x^*$.
-
-1. Em toda a sequência a derivada $f'(x_k)$ tem módulo maior ou igual a $|f'(x^*)|/2$, consequentemente é sempre não-nula e o método está bem definido.
-
-1. Por fim, chamando de $M = \frac{2m}{f'(x^*)}$, teremos
-$| x_{k+1} - x^* | \leq M | x_k - x^* |^2,$ o que finaliza a prova. $\blacksquare$
-"""
-
-# ╔═╡ 9013876c-4acd-4094-8a03-8eae69168fc9
-md"""
-**Observações:**
-
-- O fato da distância à solução, uma vez que cai abaixo de $1$, diminuir elevando o valor anterior ao quadrado explica o comportamento observado no exemplo, com o número de casas decimais corretas duplicando a cada iteração.
-
-- Um fato importante é que o teorema acima só garante a convergência quando o ponto inicial $x_0$ estiver perto de uma raiz com derivada não nula. Caso contrário não há garantias para a convergência, em particular se o ponto inicial estiver longe das raízes. De fato, a convergência pode falhar.
-"""
-
-# ╔═╡ 027b5a78-449b-4701-96c0-1bb1a0cd1317
-md"""
-- Exemplo de newton falhando.
-
-$f(x) = |x|^a, 0< a < \frac{1}{2}$
-"""
-
-# ╔═╡ ebc8990f-3c7d-41f0-b888-e9a626dbee86
-plot(x->abs(x)^(1/3),-1,1,framstyle=:origin)
-
-# ╔═╡ 35214862-2ae1-433d-87b3-0398ba0d846f
-# Exemplo de newton falhando.
-let
-	a = 1/3
-	f(x) = abs(x)^a
-	newton_eq(f,0.1)
-end
-
-# ╔═╡ 472598dc-3f73-45b3-ab25-4014bf256e6c
-md"""
-### Taxas de convergência
-
-É interessante observar a velocidade de convergência estimada para o método de Newton e compará-la para o caso de bissecção.
-
-No caso da bissecção o método é construido para garantir que de uma iteração para outra o erro caia pelo menos pela metade. Ou seja, temos que $E_k = | x_k - x_* |$ é tal que 
-
-$$E_{k + 1} \leq \frac{1}{2} E_k.$$
-Isso garante que o erro de aproximação cai à taxa constante a cada iteração. Quando o erro cai dessa forma dizemos que a convergência é **linear** (com constante $\frac{1}{2}$). Isso garante que $E_k \rightarrow 0$. Note que o mesmo ocorreria se a constante fosse qualquer número $\alpha < 1$ no lugar de $\frac{1}{2}$. Nesse caso dizemos que o método converge de forma linear com constante $\alpha$. De fato, temos convergência linar quando 
-```math
-0 < \lim_{k\to\infty} \frac{\lvert x^* - x^{k+1}\rvert}{\lvert x^* - x^{k}\rvert} = \alpha < 1
-```
-
-No caso do método de Newton a fórmula obtida foi
-
-$$E_{k + 1} \leq M E_k^2 = (M E_k) E_k.$$
-Como também provamos que o método é convergente, ou seja que $E_k \rightarrow 0$, vemos que a partir de uma certa iteração $M E_k < \frac{1}{2}$. Portanto, a partir de um certo ponto, o método de Newton passa a ficar mais rápido do que a bissecção. Mais do que isso, já na próxima iteração a diferença de velocidade é maior, e depois maior ainda e assim por diante. Ou seja, com as iterações o método de Newton vai ficando "infinitamente" mais rápido do que a bissecção. O caso do método de Newton é chamado a **convergência de quadrática**, por motivos óbvios. Métodos com convergência cúbica ou superior são definidos de forma similar.
-
-
-Além disso, quando temos
-
-$$\lim_{k \rightarrow \infty} \frac{E_{k+1}}{E_k} = 0,$$ isso singifica que  que a medida que as iterações  passam,  o método fica melhor do que a convergência linear com qualquer constante $\alpha$ fixada. Dizemos que um método que cujos erros obedecem à equação acima tem convergência **superlinear**. Tal limite é equivalente à existir uma sequencia $(\rho_k)$, com $\rho_k\to 0$ tal que 
-
-$$E_{k + 1} \leq \rho_k E_k.$$
-
-Curiosamente, existem métodos superlineares que são mais lentos que um método com velocidade quadrática (ou superior).
-
-"""
-
-# ╔═╡ 6b376de1-7bd2-497c-8cd7-5a0ec9f9661e
-Eₐ(x,y) = abs((x - y))
-
-# ╔═╡ 353170fc-3b82-4cfc-8a11-0326eb8513d4
-Eᵣ(x,y) = abs((x - y)/y)
-
-# ╔═╡ 0bf5ee6b-9ce1-46e9-8c52-c87c2147360d
-# Método da bissecção
-function bissec(f, a, b; ε :: Float64 = 1.0e-5, itmax :: Int = 1_000)
-	f(a)*f(b) < 0. ? nothing : error("Não temos certeza  de existência de raiz da função no intevalo [$a, $b]")
-	a < b ? nothing : error("Não aceitamos a >= b")
-	ε > 0 ? nothing : error("Não aceitamos ε <=  0")
-	k = 0
-	aₖ = a
-	bₖ = b
-	xₖOld = a
-	df = DataFrame(aₖ = Float64[], bₖ = Float64[], xₖ = Float64[], k = Int64[], absfₖ = Float64[], Eₐ = Float64[], Eᵣ = Float64[])
-	while k ≤ itmax
-		xₖ = (aₖ + bₖ)/2
-		fₖ = f(xₖ)
-		absfₖ = abs(fₖ)
-		push!(df, [aₖ, bₖ, xₖ, k, absfₖ, Eₐ(xₖOld,xₖ), Eᵣ(xₖOld,xₖ)]) 
-		if absfₖ < ε
-			return df, :Conv
-		end
-		if f(aₖ) * fₖ < 0
-			bₖ = xₖ
-		else
-			aₖ = xₖ
-		end
-		xₖOld = xₖ
-		k += 1	
-	end
-	return df, :MaxIter	
-	
-end
-
-# ╔═╡ 56b25216-79c3-4d98-be52-347048945f39
-df_bissec_raiz, = bissec(raiz,1,5,ε = 1e-8)
-
-# ╔═╡ 99ffc569-ee85-499c-a2bb-838a1e2d1465
-df_bissec_raiz.xₖ[end]
-
-# ╔═╡ 9cc59f87-f0da-4563-8f4b-022434b26a4b
-# Exemplo de newton sem convergência quadrática.
-begin
-	fx2(x) = x^10
-	df_x2, = newton_eq(fx2,1.5)
-	plot(fx2,0,1.5,framestyle=:origin)
-	scatter!(df_x2.xₖ[2:end],df_x2.fxₖ[2:end],leg=false,c=:black,m=:diamond)
-end
-
-# ╔═╡ 7f5cf3fa-d280-4eb8-949c-bc6f94a4122e
-df_x2
-
-# ╔═╡ d75e76f8-869c-46d5-a1d9-7a89575e8d3a
+# ╔═╡ c9a8857a-e052-44f3-828f-8e00a22b974d
 
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -308,7 +182,7 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 [compat]
 DataFrames = "~1.2.0"
 ForwardDiff = "~0.10.18"
-Plots = "~1.19.0"
+Plots = "~1.19.2"
 PlutoUI = "~0.7.9"
 StatsPlots = "~0.14.25"
 """
@@ -370,9 +244,9 @@ version = "1.16.0+6"
 
 [[ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
-git-tree-sha1 = "dcc25ff085cf548bc8befad5ce048391a7c07d40"
+git-tree-sha1 = "f53ca8d41e4753c41cdafa6ec5f7ce914b34be54"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.10.11"
+version = "0.10.13"
 
 [[Clustering]]
 deps = ["Distances", "LinearAlgebra", "NearestNeighbors", "Printf", "SparseArrays", "Statistics", "StatsBase"]
@@ -589,15 +463,15 @@ version = "3.3.5+1"
 
 [[GR]]
 deps = ["Base64", "DelimitedFiles", "GR_jll", "HTTP", "JSON", "Libdl", "LinearAlgebra", "Pkg", "Printf", "Random", "Serialization", "Sockets", "Test", "UUIDs"]
-git-tree-sha1 = "b83e3125048a9c3158cbb7ca423790c7b1b57bea"
+git-tree-sha1 = "9f473cdf6e2eb360c576f9822e7c765dd9d26dbc"
 uuid = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
-version = "0.57.5"
+version = "0.58.0"
 
 [[GR_jll]]
 deps = ["Artifacts", "Bzip2_jll", "Cairo_jll", "FFMPEG_jll", "Fontconfig_jll", "GLFW_jll", "JLLWrappers", "JpegTurbo_jll", "Libdl", "Libtiff_jll", "Pixman_jll", "Pkg", "Qt5Base_jll", "Zlib_jll", "libpng_jll"]
-git-tree-sha1 = "e14907859a1d3aee73a019e7b3c98e9e7b8b5b3e"
+git-tree-sha1 = "eaf96e05a880f3db5ded5a5a8a7817ecba3c7392"
 uuid = "d2c73de3-f751-5644-a686-071e5b155ba9"
-version = "0.57.3+0"
+version = "0.58.0+0"
 
 [[GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
@@ -952,9 +826,9 @@ version = "1.0.11"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
-git-tree-sha1 = "83c762ddea05f5554e1b04f4a5ecae61990ccc8e"
+git-tree-sha1 = "f3d4d35b8cb87adc844c05c722f505776ac29988"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.19.0"
+version = "1.19.2"
 
 [[PlutoUI]]
 deps = ["Base64", "Dates", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "Suppressor"]
@@ -1092,9 +966,9 @@ version = "1.5.1"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "a43a7b58a6e7dc933b2fa2e0ca653ccf8bb8fd0e"
+git-tree-sha1 = "1b9a0f17ee0adde9e538227de093467348992397"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.6"
+version = "1.2.7"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
@@ -1404,39 +1278,20 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─597462d0-e4e6-11eb-1879-3522061d2d39
-# ╠═b6c36e8e-7f77-4274-b8e6-3e733d554298
-# ╟─387530b2-d156-488a-9f37-4a249da454c2
-# ╟─887a28b1-50ce-4993-9032-218f5f45d0f8
-# ╠═ac53147d-192c-4d9b-9d4b-95fc22e6b6cd
-# ╠═6b15a8f1-2787-4a87-91cf-906a378f2545
-# ╠═b62c7569-b792-4b64-bd72-0c669326820f
-# ╠═9d0c754e-e284-4066-816a-324156a20dd8
-# ╠═c868424d-3c38-4b76-8109-1b0ac5d23266
-# ╠═f50c7b2f-dc3d-4ba9-895b-04693853cb8e
-# ╠═62f7a705-8acd-40db-840a-d53cf6bb5e71
-# ╠═6414ec1c-aab5-430d-9a32-4eceba6b78ee
-# ╠═75fe0ad7-a9ce-479d-9dd0-a571f22efe7b
-# ╠═56b25216-79c3-4d98-be52-347048945f39
-# ╠═99ffc569-ee85-499c-a2bb-838a1e2d1465
-# ╠═c8400ff1-2fd3-48f4-b015-b20fc2391f7c
-# ╠═4690b25d-0d53-4964-bc33-e385d7d01c7c
-# ╟─5dbc2255-87d0-41e0-8daf-d58b96e79ad0
-# ╠═22492dd1-54d7-4ee8-a064-943091f42c56
-# ╠═b2a11e5b-b38a-4465-8509-b3f4522407b0
-# ╟─2cdabaa4-be73-4c2b-b884-9e9e773e96fe
-# ╟─ccf68c58-5bb5-4e8f-9616-598799433f11
-# ╟─37dfab59-ba4d-4583-ba24-66e501735fa6
-# ╟─9013876c-4acd-4094-8a03-8eae69168fc9
-# ╟─027b5a78-449b-4701-96c0-1bb1a0cd1317
-# ╠═ebc8990f-3c7d-41f0-b888-e9a626dbee86
-# ╠═35214862-2ae1-433d-87b3-0398ba0d846f
-# ╟─472598dc-3f73-45b3-ab25-4014bf256e6c
-# ╠═0bf5ee6b-9ce1-46e9-8c52-c87c2147360d
-# ╠═6b376de1-7bd2-497c-8cd7-5a0ec9f9661e
-# ╠═353170fc-3b82-4cfc-8a11-0326eb8513d4
-# ╠═9cc59f87-f0da-4563-8f4b-022434b26a4b
-# ╠═7f5cf3fa-d280-4eb8-949c-bc6f94a4122e
-# ╠═d75e76f8-869c-46d5-a1d9-7a89575e8d3a
+# ╠═5a87ba10-7519-4355-9646-863a2bdd5dc5
+# ╠═451dc584-5f76-42f3-a05d-b517261a95c3
+# ╟─98f67429-35e0-4f6b-9610-2237a72757a7
+# ╟─6bca82fd-e143-4af3-8534-cbd7b067b810
+# ╟─8122e92c-1200-4ae0-9a55-a659bccf8035
+# ╠═d67f64a2-f72d-46da-9075-0209f3d77818
+# ╠═3d3f4084-aad3-4a95-85dd-76686fa79045
+# ╟─ef4d662b-dd64-42b6-8984-11b8dbad7ed3
+# ╟─dfdf9a50-5b18-4098-8b53-bef9a95d3efc
+# ╠═5e614364-90bd-49d9-a6cd-ffcc44e2e4a9
+# ╠═b12d3911-009d-4efb-8956-d4552aa1b0b1
+# ╠═e5aae328-09ec-4212-aebe-dccf5d83c0e2
+# ╠═46a53d9f-b2f9-4215-b25d-de28a4bbd98b
+# ╟─69719111-2140-4bbe-950f-90b5ef0d7df9
+# ╠═c9a8857a-e052-44f3-828f-8e00a22b974d
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
