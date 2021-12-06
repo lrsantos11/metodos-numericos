@@ -11,7 +11,7 @@ Você também precisa usar o VPN da UFSC para poder acessar as máquina do LABMA
 
 Após estar com o VPN ligado, você deve acessar a máquina `labmac02` usando o seu shell preferido no Linux ou o PowerShell no Windows digitando:
 ```bash
-ssh -L ZZZZ:localhost:ZZZZ seu_usuario@labmac03.blumenau.ufsc.br
+ssh -L ZZZZ:localhost:ZZZZ seu_usuario@labmac02.blumenau.ufsc.br
 ```
 em que `ZZZZ = 1234 + YYYY`, e `YYYY` são os últimos 4 números da sua matrícula. Por exemplo, se sua matrícula for 20152020, `ZZZZ = 1234 + 2020 = 3254`.
 
