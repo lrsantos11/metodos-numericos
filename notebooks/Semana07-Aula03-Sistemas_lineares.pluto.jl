@@ -28,6 +28,19 @@ function retro_subs(U,b)
 	return xsol
 end
 
+# ╔═╡ 6bed0f40-75e6-4e77-9c42-8e02b51ba91f
+# Funcao para resolver sistema triangular inferior por substituicao avançada
+function subs(L,b)
+	~istril(L) && error("L não é triangular inferior")
+	num_rows, num_cols = size(L)
+	xsol = zeros(num_cols)
+	xsol[1] = b[1]/L[1,1]
+	for i ∈ 2:num_cols
+		xsol[i] = (b[i] - dot(L[i,1:i-1], xsol[1:i-1])) / L[i,i]
+	end
+	return xsol
+end
+
 # ╔═╡ a23f3937-0e2f-4859-baf7-10064230ffc9
 md"""
 # Sistemas Lineares 
@@ -201,6 +214,7 @@ uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 # ╠═4833dd6e-5826-11ec-172b-537492fc4e68
 # ╠═ab7d391c-4a01-478b-bb9c-20110c3a3acc
 # ╠═e3b065ef-a425-459d-bb4d-d25b7483a049
+# ╠═6bed0f40-75e6-4e77-9c42-8e02b51ba91f
 # ╟─a23f3937-0e2f-4859-baf7-10064230ffc9
 # ╟─1fc543d6-27d0-4c80-a837-e393c3e25446
 # ╟─25afda0a-73f7-46d8-9bae-049d36c7cabf
