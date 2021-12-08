@@ -90,6 +90,9 @@ let
 	norm(U*xsol - b)
 end
 
+# ╔═╡ 0e942396-5341-43f5-a1c2-dfb4f08a9657
+
+
 # ╔═╡ 516ba208-c113-47d1-a7a7-cb6b8b9a2083
 md"""
 
@@ -100,7 +103,22 @@ md"""
 # ╔═╡ 9bca219d-93bc-4247-b716-3746c411262d
 # Funcao para resolver sistema triangular inferior por substituicao avançada
 function subs(L,b)
+	~istril(L) && error("L não é triangular inferior")
+	num_rows, num_cols = size(L)
+	xsol = zeros(num_cols)
+	xsol[1] = b[1]/L[1,1]
+	for i ∈ 2:num_cols
+		xsol[i] = (b[i] - dot(L[i,1:i-1], xsol[1:i-1])) / L[i,i]
+	end
+	return xsol
+end
 
+# ╔═╡ 42e012a9-264e-4678-ade9-a11bf187c992
+let 
+	L = [1 0; 2 1.]
+	b = [1,1.]
+	xsol = subs(L,b)
+	norm(L*xsol - b)
 end
 
 # ╔═╡ 6a2db00e-ea3c-407e-be18-51a4e211506d
@@ -593,6 +611,14 @@ md"""
 let
 	A = [2.0 3 1 1; 4 7 4 3; 4 7 6 4; 6 9 9 8]
 	b = [3.0, 6, 4, 3]
+	L, U = preLU(A)
+	b̄ = subs(L,b)
+	xsol1 = retro_subs(U,b̄)
+	norm(A*xsol1 - b)
+	b2 = rand(4)
+	b̄2 = subs(L,b2)
+	xsol2 = retro_subs(U,b̄2)
+	norm(A*xsol2 - b2)
 end
 
 # ╔═╡ b0729c40-334e-4503-873e-f05ce14aa49f
@@ -638,9 +664,11 @@ uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 # ╠═da0007d2-0816-4e13-beec-89e3cd848ede
 # ╟─f1658e3d-1178-4fea-98ea-e28ac7f127a6
 # ╠═5b77c9f8-3b2b-41ba-950d-e9ca03c7edf2
+# ╠═fb3af435-f8ae-469f-8784-71f034b07281
+# ╠═0e942396-5341-43f5-a1c2-dfb4f08a9657
 # ╟─516ba208-c113-47d1-a7a7-cb6b8b9a2083
 # ╠═9bca219d-93bc-4247-b716-3746c411262d
-# ╠═fb3af435-f8ae-469f-8784-71f034b07281
+# ╠═42e012a9-264e-4678-ade9-a11bf187c992
 # ╟─6a2db00e-ea3c-407e-be18-51a4e211506d
 # ╠═be492efa-df70-40e9-9080-9043b0ebd073
 # ╠═3cf6d797-d99e-4fd9-ae1a-722cb7cbaf1c
@@ -676,7 +704,7 @@ uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 # ╠═9913bd3f-86b6-40f9-9ba0-57fc8d6732e7
 # ╠═55f2292d-dbf2-4ace-bbf8-51d5b4836065
 # ╟─d277bb45-62de-4ff2-aa1f-17bfe9328497
-# ╠═2c5d7d01-e932-485a-bce3-41f4d9ec5928
 # ╟─b0729c40-334e-4503-873e-f05ce14aa49f
+# ╠═2c5d7d01-e932-485a-bce3-41f4d9ec5928
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

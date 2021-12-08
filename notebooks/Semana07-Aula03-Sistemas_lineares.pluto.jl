@@ -12,7 +12,7 @@ md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 07 - Aula 02-03
+###### Semana 07 - Aula 03
 """
 
 # ╔═╡ e3b065ef-a425-459d-bb4d-d25b7483a049
