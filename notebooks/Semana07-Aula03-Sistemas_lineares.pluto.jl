@@ -41,6 +41,23 @@ function subs(L,b)
 	return xsol
 end
 
+# ╔═╡ 9f1d96d0-2d21-43ae-9b8f-f1f6a094e86f
+# Fatoracao LU de uma matriz A sem pivoteamento
+function preLU(A)
+	m, n  = size(A)
+	U = copy(A)
+	L = diagm(ones(m))
+	for j ∈ 1:m-1
+		for i ∈ j+1:m
+			ℓ = U[i,j] / U[j,j]
+			L[i, j] = ℓ
+			U[i,:] = U[i,:] - ℓ*U[j,:]
+			U[i,j] = 0.0 
+		end
+	end
+	return L, U
+end
+
 # ╔═╡ a23f3937-0e2f-4859-baf7-10064230ffc9
 md"""
 # Sistemas Lineares 
@@ -58,7 +75,11 @@ Usaremos a sigla FLOP (de *Foating Point Operation*) para designar uma operaçã
 
 ### Substituição
 
-Vamos começar pela `retro_subs`. Olhando o seu código, vemos que a maior parte do trabalho ocorre dentro do laço `for`. Para calcular o novo `x[i]` precisamos executar uma subtração, uma divisão e o produto interno `dot(A[i, i + 1:end], x[i + 1:end])` entre dois vetores de $n - (i + 1) + 1 = n - i$ elementos. Esse produto interno precisa então de $n - i$ produtos de números reais e $n - i - 1$ somas. O total de operações realizadas nessa linha é então $2 + (n - i) + (n - i - 1) = 2(n - i)+ 1$. Dessa forma, podemos calcular o trabalho total:
+Vamos começar pela `retro_subs`. Olhando o seu código, vemos que a maior parte do trabalho ocorre dentro do laço `for`. Para calcular o novo `x[i]` precisamos executar uma subtração, uma divisão e o produto interno 
+```julia
+	dot(U[i, i + 1:end], xsol[i + 1:end])
+``` 
+entre dois vetores de $n - (i + 1) + 1 = n - i$ elementos. Esse produto interno precisa então de $n - i$ produtos de números reais e $n - i - 1$ somas. O total de operações realizadas nessa linha é então $2 + (n - i) + (n - i - 1) = 2(n - i)+ 1$. Dessa forma, podemos calcular o trabalho total:
 
 $$\sum_{i = 1}^{n} 2(n - i)+ 1 =  \sum_{i = 1}^{n} (2n + 1) - 2 \sum_{i = 1}^{n} i = n(2n + 1) - n(n + 1) = n^2.$$
 
@@ -81,7 +102,9 @@ $$2(n - i)^2 + (n - i)$$
 
 FLOPs. Note que a segunda e terceira linha do laço não geram FLOPs, são realizadas apenas cópias de valores em memória. Estamos prontos para escrever a somatória que irá acumular todo o trabalho feito.
 
-$$\sum_{i = 1}^{n - 1} 2(n - i)^2 + (n - i) = [2(n - 1)^2 + (n - 1)] + [2(n - 2)^2 + (n - 2)] + \ldots + [2\cdot2^2 + 2] + [2\cdot1^2 + 1].$$
+$$\begin{aligned}
+\sum_{i = 1}^{n - 1} 2(n - i)^2 + (n - i) &= [2(n - 1)^2 + (n - 1)] + [2(n - 2)^2 + (n - 2)] \\& + \ldots + [2\cdot2^2 + 2] + [2\cdot1^2 + 1].
+\end{aligned}$$
 
 
 Note que lendo essa somatória de trás para frente chegamos a uma expressão um pouco mais simples.
@@ -114,6 +137,11 @@ $$\begin{aligned}
 \end{aligned}$$
 
 Note que o tempo de calcular uma fatoração LU é muito maior do que o tempo de resolver um sistema triangular por substituição, afinal ele cresce com o cubo da dimensão da matriz. Isso mostra que, para resolver um sistema linear fazendo primeiro a fatoração LU, a maior parte do trabalho está no processo de fatoração. Ele irá dominar o tempo de execução.
+
+"""
+
+# ╔═╡ 6ba68c65-ca58-4b14-bacc-3107b5b81a1b
+md"""
 
 ## Pivoteamento
 
@@ -211,12 +239,14 @@ uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
 """
 
 # ╔═╡ Cell order:
-# ╠═4833dd6e-5826-11ec-172b-537492fc4e68
+# ╟─4833dd6e-5826-11ec-172b-537492fc4e68
 # ╠═ab7d391c-4a01-478b-bb9c-20110c3a3acc
 # ╠═e3b065ef-a425-459d-bb4d-d25b7483a049
 # ╠═6bed0f40-75e6-4e77-9c42-8e02b51ba91f
+# ╠═9f1d96d0-2d21-43ae-9b8f-f1f6a094e86f
 # ╟─a23f3937-0e2f-4859-baf7-10064230ffc9
 # ╟─1fc543d6-27d0-4c80-a837-e393c3e25446
 # ╟─25afda0a-73f7-46d8-9bae-049d36c7cabf
+# ╟─6ba68c65-ca58-4b14-bacc-3107b5b81a1b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ da0007d2-0816-4e13-beec-89e3cd848ede
-using LinearAlgebra, PlutoUI
+using LinearAlgebra, PlutoUI, BenchmarkTools, SparseArrays
 
 # ╔═╡ 1623ba20-5693-11ec-0b0b-1358d14e7ab3
 md"""
@@ -593,8 +593,8 @@ function preLU(A)
 	m, n  = size(A)
 	U = copy(A)
 	L = diagm(ones(m))
-	for j ∈ 1:m-1
-		for i ∈ j+1:m
+	@inbounds for j ∈ 1:m-1
+		@inbounds for i ∈ j+1:m
 			ℓ = U[i,j] / U[j,j]
 			L[i, j] = ℓ
 			U[i,:] = U[i,:] - ℓ*U[j,:]
@@ -634,13 +634,37 @@ let
 	norm(A*xsol2 - b2)
 end
 
+# ╔═╡ c5414554-246c-4ec9-a925-570b89a7170e
+let
+	n = 4000
+	A = randn(n,n) + n*I
+	@benchmark preLU(A) 
+end
+
+# ╔═╡ 37bc4502-eb26-4576-aa18-0dca455475af
+let
+	n = 400000
+	A = sprand(n,n,0.01) + n*I
+	# @benchmark lu!(A)
+end
+
+# ╔═╡ 87652e4e-08cf-4a21-8abf-87ee2ed21899
+let
+	n = 4000
+	A = randn(n,n) + n*I
+	@benchmark lu(A)
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
+BenchmarkTools = "~1.2.2"
 PlutoUI = "~0.7.21"
 """
 
@@ -662,6 +686,12 @@ uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+
+[[BenchmarkTools]]
+deps = ["JSON", "Logging", "Printf", "Profile", "Statistics", "UUIDs"]
+git-tree-sha1 = "940001114a0147b6e4d10624276d56d531dd9b49"
+uuid = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+version = "1.2.2"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -769,6 +799,10 @@ version = "0.7.21"
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
+[[Profile]]
+deps = ["Printf"]
+uuid = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
+
 [[REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
@@ -790,6 +824,14 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+
+[[SparseArrays]]
+deps = ["LinearAlgebra", "Random"]
+uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[[Statistics]]
+deps = ["LinearAlgebra", "SparseArrays"]
+uuid = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [[TOML]]
 deps = ["Dates"]
@@ -876,5 +918,8 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╟─d277bb45-62de-4ff2-aa1f-17bfe9328497
 # ╟─b0729c40-334e-4503-873e-f05ce14aa49f
 # ╠═2c5d7d01-e932-485a-bce3-41f4d9ec5928
+# ╠═c5414554-246c-4ec9-a925-570b89a7170e
+# ╠═37bc4502-eb26-4576-aa18-0dca455475af
+# ╠═87652e4e-08cf-4a21-8abf-87ee2ed21899
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
