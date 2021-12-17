@@ -26,7 +26,7 @@ md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 07 - Aula 02
+###### Semana 08 - Aula 02
 """
 
 # ╔═╡ 58564077-487a-4721-8ab9-d2ceddb3ba59
@@ -1464,7 +1464,7 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─28febda9-bb76-448b-89f2-5663b4f8af11
+# ╠═28febda9-bb76-448b-89f2-5663b4f8af11
 # ╟─9c6074f1-981d-4150-a189-5296ca374e70
 # ╟─58564077-487a-4721-8ab9-d2ceddb3ba59
 # ╟─ab6c9311-3a94-4509-8250-b95425a4a07f
