@@ -14,171 +14,283 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 9cee1f22-fa37-11eb-3dbb-adee03240694
+# ╔═╡ a385b7b2-740f-4cd6-8c3d-091b944fce12
 begin
-	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra
-	plotly()
+	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra, LaTeXStrings
+	plotlyjs()
 end
 
-# ╔═╡ 8a4a9300-a037-400d-abb6-a5754df8d265
+# ╔═╡ dfec6a32-ffa4-11eb-374b-d3703cb52be3
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 09 - Aula 01
+###### Semana 09 - Aula 02
 """
 
-# ╔═╡ 139d732f-9142-4db8-b29d-b7bf170de5c7
+# ╔═╡ f9cf143f-e5e0-412b-9e6a-dcdce847d78e
 md"""
-# Interpolação Polinomial
+## Interpolação
+### Forma de Lagrange
+
+ - Exemplo 2
 """
 
-# ╔═╡ 4593ee55-0e92-4177-a177-e6b49a285214
-df_pop = DataFrame(:ano => [1940, 1950, 1960, 1970, 1980, 1990], :populacao => [132, 151, 179, 203, 226, 249])
+# ╔═╡ 8a168fc2-a625-43bd-8a6c-9dbb638404ae
+df2 = DataFrame(x = [-1, 0, 1, 2.], y = [1, 3, 1, 1.])
 
-# ╔═╡ 83d11f30-b3b7-49da-88b2-7855e9c624b2
-plt0 = @df df_pop scatter(:ano,:populacao, label = "População Brasil (em M de habitantes)", leg = :bottomright) 
+# ╔═╡ cdddc49f-b9d8-437e-8267-b30b6a72665d
+plt2 = @df df2 scatter(:x, :y)
 
-# ╔═╡ 65e3926d-428d-4efd-930d-266d83a6fd61
-let
-	A0 = [1 1960
-		  1 1970.]
-	b0  = [179, 203]
-	a  = A0 \ b0
-	plot(plt0, x-> a[1] + a[2]*x, label = "Poli 1o gr")
+# ╔═╡ b2304829-aca8-4d10-b15d-9eda42748a3a
+begin
+	L₀(x) = (x^3 - 3x^2 + 2x)/-6
+	L₁(x) = (x+1)*(x^2 - 3x + 2)/2
+	L₂(x) = (x^3 - x^2 - 2x)/-2
+	L₃(x) = (x^3 - x)/6
+	p2₃(x) = 1 * L₀(x) + 3 * L₁(x) + 1 *  L₂(x) + 1 * L₃(x)
 end
 
-# ╔═╡ 8d96bfdf-95c9-4a2f-bb98-0bcceb2a05e4
+# ╔═╡ a34d6b08-8fb8-4a76-a026-2aea8bfcce09
+plot(plt2, p2₃, -1.1,2.1,leg = false)
+
+# ╔═╡ dcb1ac50-8f2c-4d57-8e6a-45b3b445273f
+df0 = DataFrame(x = [-1,0,1,2,3.], y = [1,1,0,-1,-2.])
+
+# ╔═╡ 3b07b25f-2293-40e6-bf68-4330da282fc4
+p₃(x) = 1 - 1/2*(x^2 + x) + 1/6* x*(x^2 -1)
+
+# ╔═╡ bec6d313-7ad9-4296-b474-4ceeb95e974f
+p₄(x) = p₃(x) - 1/24*x*(x^2-1)*(x-2)
+
+# ╔═╡ b311457a-7e5a-4358-a79c-8c5c54dd7ce4
+begin
+	plt0 = @df df0 scatter(:x, :y, label="Dados")
+	# plot!(p₃,-1.1,3.1, label = "p₃")
+	# plot!(p₄,-1.1,3.1, label = "p₄")
+end
+
+# ╔═╡ f373b04e-25d7-44a7-b10c-041be10525b7
+md"""
+### Fenômento de Runge
+
+- Exemplo 1: $f(x)  = \frac{1}{1 + 25x^2}$ tabelada no intervalo $[-1,1]$ nos pontos $x_i = -1 + \frac{2i}{n}$, para $i = 0, 1, 2, \ldots, n.$
+  - Se $n\to\infty$, temos que  $\lvert f(\bar x) - p_n(\bar x)\rvert \to \infty$, para algum $\bar x \in [-1,1]$.
+"""
+
+
+# ╔═╡ 3a0a50ab-3605-460a-836d-45ea4437e91a
+f1(x) = 1/(1+25x^2)
+
+# ╔═╡ 140f6d8e-f62e-456a-875a-af4abed0c686
+@bind n Slider(3:20, show_value=true)
+
+# ╔═╡ 6b241e37-4393-48aa-884c-7732f0a4ce8c
+xi = [-1 + 2*i/n for i = 0:n]
+
+# ╔═╡ d1a96ec0-1ec0-4ead-b2aa-d0b4b17237d9
+yi = f1.(xi)
+
+# ╔═╡ d89cf5bf-2812-4b3b-afc6-09752e702e95
+V = [xi[i]^j for i=1:n+1 ,j = 0:n]
+
+# ╔═╡ 46d7be0c-47eb-4b07-851e-5c15c72cab3b
+coef0 = V \ yi
+
+# ╔═╡ 40f9df30-d7af-49e1-859f-c05ef35b6eca
+pₙ(x) = sum(coef0[i+1]*x^(i) for i = 0:n)
+
+# ╔═╡ 46ee2096-693a-4825-bf95-50530e6defee
+begin
+	plt = plot(f1,-1,1,label=L"f(x) = \frac{1}{1+25x^2}")
+	scatter!(plt,xi,yi,label="Dados")
+	plot!(plt,pₙ,-1,1,label ="pₙ(x) - Grau $n", leg = :outerright)
+end
+
+# ╔═╡ a1597bed-8352-4d12-8e6e-9cc57a4c66e1
+md"""
+## Algoritmo Diferença Dividida
+"""
+
+# ╔═╡ af869c9d-c655-4bbb-989d-5fea3c2feefc
+function difdiv(x_data,y_data)
+	num_data = length(x_data)
+	@assert num_data == length(y_data) "Tamanho de x_data diferente de tamanho de y_data."
+	# Tabela de difrenças dividas 	
+	tab = zeros(num_data,num_data)
+	# Primeira coluna de tab =  y_data
+	tab[:,1] = y_data
+	# Preenchimento de tab triangular inferior
+	for j in 2:num_data
+		for i in j:num_data
+			tab[i,j] = (tab[i,j-1] - tab[i-1,j-1]) / (x_data[i] - x_data[i-j+1] )
+		end
+	end
+	return LowerTriangular(tab)
+end
+
+# ╔═╡ 430d4dc6-1eb9-4f14-9d45-fd93a732e95f
+difdiv(xi,yi)
+
+# ╔═╡ c6873de8-276d-4eee-a045-5bcd6a698d17
+function calcula_poli_newton(x̄::Number, x_data::Vector, tab::LowerTriangular)
+	num_data = length(x_data)
+	# Testes de consistência de dados
+	@assert (num_data, num_data) == size(tab)
+	@assert istril(tab)
+	coef = diag(tab)
+	pol_val = coef[num_data]
+	for j = num_data-1:-1:1
+		pol_val = pol_val*(x̄ - x_data[j]) + coef[j]
+	end
+    return pol_val
+end
+
+
+# ╔═╡ 09e5570e-1904-487d-9143-4d1e3c23f0a7
+md"""
+Exemplo 0
+"""
+
+# ╔═╡ 1df956a7-231c-44b9-b3cd-519bfacb20b9
+df0
+
+# ╔═╡ e441d549-bb43-4ce5-af38-adc3817218db
+tab0 = difdiv(df0.x,df0.y)
+
+# ╔═╡ 461b9460-e8d2-4827-9ad2-d196efd1b685
+size(tab0)
+
+# ╔═╡ 0aa5aa15-8b6e-4935-8b04-0e1bd78e6f02
+coef = diag(tab0)
+
+# ╔═╡ a5470771-01ac-490b-840b-f4dd75a066ad
+p̄₄(x) = calcula_poli_newton(x,df0.x,tab0)
+
+# ╔═╡ d92d6abf-6824-48a9-90e8-83ddbf6e59cc
+plot(plt0,p̄₄,-1,3,label="p̄₄",ls=:dash,lw=2)
+
+# ╔═╡ d2219b5e-ec0f-4888-99d3-561c75f358d2
 md"""
 - Exemplo 2
-
 """
 
-# ╔═╡ feae7b64-0197-4a0f-b90f-de2c5acfdd22
-A1 = [1 -1 1;  
-	  1  0 0; 
-	  1  2 4]
+# ╔═╡ 2e4ad0bb-3cff-49e8-9d30-f66064e5ad46
+x2 = [0,0.1,0.2,0.3,0.4,0.5]
 
-# ╔═╡ c0deec20-b7ed-4f89-89ba-c727453c409f
-b1 = [4, 1 ,-1]
+# ╔═╡ 47ac7bd2-3990-432d-8f34-8b58f008c71e
+y2 = exp.(x2)
 
+# ╔═╡ 036d0f88-3db6-4ded-b268-fc4a19620775
+md"""
+#### Tarefa
+- Data a tabela acima, econtrar uma aproximação para `exp(0.25)`, usando interpolação linear e quadrática.
+"""
 
-# ╔═╡ 0cf665bf-0fca-4289-af99-5cfcc7eb4199
-a1 = A1 \ b1
+# ╔═╡ 6a60fd3d-3f0a-4ce5-a8c2-688a19089be7
+x̄ = exp(0.25)
 
-# ╔═╡ 0fb8abc8-733a-4824-8a03-d398e0e9ef4c
-df_1 = DataFrame(x = [-1, 0, 2], y = [4,1,-1] )
+# ╔═╡ 286afdda-add4-4bba-964c-6bf98caccd6e
+tab_exp_linear = difdiv(x2[3:4],y2[3:4])
 
-# ╔═╡ d51c9e46-4ad0-49d7-adce-a73255bd8026
-begin 
-	plt1 = @df df_1 scatter(:x, :y, leg=false)
-	plot!(x-> a1[1] + a1[2]*x + a1[3]*x^2, -1, 4, leg=false, lw =2)
+# ╔═╡ 89470027-c1d8-451f-a7fc-0e960ed9da83
+x̄₁ = calcula_poli_newton(0.25,x2[3:4],tab_exp_linear)	
+
+# ╔═╡ 60a5ee9e-09bd-41b3-8192-636e7c05ad78
+e₁ = abs(x̄ - x̄₁)
+
+# ╔═╡ 2b3dadbf-f6e4-4820-ae87-02f2d4372f23
+tab_exp_quad1 = difdiv(x2[2:4],y2[2:4])
+
+# ╔═╡ 14863b74-1bb2-49ef-a304-082b81c0efe2
+x̄₂ = calcula_poli_newton(0.25,x2[2:4],tab_exp_quad1)	
+
+# ╔═╡ c3ff9ed8-2f11-43e0-be84-53b09e944b83
+e₂ = abs(x̄ - x̄₂)
+
+# ╔═╡ 08da3796-8f82-47a3-9c8c-7b04e8ce46b5
+tab_exp_quad2 = difdiv(x2[3:5],y2[3:5])
+
+# ╔═╡ 7451fc5d-0923-4539-b545-a62a30827f7e
+x̄₂₂ = calcula_poli_newton(0.25,x2[3:5],tab_exp_quad2)	
+
+# ╔═╡ 1818bf6a-0b17-4d3a-9948-3fd6b3570696
+e₂₂ = abs(x̄ - x̄₂₂)
+
+# ╔═╡ 7466b65e-2d4a-4591-8361-0d6021ef44ef
+p̄₂(x) = calcula_poli_newton(x,x2[2:4],tab_exp_quad1)
+
+# ╔═╡ bc126ca6-3d3c-4da2-9613-7953ad2e155b
+begin
+	plot(exp,0,1,label="exp")
+	plot!(p̄₂,0,1,label="p̄₂",ls=:dash)
+	scatter!(x2,y2,label="")
 end
 
-# ╔═╡ ae3e582a-50dd-4e8e-a2d2-fdf221834448
+# ╔═╡ b65646b4-0214-44a8-8e4b-de7b187dfe7d
 md"""
-#### Matrizes mal-conditionadas (ill-conditioned)
-
- - Número de condição da matriz inversível $A$
-
-$\kappa(A) = \lVert A \rVert \cdot \lVert A^{-1} \rVert$
-
-- Se $\kappa(A) \gg 1$, $A$ é quase singular, isto é, é mal-conditionada. 
-
-- Em Julia, `cond(A)` encontra o número de condição de `A`.
+- Exercício 11
 """
 
-# ╔═╡ d04f62e9-2e28-4aca-9566-c1be7fd0fed2
-@bind β Slider(1:10)
+# ╔═╡ 42d1e698-a563-4d86-838a-b0e6b68cd09a
+f₁₁(x) = x - exp(-x)
 
-# ╔═╡ 2c24a8ce-a781-476b-a6c7-6cdf0d629350
-ε = exp10(-β)
+# ╔═╡ e6c8c8ac-5d73-48fa-8b09-c0629a982b91
+x₁₁ = [0.06862502700517605 ,0.5, 
+0.6279414105857047]
 
-# ╔═╡ 430a4705-308e-4383-b978-c7a7546517d8
-A = [1  ε; 
-	 1 1/ε]
+# ╔═╡ cb46ca01-0560-44da-8365-c01688cffe97
+y₁₁ = f₁₁.(x₁₁)
 
-# ╔═╡ 62e42e60-e607-4e23-a4f8-e24d50cc7888
-cond(A)
+# ╔═╡ 9c479aa9-5053-4225-9a13-70b985f2a7f6
+tab₁₁ = difdiv(x₁₁,y₁₁)
 
-# ╔═╡ 1c309efe-ba4c-4a05-b5d5-99693b3418ec
-B = [1 1; 
-	 1 1+ε]
+# ╔═╡ d3d3cec5-2db4-48ca-babc-353f90ab4b3d
+a = diag(tab₁₁)
 
-# ╔═╡ c9976cae-d45c-4463-a0fd-073cb7592454
-cond(B)
+# ╔═╡ de4e4df8-125f-4ddb-8f81-dacbc024dffc
+x̄₁₁ = (-a[2] + √(a[2]^2 - 4*a[3]*a[1]))/(2*a[3])
 
-# ╔═╡ b2b014d4-f32f-43c3-8ba0-8c7dc33afa9f
-cond(I)
+# ╔═╡ e1e97698-ff46-4561-bb66-0909234bf54a
+x̂₁₁ = (- a[2] - √(a[2]^2 - 4*a[3]*a[1]))/(2*a[3])
 
-# ╔═╡ 8b0e7b7b-2950-46c9-a0a3-42e4249c888f
-md"""
-- Matriz de Vandermonde é mal-condicionada
-"""
+# ╔═╡ fc98d914-10e4-4135-95d1-79c56391bec1
+abs(f₁₁(x̄₁₁))
 
-# ╔═╡ 69f860cf-cbdd-4083-bd78-541e9f32977d
-@bind k Slider(2:20)
+# ╔═╡ 6bfced88-c79b-4226-95aa-2bdbc9b916cb
+function newton()
+	xk = 0.5
+	for k in 1:5
+		xk = xk - f₁₁(xk)/(ForwardDiff.derivative(f₁₁, xk))
+	end
+	return xk
+end
 
-# ╔═╡ ad2c2af8-ec03-4fea-84f6-3e6053c3daed
-x = collect(range(0, stop=2, length = k))
+# ╔═╡ 0cfe191e-960d-4633-9462-c959decc6ec3
+newton()
 
-# ╔═╡ 8a197d82-e97c-4d71-afa8-fdc6c47ad7fd
-n = length(x)-1
+# ╔═╡ 609b8247-b9ff-4acd-b43a-213b81b29837
+abs(f₁₁(newton()))
 
-# ╔═╡ 99c3af43-3edb-4544-8989-66863b86f79e
-V = [x[i]^(j-1) for i in 1:n+1, j in 1:n+1 ]
+# ╔═╡ 521461dd-1f3a-430a-adbc-57d1f256bdfa
+df_casos = DataFrame(Data = [10,18,25,32,39], H1N1 = [153695,160129,174565,185067,190765])
 
-# ╔═╡ fdd1ffec-067b-4d39-949f-2c056fb029b7
-cond(V)
+# ╔═╡ 8c28317e-4740-453b-94d1-06dc548567ba
+tab_h1n1 = difdiv(df_casos.Data[3:5],df_casos.H1N1[3:5])
 
-# ╔═╡ 791c53a3-f7ae-4a26-8578-8161db4d2061
-C = [1 2;
-     1.0001 2]
+# ╔═╡ f019b63a-b6b8-4448-82c5-197bf8e75a65
+coef_h1n1 = diag(tab_h1n1)
 
-# ╔═╡ 24417256-68ed-4cce-b5e6-d07456dbf34b
-cond(C)
+# ╔═╡ 23af43bb-d81d-4a07-bc9f-f1c7b6a7c6a6
+p₂_h1n1(x) = calcula_poli_newton(x,df_casos.Data[3:5],tab_h1n1 )
 
-# ╔═╡ 1aad8bc8-bf72-46ae-b856-f4b80d6b437b
-md"""
- - Exemplo 3: Qual polinômio interpola $f(x) = 1/x^2$ em $x_0 = 2, x_1 = 2.5, x_2 = 4$?
-"""
+# ╔═╡ c2fcc647-c561-48bf-8a17-a16dc09c1871
+p₂_h1n1(36)
 
-# ╔═╡ 0030647a-830b-4ff5-a8c0-a06e85136e7c
-f1(x) = 1/x^2
-
-# ╔═╡ 294a4d15-22b6-484b-b402-281214b98122
-x1 = [2, 2.5, 4]
-
-# ╔═╡ c7489196-bd7f-480e-ab2d-5749f4488cf7
-y1 = f1.(x1)
-
-# ╔═╡ 8c2feba7-9c58-42c0-bfa3-0004cec98322
-md"""
- - Montar Sistema Linear
-"""
-
-# ╔═╡ 3f3fd73c-a5ba-4418-853d-19bdf80df152
-
-
-# ╔═╡ ad0c7d91-dc9f-45d4-9099-3dd1b0dc571a
-p₂(x) = 0.0575x^2 - 0.4388x + 0.8975
-
-# ╔═╡ 688d547a-afbd-4357-9da9-95010aa1b21c
-f1(3)
-
-# ╔═╡ d8f6bb9d-5aa0-4de0-80b6-77ac0f26d092
-p₂(3)
-
-# ╔═╡ e601a47e-d9f5-410f-a9d5-04e595625bc2
-erro = f1(3) - p₂(3)
-
-# ╔═╡ 792e5b49-ff05-4dae-a8bc-4039e9491815
+# ╔═╡ 5e8534c1-2262-498e-bab8-5c8c8a09d648
 begin
-	plot(f1,1,5, label="f(x) = 1/x²")
-	scatter!(x1, y1,label="")
-	scatter!([3], [f1(3)],label="")
-	scatter!([3], [p₂(3)],label="")
-	plot!(p₂, label="p₂(x)",lw=2)
+	@df df_casos scatter(:Data,:H1N1, label="casos H1N1",leg=:bottomright)
+	plot!(p₂_h1n1)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -186,6 +298,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
@@ -194,7 +307,8 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 [compat]
 DataFrames = "~1.2.2"
 ForwardDiff = "~0.10.19"
-Plots = "~1.20.0"
+LaTeXStrings = "~1.2.1"
+Plots = "~1.20.1"
 PlutoUI = "~0.7.9"
 StatsPlots = "~0.14.26"
 """
@@ -292,9 +406,9 @@ version = "0.3.0"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "344f143fa0ec67e47917848795ab19c6a455f32c"
+git-tree-sha1 = "79b9563ef3f2cc5fc6d3046a5ee1a57c9de52495"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.32.0"
+version = "3.33.0"
 
 [[CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -355,9 +469,9 @@ version = "1.0.3"
 
 [[DiffRules]]
 deps = ["NaNMath", "Random", "SpecialFunctions"]
-git-tree-sha1 = "85d2d9e2524da988bffaf2a381864e20d2dae08d"
+git-tree-sha1 = "3ed8fa7178a10d1cd0f1ca524f249ba6937490c0"
 uuid = "b552c78f-8df3-52c6-915a-8e097449b14b"
-version = "1.2.1"
+version = "1.3.0"
 
 [[Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
@@ -542,6 +656,11 @@ git-tree-sha1 = "15732c475062348b0165684ffe28e85ea8396afc"
 uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
 version = "1.0.0"
 
+[[IrrationalConstants]]
+git-tree-sha1 = "f76424439413893a832026ca355fe273e93bce94"
+uuid = "92d709cd-6900-40b7-9082-c6be49f344b6"
+version = "0.1.0"
+
 [[IterTools]]
 git-tree-sha1 = "05110a2ab1fc5f932622ffea2a003221f4782c18"
 uuid = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
@@ -681,10 +800,10 @@ deps = ["Libdl", "libblastrampoline_jll"]
 uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[LogExpFunctions]]
-deps = ["DocStringExtensions", "LinearAlgebra"]
-git-tree-sha1 = "7bd5f6565d80b6bf753738d2bc40a5dfea072070"
+deps = ["DocStringExtensions", "IrrationalConstants", "LinearAlgebra"]
+git-tree-sha1 = "3d682c07e6dd250ed082f883dc88aee7996bf2cc"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.2.5"
+version = "0.3.0"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -838,9 +957,9 @@ version = "1.0.11"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
-git-tree-sha1 = "e39bea10478c6aff5495ab522517fae5134b40e3"
+git-tree-sha1 = "8365fa7758e2e8e4443ce866d6106d8ecbb4474e"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.20.0"
+version = "1.20.1"
 
 [[PlutoUI]]
 deps = ["Base64", "Dates", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "Suppressor"]
@@ -999,10 +1118,10 @@ uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.33.9"
 
 [[StatsFuns]]
-deps = ["LogExpFunctions", "Rmath", "SpecialFunctions"]
-git-tree-sha1 = "30cd8c360c54081f806b1ee14d2eecbef3c04c49"
+deps = ["IrrationalConstants", "LogExpFunctions", "Reexport", "Rmath", "SpecialFunctions"]
+git-tree-sha1 = "20d1bb720b9b27636280f751746ba4abb465f19d"
 uuid = "4c63d2b9-4356-54db-8cca-17b64c39e42c"
-version = "0.9.8"
+version = "0.9.9"
 
 [[StatsPlots]]
 deps = ["Clustering", "DataStructures", "DataValues", "Distributions", "Interpolations", "KernelDensity", "LinearAlgebra", "MultivariateStats", "Observables", "Plots", "RecipesBase", "RecipesPipeline", "Reexport", "StatsBase", "TableOperations", "Tables", "Widgets"]
@@ -1295,44 +1414,70 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╟─8a4a9300-a037-400d-abb6-a5754df8d265
-# ╟─9cee1f22-fa37-11eb-3dbb-adee03240694
-# ╟─139d732f-9142-4db8-b29d-b7bf170de5c7
-# ╠═4593ee55-0e92-4177-a177-e6b49a285214
-# ╠═83d11f30-b3b7-49da-88b2-7855e9c624b2
-# ╠═65e3926d-428d-4efd-930d-266d83a6fd61
-# ╟─8d96bfdf-95c9-4a2f-bb98-0bcceb2a05e4
-# ╠═feae7b64-0197-4a0f-b90f-de2c5acfdd22
-# ╠═c0deec20-b7ed-4f89-89ba-c727453c409f
-# ╠═0cf665bf-0fca-4289-af99-5cfcc7eb4199
-# ╟─0fb8abc8-733a-4824-8a03-d398e0e9ef4c
-# ╠═d51c9e46-4ad0-49d7-adce-a73255bd8026
-# ╟─ae3e582a-50dd-4e8e-a2d2-fdf221834448
-# ╟─d04f62e9-2e28-4aca-9566-c1be7fd0fed2
-# ╟─2c24a8ce-a781-476b-a6c7-6cdf0d629350
-# ╠═430a4705-308e-4383-b978-c7a7546517d8
-# ╠═62e42e60-e607-4e23-a4f8-e24d50cc7888
-# ╠═1c309efe-ba4c-4a05-b5d5-99693b3418ec
-# ╠═c9976cae-d45c-4463-a0fd-073cb7592454
-# ╠═b2b014d4-f32f-43c3-8ba0-8c7dc33afa9f
-# ╟─8b0e7b7b-2950-46c9-a0a3-42e4249c888f
-# ╠═69f860cf-cbdd-4083-bd78-541e9f32977d
-# ╠═ad2c2af8-ec03-4fea-84f6-3e6053c3daed
-# ╠═8a197d82-e97c-4d71-afa8-fdc6c47ad7fd
-# ╠═99c3af43-3edb-4544-8989-66863b86f79e
-# ╠═fdd1ffec-067b-4d39-949f-2c056fb029b7
-# ╠═791c53a3-f7ae-4a26-8578-8161db4d2061
-# ╠═24417256-68ed-4cce-b5e6-d07456dbf34b
-# ╠═1aad8bc8-bf72-46ae-b856-f4b80d6b437b
-# ╠═0030647a-830b-4ff5-a8c0-a06e85136e7c
-# ╠═294a4d15-22b6-484b-b402-281214b98122
-# ╠═c7489196-bd7f-480e-ab2d-5749f4488cf7
-# ╟─8c2feba7-9c58-42c0-bfa3-0004cec98322
-# ╠═3f3fd73c-a5ba-4418-853d-19bdf80df152
-# ╠═ad0c7d91-dc9f-45d4-9099-3dd1b0dc571a
-# ╠═688d547a-afbd-4357-9da9-95010aa1b21c
-# ╠═d8f6bb9d-5aa0-4de0-80b6-77ac0f26d092
-# ╠═e601a47e-d9f5-410f-a9d5-04e595625bc2
-# ╠═792e5b49-ff05-4dae-a8bc-4039e9491815
+# ╠═dfec6a32-ffa4-11eb-374b-d3703cb52be3
+# ╠═a385b7b2-740f-4cd6-8c3d-091b944fce12
+# ╠═f9cf143f-e5e0-412b-9e6a-dcdce847d78e
+# ╠═8a168fc2-a625-43bd-8a6c-9dbb638404ae
+# ╠═cdddc49f-b9d8-437e-8267-b30b6a72665d
+# ╠═b2304829-aca8-4d10-b15d-9eda42748a3a
+# ╠═a34d6b08-8fb8-4a76-a026-2aea8bfcce09
+# ╠═dcb1ac50-8f2c-4d57-8e6a-45b3b445273f
+# ╠═3b07b25f-2293-40e6-bf68-4330da282fc4
+# ╠═bec6d313-7ad9-4296-b474-4ceeb95e974f
+# ╠═b311457a-7e5a-4358-a79c-8c5c54dd7ce4
+# ╟─f373b04e-25d7-44a7-b10c-041be10525b7
+# ╠═3a0a50ab-3605-460a-836d-45ea4437e91a
+# ╠═140f6d8e-f62e-456a-875a-af4abed0c686
+# ╟─46ee2096-693a-4825-bf95-50530e6defee
+# ╠═6b241e37-4393-48aa-884c-7732f0a4ce8c
+# ╠═d1a96ec0-1ec0-4ead-b2aa-d0b4b17237d9
+# ╠═d89cf5bf-2812-4b3b-afc6-09752e702e95
+# ╠═46d7be0c-47eb-4b07-851e-5c15c72cab3b
+# ╠═40f9df30-d7af-49e1-859f-c05ef35b6eca
+# ╠═430d4dc6-1eb9-4f14-9d45-fd93a732e95f
+# ╟─a1597bed-8352-4d12-8e6e-9cc57a4c66e1
+# ╠═af869c9d-c655-4bbb-989d-5fea3c2feefc
+# ╠═c6873de8-276d-4eee-a045-5bcd6a698d17
+# ╟─09e5570e-1904-487d-9143-4d1e3c23f0a7
+# ╠═1df956a7-231c-44b9-b3cd-519bfacb20b9
+# ╠═e441d549-bb43-4ce5-af38-adc3817218db
+# ╠═461b9460-e8d2-4827-9ad2-d196efd1b685
+# ╠═0aa5aa15-8b6e-4935-8b04-0e1bd78e6f02
+# ╠═a5470771-01ac-490b-840b-f4dd75a066ad
+# ╠═d92d6abf-6824-48a9-90e8-83ddbf6e59cc
+# ╟─d2219b5e-ec0f-4888-99d3-561c75f358d2
+# ╠═2e4ad0bb-3cff-49e8-9d30-f66064e5ad46
+# ╠═47ac7bd2-3990-432d-8f34-8b58f008c71e
+# ╟─036d0f88-3db6-4ded-b268-fc4a19620775
+# ╠═6a60fd3d-3f0a-4ce5-a8c2-688a19089be7
+# ╠═286afdda-add4-4bba-964c-6bf98caccd6e
+# ╠═89470027-c1d8-451f-a7fc-0e960ed9da83
+# ╠═60a5ee9e-09bd-41b3-8192-636e7c05ad78
+# ╠═2b3dadbf-f6e4-4820-ae87-02f2d4372f23
+# ╠═14863b74-1bb2-49ef-a304-082b81c0efe2
+# ╠═c3ff9ed8-2f11-43e0-be84-53b09e944b83
+# ╠═08da3796-8f82-47a3-9c8c-7b04e8ce46b5
+# ╠═7451fc5d-0923-4539-b545-a62a30827f7e
+# ╠═1818bf6a-0b17-4d3a-9948-3fd6b3570696
+# ╠═7466b65e-2d4a-4591-8361-0d6021ef44ef
+# ╠═bc126ca6-3d3c-4da2-9613-7953ad2e155b
+# ╠═b65646b4-0214-44a8-8e4b-de7b187dfe7d
+# ╠═42d1e698-a563-4d86-838a-b0e6b68cd09a
+# ╠═e6c8c8ac-5d73-48fa-8b09-c0629a982b91
+# ╠═cb46ca01-0560-44da-8365-c01688cffe97
+# ╠═9c479aa9-5053-4225-9a13-70b985f2a7f6
+# ╠═d3d3cec5-2db4-48ca-babc-353f90ab4b3d
+# ╠═de4e4df8-125f-4ddb-8f81-dacbc024dffc
+# ╠═e1e97698-ff46-4561-bb66-0909234bf54a
+# ╠═fc98d914-10e4-4135-95d1-79c56391bec1
+# ╠═6bfced88-c79b-4226-95aa-2bdbc9b916cb
+# ╠═0cfe191e-960d-4633-9462-c959decc6ec3
+# ╠═609b8247-b9ff-4acd-b43a-213b81b29837
+# ╠═521461dd-1f3a-430a-adbc-57d1f256bdfa
+# ╠═8c28317e-4740-453b-94d1-06dc548567ba
+# ╠═f019b63a-b6b8-4448-82c5-197bf8e75a65
+# ╠═23af43bb-d81d-4a07-bc9f-f1c7b6a7c6a6
+# ╠═c2fcc647-c561-48bf-8a17-a16dc09c1871
+# ╠═5e8534c1-2262-498e-bab8-5c8c8a09d648
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
