@@ -17,7 +17,7 @@ end
 # ╔═╡ a385b7b2-740f-4cd6-8c3d-091b944fce12
 begin
 	using Plots, PlutoUI, ForwardDiff, DataFrames, StatsPlots, LinearAlgebra, LaTeXStrings
-	plotlyjs()
+	gr()
 end
 
 # ╔═╡ dfec6a32-ffa4-11eb-374b-d3703cb52be3
@@ -40,7 +40,7 @@ md"""
 df2 = DataFrame(x = [-1, 0, 1, 2.], y = [1, 3, 1, 1.])
 
 # ╔═╡ cdddc49f-b9d8-437e-8267-b30b6a72665d
-plt2 = @df df2 scatter(:x, :y)
+plt2 = @df df2 scatter(:x, :y, label = "Pontos")
 
 # ╔═╡ b2304829-aca8-4d10-b15d-9eda42748a3a
 begin
@@ -52,7 +52,13 @@ begin
 end
 
 # ╔═╡ a34d6b08-8fb8-4a76-a026-2aea8bfcce09
-plot(plt2, p2₃, -1.1,2.1,leg = false)
+begin
+	plot(plt2, p2₃, -1.1,2.1,label = "")
+	plot!(L₀, label = "L₀", lw = 2)
+	plot!(x -> 3*L₁(x), label = "L₁", lw = 2)
+	plot!(L₂, label = "L₂", lw = 2)
+	plot!(L₃, label = "L₃", lw = 2)
+end
 
 # ╔═╡ dcb1ac50-8f2c-4d57-8e6a-45b3b445273f
 df0 = DataFrame(x = [-1,0,1,2,3.], y = [1,1,0,-1,-2.])
@@ -1416,7 +1422,7 @@ version = "0.9.1+5"
 # ╔═╡ Cell order:
 # ╠═dfec6a32-ffa4-11eb-374b-d3703cb52be3
 # ╠═a385b7b2-740f-4cd6-8c3d-091b944fce12
-# ╠═f9cf143f-e5e0-412b-9e6a-dcdce847d78e
+# ╟─f9cf143f-e5e0-412b-9e6a-dcdce847d78e
 # ╠═8a168fc2-a625-43bd-8a6c-9dbb638404ae
 # ╠═cdddc49f-b9d8-437e-8267-b30b6a72665d
 # ╠═b2304829-aca8-4d10-b15d-9eda42748a3a
