@@ -78,7 +78,7 @@ Dia = [3,  6 , 9 , 12 , 15 , 18,  21,  24,  27]
 Temp = [31.2,  32.0 , 35.3 , 34.1  ,35.0 , 35.5 , 34.1 , 35.1 , 36.0]
 
 # ╔═╡ 40634965-a08e-4c69-904f-1d0b0b474fed
-df_T  =DataFrame(Dia = Dia, Temperatura = Temp)
+df_T  = DataFrame(Dia = Dia, Temperatura = Temp)
 
 # ╔═╡ fba0ce9e-cfb8-4d96-b3aa-45a063ef8892
 T̄ = 13
@@ -109,6 +109,115 @@ T₂(T̄)
 
 # ╔═╡ 1078a513-29a9-48cf-a485-41da1519a33c
 T₃(T̄)
+
+# ╔═╡ 12ace80d-ccce-4056-a831-977bef1c0a87
+begin
+	pts_x = collect(range(0,stop = 2, length = 5))
+	f(x) = 1 + 2x 
+	pts_y = f.(pts_x)
+	scatter(pts_x, pts_y)
+end
+
+# ╔═╡ 908520b8-d979-498c-99cb-b38a124906f6
+	tabex_pts = difdiv(pts_x, pts_y)
+
+# ╔═╡ 5111a0ad-3068-493c-a9dd-120c1c7f7f4e
+md"""
+#### Exercício 12 (Lista 4)
+
+1. Use interpolação polinomial para estimar μ em T = 2.5C.
+1. Ajuste uma parábola aos dados da tabela (no sentido de quadrados mínimos) e estime μ em T = 2.5C usando esta parábola.
+1. Compare os resultados obtidos nos itens 1) e 2).
+
+
+"""
+
+# ╔═╡ f6f30667-5d08-477e-946d-49a36f15e2e4
+begin
+	T = [0 , 5  ,10 , 20 , 30 ,  40]
+	μ = [1.787 , 1.519 , 1.307 , 1.002 , 0.7975 , 0.6529]
+	df_ex = DataFrame(T = T, μ = μ)
+end
+
+# ╔═╡ 0dbfdc5a-8c07-449b-b727-27e15eeedd55
+	plt_ex12 = @df df_ex scatter(:T, :μ, label = "Viscosidade da Água")
+
+# ╔═╡ b202a2bd-918f-49a6-af68-11c539222c41
+
+
+# ╔═╡ e958791f-5819-482e-b272-005b392c3a6a
+md"""
+1) Interpolação
+"""
+
+# ╔═╡ af9f8935-ba1b-4a08-a8fe-d5361ef9e21a
+begin
+	tabex12_linear = difdiv(df_ex[1:2,:T], df_ex[1:2,:μ])
+	μ_linear(T) = avalia_pol_newton(T, df_ex.T[1:2], tabex12_linear)
+	plt_ex12_linear = plot(plt_ex12, μ_linear)
+	scatter!(plt_ex12_linear, [2.5], [μ_linear(2.5)])
+end
+
+# ╔═╡ f588ffab-14cd-41b0-931c-5d3f067e99b6
+μ_linear(2.5)
+
+# ╔═╡ 92c8b902-1f8c-47fe-9608-c70b6f5f3ef0
+begin
+	tabex12_quad = difdiv(df_ex[1:3,:T], df_ex[1:3,:μ])
+	μ_quad(T) = avalia_pol_newton(T, df_ex.T[1:3], tabex12_quad)
+	plt_ex12_quad = plot(plt_ex12, μ_quad)
+	scatter!(plt_ex12_quad,[2.5], [μ_quad(2.5)])
+end
+
+# ╔═╡ 43685bfb-82a9-4921-a99e-bcb2b0b0fe1a
+μ_quad(2.5)
+
+# ╔═╡ d466f9ed-1cfb-45c6-9718-daef225dd717
+begin
+	tabex12_todos = difdiv(df_ex.T, df_ex.μ)
+	μ_todos(T) = avalia_pol_newton(T, df_ex.T, tabex12_todos)
+	plt_ex12_todos = plot(plt_ex12, μ_todos)
+	scatter!(plt_ex12_todos,[2.5], [μ_todos(2.5)])
+end
+
+# ╔═╡ 93e2e6e2-ea51-47f5-88d7-63ab5208eebf
+md"""
+2) Quadrados Mínimos (parábola)
+"""
+
+# ╔═╡ 72e76172-d306-4d37-be90-de80fe7acec5
+num_dadosex12, = size(df_ex)
+
+# ╔═╡ c7176f08-772e-402b-b50a-ffba48a26167
+A = [ones(num_dadosex12) df_ex.T (df_ex.T).^2] # p₂(T) = α + βT + γT²
+
+# ╔═╡ cc05f7ba-b4e6-4930-adb2-8c4727882933
+b = df_ex.μ
+
+# ╔═╡ 96e77979-3a5c-4172-aabb-858e1f199001
+A'A
+
+# ╔═╡ a34f15b2-abcd-40e2-b5b4-e6a2b7bb35b4
+ A'b
+
+# ╔═╡ 41f20d0b-1518-4b74-83c1-71f0384dce85
+#Equações Normais AᵀAα =  Aᵀb
+α = (A'A) \ (A'b)
+
+# ╔═╡ b36b4288-9b17-4514-81ec-8a61eaa68594
+begin
+	#   μ_qm2(T) = dot(α, [1, T, T^2])
+		μ_qm2(T) = α[1] + α[2]*T + α[3]*T^2
+		plt_ex12_QM = plot(plt_ex12, μ_qm2)
+		scatter!(plt_ex12_QM,[2.5], [μ_qm2(2.5)])
+	
+end
+
+# ╔═╡ 98f07865-9b02-42b6-943a-81afa09f6d3b
+μ_qm2(2.5)
+
+# ╔═╡ 486f576e-ae3e-4352-9610-f2f1ea639bda
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1376,5 +1485,27 @@ version = "0.9.1+5"
 # ╠═1df3e19a-ee0c-4191-9d0f-b8eee2ca2f73
 # ╠═80b683f2-8d36-459d-bada-b1daa0e7b99b
 # ╠═1078a513-29a9-48cf-a485-41da1519a33c
+# ╠═12ace80d-ccce-4056-a831-977bef1c0a87
+# ╠═908520b8-d979-498c-99cb-b38a124906f6
+# ╟─5111a0ad-3068-493c-a9dd-120c1c7f7f4e
+# ╠═f6f30667-5d08-477e-946d-49a36f15e2e4
+# ╠═0dbfdc5a-8c07-449b-b727-27e15eeedd55
+# ╠═b202a2bd-918f-49a6-af68-11c539222c41
+# ╟─e958791f-5819-482e-b272-005b392c3a6a
+# ╠═af9f8935-ba1b-4a08-a8fe-d5361ef9e21a
+# ╠═f588ffab-14cd-41b0-931c-5d3f067e99b6
+# ╠═92c8b902-1f8c-47fe-9608-c70b6f5f3ef0
+# ╠═43685bfb-82a9-4921-a99e-bcb2b0b0fe1a
+# ╠═d466f9ed-1cfb-45c6-9718-daef225dd717
+# ╠═93e2e6e2-ea51-47f5-88d7-63ab5208eebf
+# ╠═72e76172-d306-4d37-be90-de80fe7acec5
+# ╠═c7176f08-772e-402b-b50a-ffba48a26167
+# ╠═cc05f7ba-b4e6-4930-adb2-8c4727882933
+# ╠═96e77979-3a5c-4172-aabb-858e1f199001
+# ╠═a34f15b2-abcd-40e2-b5b4-e6a2b7bb35b4
+# ╠═41f20d0b-1518-4b74-83c1-71f0384dce85
+# ╠═b36b4288-9b17-4514-81ec-8a61eaa68594
+# ╠═98f07865-9b02-42b6-943a-81afa09f6d3b
+# ╠═486f576e-ae3e-4352-9610-f2f1ea639bda
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
