@@ -14,181 +14,121 @@ macro bind(def, element)
     end
 end
 
-# ╔═╡ 04c2a6c2-9a2e-11ec-32de-a9af910ef847
-using Plots, LinearAlgebra, PlutoUI
+# ╔═╡ b1265ffd-a378-433d-afeb-7c51ccf5b3ce
+using LinearAlgebra, PlutoUI, Plots
 
-# ╔═╡ 92f8fa30-b2ef-4b4c-8248-e2180f6d74cd
+# ╔═╡ aaf4150a-1beb-4db2-840c-145af2b7bfcf
 md"""
 ##### UFSC/Blumenau
 ##### MAT1831 - Métodos Numéricos
 ##### Prof. Luiz-Rafael Santos
-###### Semana 13 - Aulas 01-02
+###### Semana 14 - Aulas 01
 """
 
-# ╔═╡ 68390c81-c4d0-4858-a12f-01e074a9f636
+# ╔═╡ 7f6f88bf-6cb3-4e38-b97d-aa427dbfb80b
 plotly()
 
-# ╔═╡ dae1a521-c326-433f-a698-746ad47c1dfb
+# ╔═╡ 6cffc7f5-255e-460e-abb4-0ee901f78bd7
 md"""
-#### Métodos Numéricos para Equações Diferenciais
-##### Problemas de Valor Inicial (PVI)
-
-$$\begin{cases} y' = f(t,y), t\in [a,b] \\
-y(a) = y_0 \end{cases}\tag{PVI}$$
+#### Vetorizando métodos para PVIs
 """
 
-# ╔═╡ 816f4b09-0f90-4c06-a158-2fbf4dadddc3
-md"""
-##### Método de Euler
-"""
+# ╔═╡ f0320fb4-40b2-4ab0-9946-311712a614d4
 
-# ╔═╡ 7b09f460-c350-4ac1-b285-d03b8a9ce619
-md"""
-###### Exemplo 1
-"""
 
-# ╔═╡ 230616c8-261b-4db1-bb9a-29bed8597b4e
-y(t) = (1+t) + exp(-t)
-
-# ╔═╡ 099f6e36-908e-45a8-a1d2-3f8dfc57681c
-y₀ = 2
-
-# ╔═╡ c5a8737a-3adb-418f-b156-08577da036f1
-n = 5
-
-# ╔═╡ dafaa153-3fc4-4836-a610-f1bcaac7d07a
-h = 0.2
-
-# ╔═╡ c51b3463-627b-4409-b46e-8c0c96eb1f3a
-f₁(t,y) = t - y + 2
-
-# ╔═╡ ef22620b-a4ed-4706-91c3-53f1e1f038a3
-tᵢ = collect(0:0.2:1)
-
-# ╔═╡ 0f563be9-f5ce-4a22-86fd-92cce959650d
-begin 
-	yᵢ = zeros(size(tᵢ))
-	yᵢ[1] = y₀
-	for  i ∈ 1:n
-		yᵢ[i+1] = yᵢ[i] + h*f₁(tᵢ[i],yᵢ[i])
-	end
-	yᵢ
-end
-
-# ╔═╡ 8f6c7640-6cb0-42e7-8f0d-8d9ba0dd394c
-begin
-	plot(y, 0,1.1, label = "Sol (Trajetória)")
-	scatter!(tᵢ,yᵢ,label = "Aproximação por Euler")
-end
-
-# ╔═╡ f0ba7881-ea64-4d71-a312-e12145bb08a5
-function euler(f,a,b,y₀,n)
-	h = (b - a)/n
+# ╔═╡ 256a6827-be2b-4fc0-8dce-fda5ca1d0cb2
+function euler(f, a, b, y₀, h)
 	tᵢ = collect(range(a, stop = b, step = h))
-	yᵢ = zeros(size(tᵢ))
-	yᵢ[1] = y₀
+	n = length(tᵢ)-1
+	yᵢ = zeros(length(y₀),length(tᵢ))
+	yᵢ[:,1] .= y₀
 	for  i ∈ 1:n
-		 yᵢ[i+1] = yᵢ[i] + h*f(tᵢ[i],yᵢ[i])
+		 yᵢ[:,i+1] .= yᵢ[:,i] .+ h*f(tᵢ[i],yᵢ[:,i])
 	end
 	yᵢ
 end
 
-# ╔═╡ 1535cf47-954e-42c0-9e56-ed19e31fbbec
-md"""
-#### Euler Modificado
-
-$$\begin{cases} k_1 = f(t_i, y_i) \\
-k_2 = f(t_{i+1}, y_i + h k_1) \\
-y_{i+1} = y_i + h \dfrac{(k_1 + k_2)}{2}
-\end{cases}$$
-"""
-
-# ╔═╡ 2608d42f-9886-406a-a126-20feb07a03b9
-function euler_modificado(f,a,b,y₀,n)
-	h = (b - a)/n
+# ╔═╡ 0ec4fb48-56c3-4c00-a111-bad162eed35c
+function euler_modificado(f, a, b, y₀, h)
 	tᵢ = collect(range(a, stop = b, step = h))
-	yᵢ = zeros(size(tᵢ))
-	yᵢ[1] = y₀
+	n = length(tᵢ)-1
+	yᵢ = zeros(length(y₀),length(tᵢ))
+	yᵢ[:,1] = y₀
 	for  i ∈ 1:n
-		k₁ = f(tᵢ[i],yᵢ[i])
-		k₂ = f(tᵢ[i+1],yᵢ[i] + h*k₁)
-		 yᵢ[i+1] = yᵢ[i] + h*(k₁ + k₂)/2
+		k₁ = f(tᵢ[i],yᵢ[:,i])
+		k₂ = f(tᵢ[i+1],yᵢ[:,i] + h*k₁)
+		 yᵢ[:,i+1] = yᵢ[:,i] + h*(k₁ + k₂)/2
 	end
 	yᵢ
 end
 
-# ╔═╡ ea27baa0-9ebb-4c22-acfc-b4ba24f874c2
-md"""
-###### Exemplo 2
-"""
-
-# ╔═╡ 7b7c4e66-47a7-4907-909f-ccf563082c5e
-md"""
-n = $(@bind n₂  Slider(1:40, show_value = true))
-"""
-
-# ╔═╡ 81e22155-ccbf-4455-a496-1f09873778bd
-begin
-	f₂(t,y) = 1 - y/t
-	a₂, b₂ = 2, 2.1
-	y₀² = 2
-	yᵢ²ₑ = euler(f₂,a₂,b₂,y₀², n₂)
-end
-
-# ╔═╡ 29ba7358-b74e-484f-9e1e-855eb2f15d64
-begin 
-	plot(t-> t/2 + 2/t,a₂,b₂ ) #Solução
-	pltₑ = scatter!(range(a₂, stop = b₂, length = n₂ + 1), yᵢ²ₑ, leg = false, title = "E")
-end
-
-# ╔═╡ 8905e77c-26fe-46d0-9157-b65b159e56dd
-yᵢ²ₑₘ = euler_modificado(f₂,a₂,b₂,y₀², n₂)
-
-
-# ╔═╡ e00dd4be-bde0-46de-a825-283fb8741a4f
-begin 
-	plot(t-> t/2 + 2/t,a₂,b₂ ) #Solução
-	pltₑₘ = scatter!(range(a₂, stop = b₂, length = n₂ + 1), yᵢ²ₑₘ, leg = false, title = "EM")
-	plot(pltₑₘ,pltₑ)
-end
-
-# ╔═╡ 2a416d22-8513-4fc0-9181-f2acebf6c70d
-md"""
-#### Runge-Kutta 4ª Ordem
-
-$$\begin{cases} k_1 = f(t_i, y_i) \\
-k_2 = f(t_{i} + \frac{h}{2}, y_i + \frac{h}{2} k_1) \\
-k_3 = f(t_{i} + \frac{h}{2}, y_i + \frac{h}{2} k_2) \\
-k_4 = f(t_{i} + {h}, y_i + {h} k_4) \\
-y_{i+1} = y_i + h \dfrac{(k_1 + 2k_2 + 2k_3 + k_4)}{6}
-\end{cases}$$
-"""
-
-# ╔═╡ d4381073-92fb-45ae-ba37-feba67c6dea6
-function rk4(f, a, b, y₀, n)
-	h = (b - a)/n
+# ╔═╡ c3d1f2ec-4f4f-42f6-a99e-0e7d0ea5ada1
+function rk4(f, a, b, y₀, h)
 	tᵢ = collect(range(a, stop = b, step = h)) #grid
-	yᵢ = zeros(size(tᵢ))
-	yᵢ[1] = y₀
+	n = length(tᵢ)-1
+	yᵢ = zeros(length(y₀),length(tᵢ))
+	yᵢ[:,1] .= y₀
 	for  i ∈ 1:n
-		k₁ = f(tᵢ[i],yᵢ[i])
-		k₂ = f(tᵢ[i] + (h/2),yᵢ[i] + (h/2)*k₁)
-		k₃ = f(tᵢ[i] + (h/2),yᵢ[i] + (h/2)*k₂)
-		k₄ = f(tᵢ[i] + h,yᵢ[i] + h*k₃)
-		yᵢ[i+1] = yᵢ[i] + (h/6)*(k₁ + 2k₂ +2k₃+ k₄)
+		k₁ = f(tᵢ[i],yᵢ[:,i])
+		k₂ = f(tᵢ[i] + (h/2),yᵢ[:,i] + (h/2)*k₁)
+		k₃ = f(tᵢ[i] + (h/2),yᵢ[:,i] + (h/2)*k₂)
+		k₄ = f(tᵢ[i] + h,yᵢ[:,i] + h*k₃)
+		yᵢ[:,i+1] .= yᵢ[:,i] .+ (h/6)*(k₁ + 2k₂ +2k₃+ k₄)
 	end
 	yᵢ
 end
 
-# ╔═╡ b1b5c21a-4943-4ddd-a9e9-45ca04adb900
-yᵢ²ᵣₖ = rk4(f₂,a₂,b₂,y₀², n₂)
+# ╔═╡ 8531f8cd-f653-40c4-aa39-5eac8f964e6f
+md"""
+###### Exemplo 16.4 (Ascher)
 
-# ╔═╡ 818dd875-552d-425f-a27c-c576807c6814
-begin 
-	plot(t-> t/2 + 2/t,a₂,b₂ ) #Solução
-	pltᵣₖ = scatter!(range(a₂, stop = b₂, length = n₂ + 1), yᵢ²ᵣₖ, leg = false, title = "RK4")
-	plot(pltᵣₖ,pltₑₘ,pltₑ)
+- Fisiologia de plantas
+"""
+
+# ╔═╡ b37dafe2-9e1e-11ec-2919-dbe1ea6a609c
+function irradia(t,y)
+	f = similar(y) # mesmo tamanho de y
+	f[1] = -1.71*y[1] + .43*y[2] + 8.32*y[3] + .0007
+	f[2] = 1.71*y[1] - 8.75*y[2]
+	f[3] = -10.03*y[3] + .43*y[4] + .035*y[5]
+	f[4]= 8.32*y[2] + 1.71*y[3] - 1.12*y[4]
+	f[5] = -1.745*y[5] + .43*y[6] + .43*y[7]
+	f[6] = -280*y[6]*y[8] + .69*y[4] + 1.71*y[5] - .43*y[6] + .69*y[7]
+	f[7] = 280*y[6]*y[8] - 1.81*y[7]
+	f[8] = -280*y[6]*y[8] + 1.81*y[7]
+	return f
 end
+
+# ╔═╡ d3ff2364-a157-4e21-a0b3-27de322617c0
+
+
+# ╔═╡ d45f65f7-0eec-4c21-b7f5-ebeb1bc31ae2
+md"""
+n = $(@bind n  Slider(300000:300000, show_value = true))
+"""
+
+# ╔═╡ 0642c0eb-0aec-46ea-8db4-7b8452cb52a5
+begin
+	m = 8
+	a, b = 0, 332
+	y₀ = zeros(m)
+	y₀[1] = 1
+	y₀[end] = .0057
+	h = (b-a)/n
+	h = 0.0001
+end
+
+# ╔═╡ 04d84847-d99c-4783-9cfd-84746cc7abe4
+euler(irradia,a,b,y₀,h)	
+
+# ╔═╡ fd9e085a-1814-4e69-80c4-4b397cb0c91b
+euler_modificado(irradia,a,b,y₀,h)	
+
+# ╔═╡ 3dab08b2-c665-4eff-9b7e-af1ba132eb4b
+solrk = rk4(irradia,a,b,y₀,h)	
+
+# ╔═╡ 4334a7e7-bdad-4400-af92-5a228ebf6d38
+plot(range(a,stop=b, step = h),solrk[1,:])
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -199,7 +139,7 @@ PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
 Plots = "~1.26.0"
-PlutoUI = "~0.7.35"
+PlutoUI = "~0.7.36"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -274,9 +214,9 @@ version = "0.12.8"
 
 [[deps.Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
-git-tree-sha1 = "44c37b4636bc54afac5c574d2d02b625349d6582"
+git-tree-sha1 = "96b0bc6c52df76506efc8a441c6cf1adcb1babc4"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "3.41.0"
+version = "3.42.0"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -400,9 +340,9 @@ version = "0.64.0+0"
 
 [[deps.GeometryBasics]]
 deps = ["EarCut_jll", "IterTools", "LinearAlgebra", "StaticArrays", "StructArrays", "Tables"]
-git-tree-sha1 = "58bcdf5ebc057b085e58d95c138725628dd7453c"
+git-tree-sha1 = "83ea630384a13fc4f002b77690bc0afeb4255ac9"
 uuid = "5c1252a2-5f33-56bf-86c9-59e7332b4326"
-version = "0.4.1"
+version = "0.4.2"
 
 [[deps.Gettext_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "XML2_jll"]
@@ -606,9 +546,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LogExpFunctions]]
 deps = ["ChainRulesCore", "ChangesOfVariables", "DocStringExtensions", "InverseFunctions", "IrrationalConstants", "LinearAlgebra"]
-git-tree-sha1 = "e5718a00af0ab9756305a0392832c8952c7426c1"
+git-tree-sha1 = "3f7cb7157ef860c637f3f4929c8ed5d9716933c6"
 uuid = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
-version = "0.3.6"
+version = "0.3.7"
 
 [[deps.Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -693,9 +633,9 @@ version = "8.44.0+0"
 
 [[deps.Parsers]]
 deps = ["Dates"]
-git-tree-sha1 = "13468f237353112a01b2d6b32f3d0f80219944aa"
+git-tree-sha1 = "85b5da0fa43588c75bb1ff986493443f821c70b7"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "2.2.2"
+version = "2.2.3"
 
 [[deps.Pixman_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -727,9 +667,9 @@ version = "1.26.0"
 
 [[deps.PlutoUI]]
 deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "Markdown", "Random", "Reexport", "UUIDs"]
-git-tree-sha1 = "85bf3e4bd279e405f91489ce518dedb1e32119cb"
+git-tree-sha1 = "2c87c85e397b7ffed5ffec054f532d4edd05d901"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
-version = "0.7.35"
+version = "0.7.36"
 
 [[deps.Preferences]]
 deps = ["TOML"]
@@ -857,10 +797,10 @@ uuid = "3783bdb8-4a98-5b6b-af9a-565f29a5fe9c"
 version = "1.0.1"
 
 [[deps.Tables]]
-deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "bb1064c9a84c52e277f1096cf41434b675cd368b"
+deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "OrderedCollections", "TableTraits", "Test"]
+git-tree-sha1 = "5ce79ce186cc678bbb5c5681ca3379d1ddae11a1"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.6.1"
+version = "1.7.0"
 
 [[deps.Tar]]
 deps = ["ArgTools", "SHA"]
@@ -1109,32 +1049,22 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═92f8fa30-b2ef-4b4c-8248-e2180f6d74cd
-# ╠═04c2a6c2-9a2e-11ec-32de-a9af910ef847
-# ╠═68390c81-c4d0-4858-a12f-01e074a9f636
-# ╟─dae1a521-c326-433f-a698-746ad47c1dfb
-# ╟─816f4b09-0f90-4c06-a158-2fbf4dadddc3
-# ╟─7b09f460-c350-4ac1-b285-d03b8a9ce619
-# ╠═230616c8-261b-4db1-bb9a-29bed8597b4e
-# ╠═099f6e36-908e-45a8-a1d2-3f8dfc57681c
-# ╠═c5a8737a-3adb-418f-b156-08577da036f1
-# ╠═dafaa153-3fc4-4836-a610-f1bcaac7d07a
-# ╠═c51b3463-627b-4409-b46e-8c0c96eb1f3a
-# ╠═ef22620b-a4ed-4706-91c3-53f1e1f038a3
-# ╠═0f563be9-f5ce-4a22-86fd-92cce959650d
-# ╠═8f6c7640-6cb0-42e7-8f0d-8d9ba0dd394c
-# ╠═f0ba7881-ea64-4d71-a312-e12145bb08a5
-# ╠═81e22155-ccbf-4455-a496-1f09873778bd
-# ╠═29ba7358-b74e-484f-9e1e-855eb2f15d64
-# ╠═1535cf47-954e-42c0-9e56-ed19e31fbbec
-# ╠═2608d42f-9886-406a-a126-20feb07a03b9
-# ╟─ea27baa0-9ebb-4c22-acfc-b4ba24f874c2
-# ╠═8905e77c-26fe-46d0-9157-b65b159e56dd
-# ╟─7b7c4e66-47a7-4907-909f-ccf563082c5e
-# ╠═e00dd4be-bde0-46de-a825-283fb8741a4f
-# ╟─2a416d22-8513-4fc0-9181-f2acebf6c70d
-# ╠═d4381073-92fb-45ae-ba37-feba67c6dea6
-# ╠═b1b5c21a-4943-4ddd-a9e9-45ca04adb900
-# ╠═818dd875-552d-425f-a27c-c576807c6814
+# ╟─aaf4150a-1beb-4db2-840c-145af2b7bfcf
+# ╠═b1265ffd-a378-433d-afeb-7c51ccf5b3ce
+# ╠═7f6f88bf-6cb3-4e38-b97d-aa427dbfb80b
+# ╟─6cffc7f5-255e-460e-abb4-0ee901f78bd7
+# ╠═f0320fb4-40b2-4ab0-9946-311712a614d4
+# ╠═256a6827-be2b-4fc0-8dce-fda5ca1d0cb2
+# ╠═0ec4fb48-56c3-4c00-a111-bad162eed35c
+# ╠═c3d1f2ec-4f4f-42f6-a99e-0e7d0ea5ada1
+# ╟─8531f8cd-f653-40c4-aa39-5eac8f964e6f
+# ╠═b37dafe2-9e1e-11ec-2919-dbe1ea6a609c
+# ╠═d3ff2364-a157-4e21-a0b3-27de322617c0
+# ╠═d45f65f7-0eec-4c21-b7f5-ebeb1bc31ae2
+# ╠═0642c0eb-0aec-46ea-8db4-7b8452cb52a5
+# ╠═04d84847-d99c-4783-9cfd-84746cc7abe4
+# ╠═fd9e085a-1814-4e69-80c4-4b397cb0c91b
+# ╠═3dab08b2-c665-4eff-9b7e-af1ba132eb4b
+# ╠═4334a7e7-bdad-4400-af92-5a228ebf6d38
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
