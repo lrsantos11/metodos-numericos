@@ -30,8 +30,8 @@ plotly()
 
 # ╔═╡ dae1a521-c326-433f-a698-746ad47c1dfb
 md"""
-#### Métodos Numéricos para Equações Diferenciais
-##### Problemas de Valor Inicial (PVI)
+# Métodos Numéricos para Equações Diferenciais
+## Problemas de Valor Inicial (PVI)
 
 $$\begin{cases} y' = f(t,y), t\in [a,b] \\
 y(a) = y_0 \end{cases}\tag{PVI}$$
@@ -1109,10 +1109,10 @@ version = "0.9.1+5"
 """
 
 # ╔═╡ Cell order:
-# ╠═92f8fa30-b2ef-4b4c-8248-e2180f6d74cd
+# ╟─92f8fa30-b2ef-4b4c-8248-e2180f6d74cd
 # ╠═04c2a6c2-9a2e-11ec-32de-a9af910ef847
 # ╠═68390c81-c4d0-4858-a12f-01e074a9f636
-# ╟─dae1a521-c326-433f-a698-746ad47c1dfb
+# ╠═dae1a521-c326-433f-a698-746ad47c1dfb
 # ╟─816f4b09-0f90-4c06-a158-2fbf4dadddc3
 # ╟─7b09f460-c350-4ac1-b285-d03b8a9ce619
 # ╠═230616c8-261b-4db1-bb9a-29bed8597b4e
