@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 04c2a6c2-9a2e-11ec-32de-a9af910ef847
-using Plots, LinearAlgebra, PlutoUI
+using Plots, LinearAlgebra, PlutoUI, DataFrames
 
 # ╔═╡ 92f8fa30-b2ef-4b4c-8248-e2180f6d74cd
 md"""
@@ -190,14 +190,42 @@ begin
 	plot(pltᵣₖ,pltₑₘ,pltₑ)
 end
 
+# ╔═╡ efdd65c9-624e-4e13-a292-ddb1eabbe9b7
+md"""
+### Tarefa Semana 13
+"""
+
+# ╔═╡ e74b15e7-9241-4ae6-831f-a5b6d9865f5c
+let
+	f(t,y) =  y/t - (y/t)^2
+	y(t) = t / (1 + log(t))
+	a, b = 1., 2.
+	y₀ = y(a)
+	hs = [0.1,0.05,0.02,0.01,0.005,0.002]
+	ns = Int.((b-a) ./ hs)
+	sol_euler, sol_euler_modificado, sol_rk4 = Float64[], Float64[], Float64[]
+	for n in ns
+		push!(sol_euler,euler(f,a,b,y₀,n)[end])
+		push!(sol_euler_modificado, euler_modificado.(f,a,b,y₀,n)[end])
+		push!(sol_rk4, rk4.(f,a,b,y₀,n)[end])
+	end
+	df = DataFrame(hs = hs, sol = fill(y(2), 6), sol_euler =  sol_euler, sol_eu_m =  sol_euler_modificado, sol_rk4 = sol_rk4)
+	df.erro_eu = abs.(df.sol_euler - df.sol)
+	df.erro_eu_m = abs.(df.sol_eu_m - df.sol)
+	df.erro_rk4 = abs.(df.sol_rk4 - df.sol)
+	df
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 
 [compat]
+DataFrames = "~1.3.2"
 Plots = "~1.26.0"
 PlutoUI = "~0.7.35"
 """
@@ -288,10 +316,21 @@ git-tree-sha1 = "9f02045d934dc030edad45944ea80dbd1f0ebea7"
 uuid = "d38c429a-6771-53c6-b99e-75d170b6e991"
 version = "0.5.7"
 
+[[deps.Crayons]]
+git-tree-sha1 = "249fe38abf76d48563e2f4556bebd215aa317e15"
+uuid = "a8cc5b0e-0ffa-5ad4-8c14-923d3ee1735f"
+version = "4.1.1"
+
 [[deps.DataAPI]]
 git-tree-sha1 = "cc70b17275652eb47bc9e5f81635981f13cea5c8"
 uuid = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 version = "1.9.0"
+
+[[deps.DataFrames]]
+deps = ["Compat", "DataAPI", "Future", "InvertedIndices", "IteratorInterfaceExtensions", "LinearAlgebra", "Markdown", "Missings", "PooledArrays", "PrettyTables", "Printf", "REPL", "Reexport", "SortingAlgorithms", "Statistics", "TableTraits", "Tables", "Unicode"]
+git-tree-sha1 = "ae02104e835f219b8930c7664b8012c93475c340"
+uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+version = "1.3.2"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
@@ -379,6 +418,10 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "aa31987c2ba8704e23c6c8ba8a4f769d5d7e4f91"
 uuid = "559328eb-81f9-559d-9380-de523a88c83c"
 version = "1.0.10+0"
+
+[[deps.Future]]
+deps = ["Random"]
+uuid = "9fa8497b-333b-5362-9e8d-4d0656e87820"
 
 [[deps.GLFW_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libglvnd_jll", "Pkg", "Xorg_libXcursor_jll", "Xorg_libXi_jll", "Xorg_libXinerama_jll", "Xorg_libXrandr_jll"]
@@ -470,6 +513,11 @@ deps = ["Test"]
 git-tree-sha1 = "a7254c0acd8e62f1ac75ad24d5db43f5f19f3c65"
 uuid = "3587e190-3f89-42d0-90ee-14403ec27112"
 version = "0.1.2"
+
+[[deps.InvertedIndices]]
+git-tree-sha1 = "bee5f1ef5bf65df56bdd2e40447590b272a5471f"
+uuid = "41ab1584-1d38-5bbf-9106-f11c6c58b48f"
+version = "1.1.0"
 
 [[deps.IrrationalConstants]]
 git-tree-sha1 = "7fd44fd4ff43fc60815f8e764c0f352b83c49151"
@@ -731,11 +779,23 @@ git-tree-sha1 = "85bf3e4bd279e405f91489ce518dedb1e32119cb"
 uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 version = "0.7.35"
 
+[[deps.PooledArrays]]
+deps = ["DataAPI", "Future"]
+git-tree-sha1 = "db3a23166af8aebf4db5ef87ac5b00d36eb771e2"
+uuid = "2dfb63ee-cc39-5dd5-95bd-886bf059d720"
+version = "1.4.0"
+
 [[deps.Preferences]]
 deps = ["TOML"]
 git-tree-sha1 = "de893592a221142f3db370f48290e3a2ef39998f"
 uuid = "21216c6a-2e73-6563-6e65-726566657250"
 version = "1.2.4"
+
+[[deps.PrettyTables]]
+deps = ["Crayons", "Formatting", "Markdown", "Reexport", "Tables"]
+git-tree-sha1 = "dfb54c4e414caa595a1f2ed759b160f5a3ddcba5"
+uuid = "08abe8d2-0d0c-5749-adfa-8a2ac140af0d"
+version = "1.3.1"
 
 [[deps.Printf]]
 deps = ["Unicode"]
@@ -1136,5 +1196,7 @@ version = "0.9.1+5"
 # ╠═d4381073-92fb-45ae-ba37-feba67c6dea6
 # ╠═b1b5c21a-4943-4ddd-a9e9-45ca04adb900
 # ╠═818dd875-552d-425f-a27c-c576807c6814
+# ╠═efdd65c9-624e-4e13-a292-ddb1eabbe9b7
+# ╠═e74b15e7-9241-4ae6-831f-a5b6d9865f5c
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
